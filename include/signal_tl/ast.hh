@@ -58,7 +58,7 @@ struct Const {
     return out << std::boolalpha << expr.value;
   }
 
-  static Expr asExpr(bool value) {
+  static Expr as_expr(bool value) {
     return Expr(std::make_shared<Const>(value));
   };
 };
@@ -73,7 +73,7 @@ struct Predicate {
     return out << expr.name;
   }
 
-  static Expr asExpr(const std::string& name) {
+  static Expr as_expr(const std::string& name) {
     return Expr(std::make_shared<Predicate>(name));
   };
 };
@@ -90,7 +90,7 @@ struct Not {
     return out << "~ (" << expr.arg << ")";
   }
 
-  static Expr asExpr(const Expr& arg) {
+  static Expr as_expr(const Expr& arg) {
     if (auto cval = std::get_if<ConstPtr>(&arg)) {
       return Expr(std::make_shared<Const>(~(*cval)->value));
     } else if (auto not_ = std::get_if<NotPtr>(&arg)) {
@@ -109,13 +109,13 @@ struct And {
   friend std::ostream& operator<<(std::ostream& out, const And& expr) {
     for (size_t i = 0; i < expr.args.size(); i++) {
       if (i != 0)
-        out << " | ";
+        out << " & ";
       out << expr.args[i];
     }
     return out;
   }
 
-  static Expr asExpr(const std::vector<Expr>& args) {
+  static Expr as_expr(const std::vector<Expr>& args) {
     return Expr(std::make_shared<And>(args));
   };
 };
@@ -135,7 +135,7 @@ struct Or {
     return out;
   }
 
-  static Expr asExpr(const std::vector<Expr>& args) {
+  static Expr as_expr(const std::vector<Expr>& args) {
     return Expr(std::make_shared<Or>(args));
   };
 };
@@ -164,7 +164,7 @@ struct Always {
   }
 
   static Expr
-  asExpr(const Expr& arg, const std::optional<Interval> interval = std::nullopt) {
+  as_expr(const Expr& arg, const std::optional<Interval> interval = std::nullopt) {
     return Expr(std::make_shared<Always>(arg, interval));
   };
 };
@@ -190,12 +190,12 @@ struct Eventually {
   }
 
   static Expr
-  asExpr(const Expr& arg, const std::optional<Interval> interval = std::nullopt) {
+  as_expr(const Expr& arg, const std::optional<Interval> interval = std::nullopt) {
     return Expr(std::make_shared<Eventually>(arg, interval));
   };
 };
 
-struct Until : Expr {
+struct Until {
   const std::pair<Expr, Expr> args;
   const std::optional<Interval> interval;
 
@@ -219,7 +219,7 @@ struct Until : Expr {
     return out << std::get<0>(expr.args) << " U " << std::get<1>(expr.args);
   }
 
-  static Expr asExpr(
+  static Expr as_expr(
       const Expr& arg0,
       const Expr& arg1,
       const std::optional<Interval> interval = std::nullopt) {
@@ -227,10 +227,10 @@ struct Until : Expr {
   };
 };
 
-std::ostream& operator<<(std::ostream& out, const Expr& expr) {
-  std::visit([&out](auto&& e) { out << *e; }, expr);
-  return out;
-}
+std::ostream& operator<<(std::ostream& out, const Expr& expr);
+Expr operator&(const Expr& lhs, const Expr& rhs);
+Expr operator|(const Expr& lhs, const Expr& rhs);
+Expr operator~(const Expr& expr);
 
 } // namespace ast
 #endif
