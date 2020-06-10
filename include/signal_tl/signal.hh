@@ -46,18 +46,52 @@ struct Signal {
   Sample front() const;
   Sample back() const;
 
+  /**
+   * Get const_iterator to the start of the signal
+   */
   auto begin() const {
     return this->samples.cbegin();
   }
 
+  /**
+   * Get const_iterator to the end of the signal
+   */
   auto end() const {
     return this->samples.cend();
+  }
+
+  /**
+   * Get const_iterator to the first element of the signal that is timed at or after `s`
+   */
+  auto begin_at(double s) const {
+    auto it = this->begin();
+    while (it->time < s)
+      it++;
+    return it;
+  }
+
+  /**
+   * Get const_iterator to the element after the last element of the signal
+   * that is timed at or before `t`
+   */
+  auto end_at(double t) const {
+    if (this->end_time() <= t)
+      return this->end();
+
+    auto it = this->end();
+    while (it->time > t)
+      it--;
+    // Now we have the pointer to the first element from the back whose .time <= t.
+    // So increment by 1 and return
+    it++;
+    return it;
   }
 
   /**
    * Add a Sample to the back of the Signal
    */
   void push_back(Sample s);
+  void push_back_raw(Sample s);
   /**
    * Remove sampling points where (y, dy) is continuous
    */

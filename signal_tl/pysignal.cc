@@ -7,7 +7,9 @@ void init_signal_module(py::module& parent) {
   auto m = parent.def_submodule("signal", "A general class of signals (PWL, etc.)");
   py::bind_vector<std::vector<float>>(m, "FloatList", py::buffer_protocol());
   py::bind_vector<std::vector<Sample>>(m, "SampleList");
-  py::bind_map<std::map<std::string, std::shared_ptr<signal::Signal>>>(m, "Trace");
+  py::bind_map<Trace>(m, "Trace")
+      .def(py::init<>())
+      .def(py::init<const Trace&>(), "other"_a);
 
   py::class_<Sample>(m, "Sample")
       .def(py::init())

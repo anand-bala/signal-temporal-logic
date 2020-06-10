@@ -92,6 +92,20 @@ void Signal::push_back(Sample sample) {
   this->samples.push_back(Sample{sample.time, sample.value, 0.0});
 }
 
+void Signal::push_back_raw(Sample sample) {
+  if (!this->samples.empty()) {
+    if (sample.time < this->end_time()) {
+      throw std::invalid_argument(
+          "Trying to append a Sample timestamped before the Signal end_time, i.e., time is not strictly monotonically increasing");
+    }
+    const auto [t, v, d] = this->samples.back();
+    auto last            = this->samples.back();
+
+    last.derivative = (sample.value - v) / (sample.time - t);
+  }
+  this->samples.push_back(sample);
+}
+
 Signal Signal::simplify() const {
   std::vector<Sample> sig;
   for (const auto& s : this->samples) {

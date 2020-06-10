@@ -9,9 +9,12 @@
 namespace semantics {
 using namespace signal;
 
-Signal compute_robustness(
-    const ast::Expr phi,
-    const std::map<std::string, std::shared_ptr<Signal>>& trace);
+enum struct Semantics {
+  EFFICIENT,
+  FILTERING,
+};
+
+Signal compute_robustness(const ast::Expr phi, const Trace& trace);
 
 } // namespace semantics
 
