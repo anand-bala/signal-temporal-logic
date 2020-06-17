@@ -9,11 +9,11 @@ using utils::overloaded;
 namespace {
 
 Expr AndHelper(const AndPtr& lhs, const Expr& rhs) {
-  std::vector args{lhs->args};
+  std::vector<Expr> args{lhs->args};
 
   std::visit(
-      overloaded{[&args](auto&& e) { args.push_back(e); },
-                 [&args](const AndPtr& e) {
+      overloaded{[&args](const auto e) { args.push_back(e); },
+                 [&args](const AndPtr e) {
                    args.reserve(
                        args.size() + std::distance(e->args.begin(), e->args.end()));
                    args.insert(args.end(), e->args.begin(), e->args.end());
@@ -24,11 +24,11 @@ Expr AndHelper(const AndPtr& lhs, const Expr& rhs) {
 }
 
 Expr OrHelper(const OrPtr& lhs, const Expr& rhs) {
-  std::vector args{lhs->args};
+  std::vector<Expr> args{lhs->args};
 
   std::visit(
-      overloaded{[&args](auto&& e) { args.push_back(e); },
-                 [&args](const OrPtr& e) {
+      overloaded{[&args](const auto e) { args.push_back(e); },
+                 [&args](const OrPtr e) {
                    args.reserve(
                        args.size() + std::distance(e->args.begin(), e->args.end()));
                    args.insert(args.end(), e->args.begin(), e->args.end());
@@ -41,16 +41,16 @@ Expr OrHelper(const OrPtr& lhs, const Expr& rhs) {
 } // namespace
 
 std::ostream& operator<<(std::ostream& out, const Expr& expr) {
-  std::visit([&out](auto&& e) { out << *e; }, expr);
+  std::visit([&out](auto e) { out << *e; }, expr);
   return out;
 }
 
 Expr operator&(const Expr& lhs, const Expr& rhs) {
   return std::visit(
-      overloaded{[&lhs, &rhs](auto&& e) {
+      overloaded{[&lhs, &rhs](auto e) {
                    return And::as_expr({lhs, rhs});
                  },
-                 [&rhs](const AndPtr& e) {
+                 [&rhs](const AndPtr e) {
                    return AndHelper(e, rhs);
                  }},
       lhs);
@@ -58,10 +58,10 @@ Expr operator&(const Expr& lhs, const Expr& rhs) {
 
 Expr operator|(const Expr& lhs, const Expr& rhs) {
   return std::visit(
-      overloaded{[&lhs, &rhs](auto&& e) {
+      overloaded{[&lhs, &rhs](auto e) {
                    return Or::as_expr({lhs, rhs});
                  },
-                 [&rhs](const OrPtr& e) {
+                 [&rhs](const OrPtr e) {
                    return OrHelper(e, rhs);
                  }},
       lhs);
