@@ -6,15 +6,18 @@
 #include "signal_tl/ast.hh"
 #include "signal_tl/signal.hh"
 
+#include <memory>
+
 namespace semantics {
-using namespace signal;
 
 enum struct Semantics {
   EFFICIENT,
   FILTERING,
+  CUMULATIVE,
 };
 
-Signal compute_robustness(const ast::Expr phi, const Trace& trace);
+template <Semantics S>
+signal::SignalPtr compute_robustness(const ast::Expr phi, const signal::Trace& trace);
 
 } // namespace semantics
 

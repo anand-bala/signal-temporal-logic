@@ -4,6 +4,7 @@
 #define __SIGNAL_TEMPORAL_LOGIC_AST_HH__
 
 #include <cmath>
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -104,7 +105,12 @@ struct And {
   const std::vector<Expr> args;
 
   And() = delete;
-  And(const std::vector<Expr>& args) : args(args) {}
+  And(const std::vector<Expr>& args) : args(args) {
+    if (args.size() < 2) {
+      std::invalid_argument(
+          "It doesn't make sense to have an And operator with < 2 operands");
+    }
+  }
 
   friend std::ostream& operator<<(std::ostream& out, const And& expr) {
     for (size_t i = 0; i < expr.args.size(); i++) {
@@ -124,7 +130,12 @@ struct Or {
   const std::vector<Expr> args;
 
   Or() = delete;
-  Or(const std::vector<Expr>& args) : args(args) {}
+  Or(const std::vector<Expr>& args) : args(args) {
+    if (args.size() < 2) {
+      std::invalid_argument(
+          "It doesn't make sense to have an Or operator with < 2 operands");
+    }
+  }
 
   friend std::ostream& operator<<(std::ostream& out, const Or& expr) {
     for (size_t i = 0; i < expr.args.size(); i++) {

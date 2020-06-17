@@ -22,7 +22,7 @@ using namespace pybind11::literals;
 namespace py = pybind11;
 
 PYBIND11_MAKE_OPAQUE(std::vector<signal::Sample>);
-PYBIND11_MAKE_OPAQUE(std::map<std::string, std::shared_ptr<signal::Signal>>);
+PYBIND11_MAKE_OPAQUE(std::map<std::string, signal::SignalPtr>);
 
 template <typename T>
 std::string repr(const T& expr) {
