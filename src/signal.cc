@@ -1,10 +1,14 @@
 #include "signal_tl/signal.hh"
+
+#include "minmax.hh"
 #include "utils.hh"
 
+#include <algorithm>
 #include <cmath>
 #include <exception>
 #include <functional>
 #include <iterator>
+#include <numeric>
 
 namespace signal {
 
@@ -175,106 +179,14 @@ SignalPtr Signal::shift(double dt) const {
   return sig;
 }
 
-namespace {
+SignalPtr Signal::resize_shift(double start, double end, double fill, double dt) const {
+  auto out = this->resize(start, end, fill);
+  for (auto& s : out->samples) { s.time += dt; }
+  return out;
+} // namespace signal
 
-void compute_segment_minmax(
-    std::vector<Sample>& out,
-    const Sample& i,
-    double t,
-    std::vector<Sample>::const_reverse_iterator& j,
-    bool minimize = true) {
-  std::function<bool(double, double)> op, op_c;
-  if (minimize) {
-    op   = std::less<double>();
-    op_c = std::greater<double>();
-  } else {
-    op   = std::greater<double>();
-    op_c = std::less<double>();
-  }
-  // PRECONDITIONS: j->time < t, i.time < t
-  // POSTCONDITIONS: j->time <= i.time
-  bool continued = false;
-  double s       = j->time;
-
-  // for every sample *j in (i.time, t)
-  for (; s > i.time; (t = s), j++, (s = j->time)) {
-    if (op(i.interpolate(t), j->interpolate(t))) {
-      if (op_c(i.interpolate(s), j->value)) {
-        t = i.time_intersect(*j);
-        out.push_back({t, i.interpolate(t), i.derivative});
-        out.push_back({s, j->value, j->derivative});
-        continued = false;
-      } else
-        continued = true;
-    } else if (i.interpolate(t) == j->interpolate(t)) {
-      if (op_c(i.interpolate(s), j->value)) {
-        if (continued) {
-          out.push_back({t, i.interpolate(t), i.derivative});
-          continued = false;
-        }
-        out.push_back({s, j->value, j->derivative});
-      } else
-        continued = true;
-    } else {
-      if (op(i.interpolate(s), j->value)) {
-        if (continued) {
-          out.push_back({t, i.interpolate(t), i.derivative});
-        }
-        t = i.time_intersect(*j);
-
-        out.push_back({t, j->interpolate(t), j->derivative});
-        continued = true;
-      } else {
-        if (continued) {
-          out.push_back({t, i.interpolate(t), i.derivative});
-          continued = false;
-        }
-        out.push_back({s, j->value, j->derivative});
-      }
-    }
-  }
-
-  // here we may have j->time < i.time
-  // "i" values of z are no longer "continued"
-  s = i.time;
-  if (op(i.interpolate(t), j->interpolate(t))) {
-    if (op_c(i.value, j->interpolate(s))) {
-      t = i.time_intersect(*j);
-      out.push_back({t, i.interpolate(t), i.derivative});
-      out.push_back({s, j->interpolate(s), j->derivative});
-    } else {
-      out.push_back(i);
-    }
-  } else if (i.interpolate(t) == j->interpolate(t)) {
-    if (op_c(i.value, j->interpolate(s))) {
-      if (continued) {
-        out.push_back({t, i.interpolate(t), i.derivative});
-      }
-      out.push_back({s, j->interpolate(s), j->derivative});
-    } else {
-      out.push_back(i);
-    }
-  } else {
-    if (op(i.value, j->interpolate(s))) {
-      if (continued) {
-        out.push_back({t, i.interpolate(t), i.derivative});
-      }
-      t = i.time_intersect(*j);
-      out.push_back({t, j->interpolate(t), j->derivative});
-      out.push_back(i);
-
-    } else {
-      if (continued) {
-        out.push_back({t, i.interpolate(t), i.derivative});
-      }
-      out.push_back({s, j->interpolate(s), j->derivative});
-    }
-  }
-}
-
-} // namespace
-
-SignalPtr min(const SignalPtr y1, const SignalPtr y2) {
+template <typename Compare>
+SignalPtr minmax(const SignalPtr y1, const SignalPtr y2, Compare comp) {
   // The output signal is only defined in the duration when y1 and y2 are defined.
   double begin_time = std::max(y1->begin_time(), y2->begin_time());
   double end_time   = std::min(y1->end_time(), y2->end_time());
@@ -299,91 +211,53 @@ SignalPtr min(const SignalPtr y1, const SignalPtr y2) {
   // Compute for segments
   double t = end_time;
   for (; i->time > begin_time; (t = i->time), i++) {
-    compute_segment_minmax(sig_stack, *i, t, j, true);
+    minmax::segment_minmax(sig_stack, *i, t, j, comp);
     if (j->time == i->time)
       j++;
   }
   if (i->time == begin_time) {
-    compute_segment_minmax(sig_stack, *i, t, j, true);
+    minmax::segment_minmax(sig_stack, *i, t, j, comp);
   } else {
-    compute_segment_minmax(
-        sig_stack, {begin_time, i->interpolate(begin_time), i->derivative}, t, j, true);
+    minmax::segment_minmax(
+        sig_stack, {begin_time, i->interpolate(begin_time), i->derivative}, t, j, comp);
   }
 
   auto out = std::make_shared<Signal>(std::rbegin(sig_stack), std::rend(sig_stack));
   return out->simplify();
+}
+
+template <typename Compare>
+SignalPtr minmax(const std::vector<SignalPtr>& ys, Compare comp) {
+  if (ys.empty()) {
+    auto out = std::make_shared<Signal>();
+    out->push_back(0, -std::numeric_limits<double>::infinity());
+    return out;
+  } else if (ys.size() == 1) {
+    return ys.at(0);
+  }
+
+  // TODO(anand): Parallel execution policy?
+  SignalPtr out = std::reduce(
+      std::next(ys.cbegin()),
+      ys.cend(),
+      ys.at(0),
+      [&comp](const SignalPtr a, const SignalPtr b) { return minmax(a, b, comp); });
+  return out;
+}
+
+SignalPtr min(const SignalPtr y1, const SignalPtr y2) {
+  return minmax(y1, y2, std::less<double>());
 }
 
 SignalPtr min(const std::vector<SignalPtr>& ys) {
-  auto out = std::make_shared<Signal>();
-  if (ys.empty()) {
-    out->push_back(0, -std::numeric_limits<double>::infinity());
-    return out;
-  } else if (ys.size() == 1) {
-    return ys.at(0);
-  }
-
-  out = ys.at(0);
-  for (size_t i = 1; i < ys.size(); i++) out = min(out, ys.at(1));
-  return out;
+  return minmax(ys, std::less<double>());
 }
 
 SignalPtr max(const SignalPtr y1, const SignalPtr y2) {
-  // The output signal is only defined in the duration when y1 and y2 are defined.
-  double begin_time = std::max(y1->begin_time(), y2->begin_time());
-  double end_time   = std::min(y1->end_time(), y2->end_time());
-
-  // We are going to build the signal in reverse as a vector of samples and then use
-  // that to build the output signal. Essentially, this is equivalent to pushing the new
-  // Samples in reverse onto a stack and then popping it.
-
-  std::vector<Sample> sig_stack;
-  // Since the new signal is going to have <= 4 * max(y1.size(), y2.size()) samples,
-  // we reserve that space for speed.
-  sig_stack.reserve(4 * std::max(y1->size(), y2->size()));
-
-  // Get reverse_iterators for y1, y2
-  auto i = y1->rbegin();
-  auto j = y2->rbegin();
-
-  // Advance the iterators up to end_time
-  while (i->time >= end_time) i++;
-  while (j->time >= end_time) j++;
-
-  // Compute for segments
-  double t = end_time;
-  for (; i->time > begin_time; (t = i->time), i++) {
-    compute_segment_minmax(sig_stack, *i, t, j, false);
-    if (j->time == i->time)
-      j++;
-  }
-  if (i->time == begin_time) {
-    compute_segment_minmax(sig_stack, *i, t, j, false);
-  } else {
-    compute_segment_minmax(
-        sig_stack,
-        {begin_time, i->interpolate(begin_time), i->derivative},
-        t,
-        j,
-        false);
-  }
-
-  auto out = std::make_shared<Signal>(std::rbegin(sig_stack), std::rend(sig_stack));
-  return out->simplify();
+  return minmax(y1, y2, std::greater<double>());
 }
-
 SignalPtr max(const std::vector<SignalPtr>& ys) {
-  auto out = std::make_shared<Signal>();
-  if (ys.empty()) {
-    out->push_back(0, -std::numeric_limits<double>::infinity());
-    return out;
-  } else if (ys.size() == 1) {
-    return ys.at(0);
-  }
-
-  out = ys.at(0);
-  for (size_t i = 1; i < ys.size(); i++) out = min(out, ys.at(1));
-  return out;
+  return minmax(ys, std::greater<double>());
 }
 
 std::ostream& operator<<(std::ostream& out, const signal::Sample& sample) {

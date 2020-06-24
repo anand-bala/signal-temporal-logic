@@ -11,5 +11,9 @@ void init_robustness_module(py::module& parent) {
       .value("EFFICIENT", Semantics::EFFICIENT)
       .value("FILTERING", Semantics::FILTERING);
 
-  m.def("compute_robustness", &compute_robustness, "phi"_a, "trace"_a);
+  m.def(
+      "compute_robustness",
+      &compute_robustness<Semantics::EFFICIENT>,
+      "phi"_a,
+      "trace"_a);
 }

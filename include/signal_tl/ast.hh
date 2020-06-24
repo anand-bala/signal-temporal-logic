@@ -93,7 +93,7 @@ struct Not {
 
   static Expr as_expr(const Expr& arg) {
     if (auto cval = std::get_if<ConstPtr>(&arg)) {
-      return Expr(std::make_shared<Const>(~(*cval)->value));
+      return Expr(std::make_shared<Const>(!(*cval)->value));
     } else if (auto not_ = std::get_if<NotPtr>(&arg)) {
       return Expr((*not_)->arg);
     }

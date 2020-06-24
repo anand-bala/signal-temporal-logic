@@ -56,6 +56,26 @@ constexpr auto enumerate(T&& iterable) {
   return iterable_wrapper{std::forward<T>(iterable)};
 }
 
+/**
+ * Python-style reversed iterator
+ */
+template <
+    typename T,
+    typename = decltype(std::rbegin(std::declval<T>())),
+    typename = decltype(std::rend(std::declval<T>()))>
+constexpr auto reversed(T&& iterable) {
+  struct iterable_wrapper {
+    T iterable;
+    auto begin() {
+      return std::rbegin(iterable);
+    }
+    auto end() {
+      return std::rend(iterable);
+    }
+  };
+  return iterable_wrapper{std::forward<T>(iterable)};
+}
+
 } // namespace utils
 
 #endif /* end of include guard: __SIGNAL_TEMPORAL_LOGIC_UTILS_HH__ */

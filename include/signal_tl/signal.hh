@@ -27,6 +27,12 @@ struct Sample {
   double area(double t) const;
 
   friend std::ostream& operator<<(std::ostream& out, const Sample& sample);
+  bool operator<(const Sample& o) const {
+    return value < o.value;
+  }
+  bool operator>(const Sample& o) const {
+    return value > o.value;
+  }
 };
 
 /**
@@ -139,6 +145,13 @@ struct Signal {
    */
   std::shared_ptr<Signal> shift(double dt) const;
 
+  /**
+   * Resize and shift a signal without creating copies. We use this often, so it makes
+   * sense to combine it.
+   */
+  std::shared_ptr<Signal>
+  resize_shift(double start, double end, double fill, double dt) const;
+
   friend std::ostream& operator<<(std::ostream& os, const Signal& sig);
 
  private:
@@ -149,26 +162,23 @@ using SignalPtr = std::shared_ptr<Signal>;
 using Trace     = std::map<std::string, SignalPtr>;
 
 /**
- * Compute the Signal that represents the minimum values of two signals. The output
- * signals will have the points where the two signals intersect (if they are
- * significant)
+ * Compute the Signal that represents the minimum/maximum values of two
+ * signals. The output signals will have the points where the two signals
+ * intersect (if they are significant).
  */
-SignalPtr min(const SignalPtr y1, const SignalPtr y2);
-/**
- * Computes the Signal representing the minimum of multiple signals.
- */
-SignalPtr min(const std::vector<SignalPtr> ys);
+template <typename Compare>
+SignalPtr minmax(const SignalPtr y1, const SignalPtr y2, Compare comp);
 
 /**
- * Compute the Signal that represents the maximum values of two signals. The output
- * signals will have the points where the two signals intersect (if they are
- * significant)
+ * Computes the Signal representing the minimum/maximum of multiple signals.
  */
+template <typename Compare>
+SignalPtr minmax(const std::vector<SignalPtr>& ys, Compare comp);
+
+SignalPtr min(const SignalPtr y1, const SignalPtr y2);
+SignalPtr min(const std::vector<SignalPtr>& ys);
 SignalPtr max(const SignalPtr y1, const SignalPtr y2);
-/**
- * Computes the Signal representing the maximum of multiple signals.
- */
-SignalPtr max(const std::vector<SignalPtr> ys);
+SignalPtr max(const std::vector<SignalPtr>& ys);
 
 } // namespace signal
 #endif

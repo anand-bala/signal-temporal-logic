@@ -18,6 +18,9 @@ if(GIT_FOUND)
   endfunction()
 endif()
 
+# External utility libs
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/mono_wedge)
+
 # Python Bindings
 
 find_package(pybind11 QUIET)
