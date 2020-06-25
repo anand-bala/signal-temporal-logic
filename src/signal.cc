@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <exception>
+#include <execution>
 #include <functional>
 #include <iterator>
 #include <numeric>
@@ -238,6 +239,7 @@ SignalPtr minmax(const std::vector<SignalPtr>& ys, Compare comp) {
 
   // TODO(anand): Parallel execution policy?
   SignalPtr out = std::reduce(
+      std::execution::seq,
       std::next(ys.cbegin()),
       ys.cend(),
       ys.at(0),

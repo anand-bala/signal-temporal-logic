@@ -6,7 +6,8 @@ set(PYBIND11_CPP_STANDARD -std=c++17)
 set(CMAKE_CXX_EXTENSIONS ON)
 add_subdirectory(third_party)
 
-list(APPEND STL_SOURCES src/ast.cc src/signal.cc src/efficient_robustness.cc)
+set(STL_SOURCES src/ast.cc src/efficient_robustness.cc src/minmax.cc
+                src/signal.cc)
 
 add_library(libsignaltl SHARED ${STL_SOURCES})
 target_include_directories(
@@ -15,6 +16,7 @@ target_include_directories(
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_features(libsignaltl PUBLIC cxx_std_17)
+target_compile_options(libsignaltl PUBLIC -std=c++17)
 target_link_libraries(libsignaltl PRIVATE mono_wedge::mono_wedge)
 
 list(APPEND BINDINGS_SOURCES signal_tl/pysignal_tl.cc signal_tl/pyast.cc

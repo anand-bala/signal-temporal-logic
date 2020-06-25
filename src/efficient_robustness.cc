@@ -138,14 +138,48 @@ SignalPtr compute_always(const SignalPtr y, double a) {
   return z->simplify();
 }
 
-template <typename Compare>
 void segment_until(
     std::vector<signal::Sample>& out,
     const signal::Sample& i,
     double t,
     std::vector<signal::Sample>::const_reverse_iterator& j,
-    double z_max,
-    Compare op) {}
+    double z_max) {
+  double s = i.time;
+  if (i.derivative <= 0) {
+    auto z1 = std::vector<Sample>{};
+    minmax::segment_minmax(z1, i, t, j, std::less<double>());
+
+    auto z2 = std::vector<Sample>{};
+    auto k  = z1.crbegin();
+    minmax::partial_comp(z2, k, s, t, std::greater<double>());
+
+    auto l = z2.crbegin();
+    minmax::segment_minmax(
+        out,
+        Sample{s, std::min(z_max, i.interpolate(t)), 0},
+        t,
+        l,
+        std::greater<double>());
+  } else {
+    auto z1 = std::vector<Sample>{};
+    minmax::partial_comp(z1, j, s, t, std::greater<double>());
+
+    auto z2 = std::vector<Sample>{};
+    auto k  = z1.crbegin();
+    minmax::segment_minmax(z2, i, t, k, std::less<double>());
+
+    z1      = std::vector<Sample>{};
+    auto z3 = std::vector<Sample>{};
+    z3.push_back(Sample{s, z_max, 0});
+    k = z3.crbegin();
+    minmax::segment_minmax(z1, i, t, k, std::less<double>());
+
+    k      = z1.crbegin();
+    auto l = z2.crbegin();
+    // TODO: partialOr doesnt exist...
+    // minmax::segment_minmax(out, k, l, s, t, std::greater<double>());
+  }
+}
 
 SignalPtr compute_until(const SignalPtr y1, const SignalPtr y2) {
   double begin_time = std::max(y1->begin_time(), y2->begin_time());
@@ -160,17 +194,18 @@ SignalPtr compute_until(const SignalPtr y1, const SignalPtr y2) {
   while (i->time >= end_time) i++;
   while (j->time >= end_time) j++;
 
-  double t = end_time;
-  for (; i->time > begin_time; (t = i->time), i++) {
-    minmax::segment_minmax(sig_stack, *i, t, j, comp);
+  double s     = begin_time;
+  double t     = end_time;
+  double z_max = BOTTOM;
+  for (; i->time > begin_time; (z_max = sig_stack.back().value), (t = i->time), i++) {
+    segment_until(sig_stack, *i, t, j, z_max);
     if (j->time == i->time)
       j++;
   }
   if (i->time == begin_time) {
-    minmax::segment_minmax(sig_stack, *i, t, j, comp);
+    segment_until(sig_stack, *i, t, j, z_max);
   } else {
-    minmax::segment_minmax(
-        sig_stack, {begin_time, i->interpolate(begin_time), i->derivative}, t, j, comp);
+    segment_until(sig_stack, Sample{s, i->interpolate(s), i->derivative}, t, j, z_max);
   }
 
   auto out = std::make_shared<Signal>(std::rbegin(sig_stack), std::rend(sig_stack));

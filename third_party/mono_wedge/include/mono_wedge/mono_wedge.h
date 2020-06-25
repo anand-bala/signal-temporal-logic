@@ -141,17 +141,17 @@ void mono_wedge_update(Wedge& wedge, T&& value, Compare comp) {
       mono_wedge_search(wedge.begin(), wedge.end(), value, comp);
   size_t erase_count = std::distance(i, wedge.end());
   while (erase_count--) wedge.pop_back();
-  wedge.push_back(std::forward(value));
+  wedge.push_back(std::forward<T>(value));
 }
 
 template <class Wedge, class T, class Compare>
 void min_wedge_update(Wedge& wedge, T&& value) {
-  mono_wedge_update(wedge, std::forward(value), std::less<T>());
+  mono_wedge_update(wedge, std::forward<T>(value), std::less<T>());
 }
 
 template <class Wedge, class T, class Compare>
 void max_wedge_update(Wedge& wedge, T&& value) {
-  mono_wedge_update(wedge, std::forward(value), std::greater<T>());
+  mono_wedge_update(wedge, std::forward<T>(value), std::greater<T>());
 }
 #endif
 } // namespace mono_wedge
