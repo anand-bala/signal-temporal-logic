@@ -27,13 +27,20 @@ struct Sample {
   double area(double t) const;
 
   friend std::ostream& operator<<(std::ostream& out, const Sample& sample);
-  bool operator<(const Sample& o) const {
-    return value < o.value;
-  }
-  bool operator>(const Sample& o) const {
-    return value > o.value;
-  }
 };
+
+constexpr bool operator<(const Sample& lhs, const Sample& rhs) {
+  return lhs.value < rhs.value;
+}
+constexpr bool operator>(const Sample& lhs, const Sample& rhs) {
+  return rhs < lhs;
+}
+constexpr bool operator<=(const Sample& lhs, const Sample& rhs) {
+  return !(lhs > rhs);
+}
+constexpr bool operator>=(const Sample& lhs, const Sample& rhs) {
+  return !(lhs < rhs);
+}
 
 /**
  * Piecewise-linear, right-continuous signal
@@ -160,25 +167,6 @@ struct Signal {
 
 using SignalPtr = std::shared_ptr<Signal>;
 using Trace     = std::map<std::string, SignalPtr>;
-
-/**
- * Compute the Signal that represents the minimum/maximum values of two
- * signals. The output signals will have the points where the two signals
- * intersect (if they are significant).
- */
-template <typename Compare>
-SignalPtr minmax(const SignalPtr y1, const SignalPtr y2, Compare comp);
-
-/**
- * Computes the Signal representing the minimum/maximum of multiple signals.
- */
-template <typename Compare>
-SignalPtr minmax(const std::vector<SignalPtr>& ys, Compare comp);
-
-SignalPtr min(const SignalPtr y1, const SignalPtr y2);
-SignalPtr min(const std::vector<SignalPtr>& ys);
-SignalPtr max(const SignalPtr y1, const SignalPtr y2);
-SignalPtr max(const std::vector<SignalPtr>& ys);
 
 } // namespace signal
 #endif

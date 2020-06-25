@@ -88,7 +88,7 @@ struct Not {
   Not(const Expr& arg) : arg(arg) {}
 
   friend std::ostream& operator<<(std::ostream& out, const Not& expr) {
-    return out << "~ (" << expr.arg << ")";
+    return out << "~" << expr.arg;
   }
 
   static Expr as_expr(const Expr& arg) {
@@ -113,11 +113,13 @@ struct And {
   }
 
   friend std::ostream& operator<<(std::ostream& out, const And& expr) {
+    out << "(";
     for (size_t i = 0; i < expr.args.size(); i++) {
       if (i != 0)
         out << " & ";
       out << expr.args[i];
     }
+    out << ")";
     return out;
   }
 
@@ -138,11 +140,13 @@ struct Or {
   }
 
   friend std::ostream& operator<<(std::ostream& out, const Or& expr) {
+    out << "(";
     for (size_t i = 0; i < expr.args.size(); i++) {
       if (i != 0)
         out << " | ";
       out << expr.args[i];
     }
+    out << ")";
     return out;
   }
 

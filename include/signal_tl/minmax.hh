@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef __SIGNAL_TL_MINMAX_HH__
 #define __SIGNAL_TL_MINMAX_HH__
 

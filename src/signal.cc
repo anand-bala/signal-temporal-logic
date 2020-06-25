@@ -1,13 +1,9 @@
 #include "signal_tl/signal.hh"
 
-#include "minmax.hh"
-#include "utils.hh"
+#include "signal_tl/utils.hh"
 
-#include <algorithm>
 #include <cmath>
 #include <exception>
-#include <execution>
-#include <functional>
 #include <iterator>
 #include <numeric>
 
@@ -61,31 +57,31 @@ Signal::Signal(const Iter start, const Iter end) {
   for (auto i = start; i != end; i = std::next(i)) { this->push_back(*i); }
 }
 
-inline double Signal::begin_time() const {
+double Signal::begin_time() const {
   return (samples.empty()) ? 0.0 : samples.front().time;
 }
 
-inline double Signal::end_time() const {
+double Signal::end_time() const {
   return (samples.empty()) ? 0.0 : samples.back().time;
 }
 
-inline double Signal::interpolate(double t, size_t idx) const {
+double Signal::interpolate(double t, size_t idx) const {
   return this->samples.at(idx).interpolate(t);
 }
 
-inline double Signal::time_intersect(const Sample& point, size_t idx) const {
+double Signal::time_intersect(const Sample& point, size_t idx) const {
   return this->samples.at(idx).time_intersect(point);
 }
 
-inline double Signal::area(double t, size_t idx) const {
+double Signal::area(double t, size_t idx) const {
   return this->samples.at(idx).area(t);
 }
 
-inline Sample Signal::front() const {
+Sample Signal::front() const {
   return this->samples.front();
 }
 
-inline Sample Signal::back() const {
+Sample Signal::back() const {
   return this->samples.back();
 }
 
@@ -185,82 +181,6 @@ SignalPtr Signal::resize_shift(double start, double end, double fill, double dt)
   for (auto& s : out->samples) { s.time += dt; }
   return out;
 } // namespace signal
-
-template <typename Compare>
-SignalPtr minmax(const SignalPtr y1, const SignalPtr y2, Compare comp) {
-  // The output signal is only defined in the duration when y1 and y2 are defined.
-  double begin_time = std::max(y1->begin_time(), y2->begin_time());
-  double end_time   = std::min(y1->end_time(), y2->end_time());
-
-  // We are going to build the signal in reverse as a vector of samples and then use
-  // that to build the output signal. Essentially, this is equivalent to pushing the new
-  // Samples in reverse onto a stack and then popping it.
-
-  std::vector<Sample> sig_stack;
-  // Since the new signal is going to have <= 4 * max(y1.size(), y2.size()) samples,
-  // we reserve that space for speed.
-  sig_stack.reserve(4 * std::max(y1->size(), y2->size()));
-
-  // Get reverse_iterators for y1, y2
-  auto i = y1->rbegin();
-  auto j = y2->rbegin();
-
-  // Advance the iterators up to end_time
-  while (i->time >= end_time) i++;
-  while (j->time >= end_time) j++;
-
-  // Compute for segments
-  double t = end_time;
-  for (; i->time > begin_time; (t = i->time), i++) {
-    minmax::segment_minmax(sig_stack, *i, t, j, comp);
-    if (j->time == i->time)
-      j++;
-  }
-  if (i->time == begin_time) {
-    minmax::segment_minmax(sig_stack, *i, t, j, comp);
-  } else {
-    minmax::segment_minmax(
-        sig_stack, {begin_time, i->interpolate(begin_time), i->derivative}, t, j, comp);
-  }
-
-  auto out = std::make_shared<Signal>(std::rbegin(sig_stack), std::rend(sig_stack));
-  return out->simplify();
-}
-
-template <typename Compare>
-SignalPtr minmax(const std::vector<SignalPtr>& ys, Compare comp) {
-  if (ys.empty()) {
-    auto out = std::make_shared<Signal>();
-    out->push_back(0, -std::numeric_limits<double>::infinity());
-    return out;
-  } else if (ys.size() == 1) {
-    return ys.at(0);
-  }
-
-  // TODO(anand): Parallel execution policy?
-  SignalPtr out = std::reduce(
-      std::execution::seq,
-      std::next(ys.cbegin()),
-      ys.cend(),
-      ys.at(0),
-      [&comp](const SignalPtr a, const SignalPtr b) { return minmax(a, b, comp); });
-  return out;
-}
-
-SignalPtr min(const SignalPtr y1, const SignalPtr y2) {
-  return minmax(y1, y2, std::less<double>());
-}
-
-SignalPtr min(const std::vector<SignalPtr>& ys) {
-  return minmax(ys, std::less<double>());
-}
-
-SignalPtr max(const SignalPtr y1, const SignalPtr y2) {
-  return minmax(y1, y2, std::greater<double>());
-}
-SignalPtr max(const std::vector<SignalPtr>& ys) {
-  return minmax(ys, std::greater<double>());
-}
 
 std::ostream& operator<<(std::ostream& out, const signal::Sample& sample) {
   return out << "{" << sample.time << ";" << sample.value << ";" << sample.derivative

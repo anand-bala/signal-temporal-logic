@@ -1,9 +1,13 @@
-#include "minmax.hh"
+#include "signal_tl/signal.hh"
+
+#include "signal_tl/minmax.hh"
 
 #include <limits>
+#include <vector>
+
+using namespace signal;
 
 namespace minmax {
-using namespace signal;
 
 constexpr double TOP    = std::numeric_limits<double>::infinity();
 constexpr double BOTTOM = -TOP;

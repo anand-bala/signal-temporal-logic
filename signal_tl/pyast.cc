@@ -23,14 +23,14 @@ ast::Expr not_op(const std::shared_ptr<T>& expr) {
 void init_ast_module(py::module& parent) {
   using namespace ast;
 
-  parent.def("Const", &Const::as_expr);
-  parent.def("Predicate", &Predicate::as_expr);
-  parent.def("Not", &Not::as_expr);
-  parent.def("And", &And::as_expr);
-  parent.def("Or", &Or::as_expr);
-  parent.def("Always", &Always::as_expr);
-  parent.def("Eventually", &Eventually::as_expr);
-  parent.def("Until", &Until::as_expr);
+  parent.def("Const", &Const::as_expr, "value"_a);
+  parent.def("Predicate", &Predicate::as_expr, "name"_a);
+  parent.def("Not", &Not::as_expr, "arg"_a);
+  parent.def("And", &And::as_expr, "args"_a);
+  parent.def("Or", &Or::as_expr, "args"_a);
+  parent.def("Always", &Always::as_expr, "arg"_a, "interval"_a = std::nullopt);
+  parent.def("Eventually", &Eventually::as_expr, "arg"_a, "interval"_a = std::nullopt);
+  parent.def("Until", &Until::as_expr, "arg0"_a, "arg1"_a, "interval"_a = std::nullopt);
 
   auto m = parent.def_submodule("ast", "Define the AST nodes for STL");
 

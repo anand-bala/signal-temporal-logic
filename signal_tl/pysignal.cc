@@ -5,23 +5,26 @@ void init_signal_module(py::module& parent) {
   using namespace signal;
 
   auto m = parent.def_submodule("signal", "A general class of signals (PWL, etc.)");
-  py::bind_vector<std::vector<float>>(m, "FloatList", py::buffer_protocol());
+  py::bind_vector<std::vector<double>>(m, "DoubleList", py::buffer_protocol());
   py::bind_vector<std::vector<Sample>>(m, "SampleList");
-  py::bind_map<Trace>(m, "Trace")
-      .def(py::init<>())
-      .def(py::init<const Trace&>(), "other"_a);
+  py::bind_map<Trace>(m, "Trace").def(py::init<const Trace&>(), "other"_a);
 
   py::class_<Sample>(m, "Sample")
       .def(py::init())
       .def_readonly("time", &Sample::time)
       .def_readonly("value", &Sample::value)
-      .def_readonly("derivative", &Sample::value);
+      .def_readonly("derivative", &Sample::value)
+      .def(py::self < py::self)
+      .def(py::self > py::self)
+      .def(py::self >= py::self)
+      .def(py::self <= py::self);
 
   py::class_<Signal, std::shared_ptr<Signal>>(m, "Signal")
       .def(py::init<>())
+      .def(py::init<const Signal&>(), "other"_a)
       .def(py::init<const std::vector<Sample>&>())
       .def(
-          py::init<const std::vector<float>&, const std::vector<float>&>(),
+          py::init<const std::vector<double>&, const std::vector<double>&>(),
           "points"_a,
           "times"_a)
       .def_property_readonly("begin_time", &Signal::begin_time)

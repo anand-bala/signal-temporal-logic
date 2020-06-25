@@ -12,12 +12,14 @@
 #include "mono_wedge/mono_wedge.h"
 #include "signal_tl/robustness.hh"
 
-#include "minmax.hh"
-#include "utils.hh"
+#include "signal_tl/minmax.hh"
+#include "signal_tl/utils.hh"
 
 #include <algorithm>
 #include <cmath>
 #include <deque>
+#include <execution>
+#include <functional>
 #include <limits>
 
 namespace semantics {
@@ -62,6 +64,69 @@ SignalPtr mono_wedge_minmax(const SignalPtr y, const double a, Compare comp) {
   return out->simplify();
 }
 
+template <typename Compare>
+SignalPtr signal_minmax(const SignalPtr y1, const SignalPtr y2, Compare comp) {
+  // The output signal is only defined in the duration when y1 and y2 are defined.
+  double begin_time = std::max(y1->begin_time(), y2->begin_time());
+  double end_time   = std::min(y1->end_time(), y2->end_time());
+
+  // We are going to build the signal in reverse as a vector of samples and then use
+  // that to build the output signal. Essentially, this is equivalent to pushing the new
+  // Samples in reverse onto a stack and then popping it.
+
+  std::vector<Sample> sig_stack;
+  // Since the new signal is going to have <= 4 * max(y1.size(), y2.size()) samples,
+  // we reserve that space for speed.
+  sig_stack.reserve(4 * std::max(y1->size(), y2->size()));
+
+  // Get reverse_iterators for y1, y2
+  auto i = y1->rbegin();
+  auto j = y2->rbegin();
+
+  // Advance the iterators up to end_time
+  while (i->time >= end_time) i++;
+  while (j->time >= end_time) j++;
+
+  // Compute for segments
+  double t = end_time;
+  for (; i->time > begin_time; (t = i->time), i++) {
+    minmax::segment_minmax(sig_stack, *i, t, j, comp);
+    if (j->time == i->time)
+      j++;
+  }
+  if (i->time == begin_time) {
+    minmax::segment_minmax(sig_stack, *i, t, j, comp);
+  } else {
+    minmax::segment_minmax(
+        sig_stack, {begin_time, i->interpolate(begin_time), i->derivative}, t, j, comp);
+  }
+
+  auto out = std::make_shared<Signal>(std::rbegin(sig_stack), std::rend(sig_stack));
+  return out->simplify();
+}
+
+template <typename Compare>
+SignalPtr signal_minmax(const std::vector<SignalPtr>& ys, Compare comp) {
+  if (ys.empty()) {
+    auto out = std::make_shared<Signal>();
+    out->push_back(0, -std::numeric_limits<double>::infinity());
+    return out;
+  } else if (ys.size() == 1) {
+    return ys.at(0);
+  }
+
+  // TODO(anand): Parallel execution policy?
+  SignalPtr out = std::reduce(
+      std::execution::seq,
+      std::next(ys.cbegin()),
+      ys.cend(),
+      ys.at(0),
+      [&comp](const SignalPtr a, const SignalPtr b) {
+        return signal_minmax(a, b, comp);
+      });
+  return out;
+}
+
 SignalPtr compute_not(const SignalPtr y) {
   auto out = std::make_shared<Signal>();
   for (const auto [t, v, d] : *y) { out->push_back_raw(Sample{t, -v, -d}); }
@@ -69,19 +134,19 @@ SignalPtr compute_not(const SignalPtr y) {
 }
 
 SignalPtr compute_and(const SignalPtr y1, const SignalPtr y2) {
-  return min(y1, y2);
+  return signal_minmax(y1, y2, std::less<double>());
 }
 
 SignalPtr compute_and(const std::vector<SignalPtr>& ys) {
-  return min(ys);
+  return signal_minmax(ys, std::less<double>());
 }
 
 SignalPtr compute_or(const SignalPtr y1, const SignalPtr y2) {
-  return max(y1, y2);
+  return signal_minmax(y1, y2, std::greater<double>());
 }
 
 SignalPtr compute_or(const std::vector<SignalPtr>& ys) {
-  return max(ys);
+  return signal_minmax(ys, std::greater<double>());
 }
 
 SignalPtr compute_eventually(const SignalPtr y) {
