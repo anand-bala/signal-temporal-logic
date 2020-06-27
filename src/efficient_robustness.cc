@@ -12,7 +12,6 @@
 #include "mono_wedge/mono_wedge.h"
 #include "signal_tl/robustness.hh"
 
-#include "signal_tl/minmax.hh"
 #include "signal_tl/utils.hh"
 
 #include <algorithm>
@@ -22,6 +21,8 @@
 #include <functional>
 #include <limits>
 
+#include <cassert>
+
 namespace semantics {
 using namespace signal;
 
@@ -29,6 +30,166 @@ namespace {
 
 constexpr double TOP    = std::numeric_limits<double>::infinity();
 constexpr double BOTTOM = -TOP;
+
+namespace minmax {
+
+template <typename Compare>
+void segment_minmax(
+    std::vector<Sample>& out,
+    const Sample& i,
+    double t,
+    std::vector<Sample>::const_reverse_iterator& j,
+    Compare op) {
+  // PRECONDITIONS: j->time < t, i.time < t
+  // POSTCONDITIONS: j->time <= i.time
+  bool continued = false;
+  double s       = j->time;
+
+  // for every sample *j in (i.time, t)
+  for (; s > i.time; (t = s), j++, (s = j->time)) {
+    if (op(i.interpolate(t), j->interpolate(t))) {
+      if (op(j->value, i.interpolate(s))) {
+        t = i.time_intersect(*j);
+        out.push_back({t, i.interpolate(t), i.derivative});
+        out.push_back({s, j->value, j->derivative});
+        continued = false;
+      } else
+        continued = true;
+    } else if (i.interpolate(t) == j->interpolate(t)) {
+      if (op(j->value, i.interpolate(s))) {
+        if (continued) {
+          out.push_back({t, i.interpolate(t), i.derivative});
+          continued = false;
+        }
+        out.push_back({s, j->value, j->derivative});
+      } else
+        continued = true;
+    } else {
+      if (op(i.interpolate(s), j->value)) {
+        if (continued) {
+          out.push_back({t, i.interpolate(t), i.derivative});
+        }
+        t = i.time_intersect(*j);
+
+        out.push_back({t, j->interpolate(t), j->derivative});
+        continued = true;
+      } else {
+        if (continued) {
+          out.push_back({t, i.interpolate(t), i.derivative});
+          continued = false;
+        }
+        out.push_back({s, j->value, j->derivative});
+      }
+    }
+  }
+
+  // here we may have j->time < i.time
+  // "i" values of z are no longer "continued"
+  s = i.time;
+  if (op(i.interpolate(t), j->interpolate(t))) {
+    if (op(j->interpolate(s), i.value)) {
+      t = i.time_intersect(*j);
+      out.push_back({t, i.interpolate(t), i.derivative});
+      out.push_back({s, j->interpolate(s), j->derivative});
+    } else {
+      out.push_back(i);
+    }
+  } else if (i.interpolate(t) == j->interpolate(t)) {
+    if (op(j->interpolate(s), i.value)) {
+      if (continued) {
+        out.push_back({t, i.interpolate(t), i.derivative});
+      }
+      out.push_back({s, j->interpolate(s), j->derivative});
+    } else {
+      out.push_back(i);
+    }
+  } else {
+    if (op(i.value, j->interpolate(s))) {
+      if (continued) {
+        out.push_back({t, i.interpolate(t), i.derivative});
+      }
+      t = i.time_intersect(*j);
+      out.push_back({t, j->interpolate(t), j->derivative});
+      out.push_back(i);
+
+    } else {
+      if (continued) {
+        out.push_back({t, i.interpolate(t), i.derivative});
+      }
+      out.push_back({s, j->interpolate(s), j->derivative});
+    }
+  }
+}
+
+template <typename Compare>
+void partial_comp(
+    std::vector<signal::Sample>& out,
+    std::vector<signal::Sample>::const_reverse_iterator& i,
+    double start_time,
+    double end_time,
+    Compare op) {
+  bool continued = false;
+  double z_max   = BOTTOM;
+  double s = start_time, t = end_time;
+  while (i->time > s) {
+    if (i->derivative >= 0) {
+      if (z_max < i->interpolate(t)) {
+        if (continued) {
+          out.push_back(Sample{t, z_max, 0});
+        }
+        z_max = i->interpolate(t);
+      }
+      continued = true;
+      // out.push_back(Sample(i->time, z_max, 0));
+    } else if (i->interpolate(t) >= z_max) {
+      if (continued) {
+        out.push_back(Sample{t, z_max, 0});
+        continued = false;
+      }
+      z_max = i->value;
+      out.push_back(*i);
+    } else if (z_max >= i->value) {
+      continued = true;
+      // out.push_back(Sample(i->time, z_max, 0));
+    } else {
+      out.push_back(Sample{i->time + (z_max - i->value) / i->derivative,
+                           z_max,
+                           0}); // time at which y reaches value next_z
+      out.push_back(*i);
+      z_max     = i->value;
+      continued = false;
+    }
+
+    t = i->time;
+    i++;
+  }
+
+  // leftmost sample *i may not be on s
+  //"z_max" values of z are not longer "continued".
+  if (i->derivative >= 0) {
+    if (z_max < i->interpolate(t)) {
+      if (continued) {
+        out.push_back(Sample{t, z_max, 0});
+      }
+      z_max = i->interpolate(t);
+    }
+    out.push_back(Sample{s, z_max, 0});
+  } else if (i->interpolate(t) >= z_max) {
+    if (continued) {
+      out.push_back(Sample{t, z_max, 0});
+    }
+    out.push_back(Sample{s, i->interpolate(s), i->derivative});
+  } else if (z_max >= i->interpolate(s)) {
+    out.push_back(Sample{s, z_max, 0});
+  } else {
+    out.push_back(Sample{s + (z_max - i->value) / i->derivative,
+                         z_max,
+                         0}); // time at which y reaches value next_z
+    out.push_back(Sample{s, i->interpolate(s), i->derivative});
+  }
+}
+
+} // namespace minmax
 
 /**
  * Wrapper around monotonic wedge minmax function
@@ -101,7 +262,9 @@ SignalPtr signal_minmax(const SignalPtr y1, const SignalPtr y2, Compare comp) {
         sig_stack, {begin_time, i->interpolate(begin_time), i->derivative}, t, j, comp);
   }
 
-  auto out = std::make_shared<Signal>(std::rbegin(sig_stack), std::rend(sig_stack));
+  std::reverse(std::begin(sig_stack), std::end(sig_stack));
+
+  auto out = std::make_shared<Signal>(sig_stack);
   return out->simplify();
 }
 
@@ -179,7 +342,8 @@ SignalPtr compute_eventually(const SignalPtr y) {
     }
   }
 
-  auto out = std::make_shared<Signal>(std::rbegin(sig_stack), std::rend(sig_stack));
+  std::reverse(std::begin(sig_stack), std::end(sig_stack));
+  auto out = std::make_shared<Signal>(sig_stack);
   return out->simplify();
 }
 
@@ -273,7 +437,8 @@ SignalPtr compute_until(const SignalPtr y1, const SignalPtr y2) {
     segment_until(sig_stack, Sample{s, i->interpolate(s), i->derivative}, t, j, z_max);
   }
 
-  auto out = std::make_shared<Signal>(std::rbegin(sig_stack), std::rend(sig_stack));
+  std::reverse(std::begin(sig_stack), std::end(sig_stack));
+  auto out = std::make_shared<Signal>(sig_stack);
   return out->simplify();
 }
 
@@ -293,15 +458,138 @@ SignalPtr compute_until(
   return compute_and(x, z4);
 }
 
+struct RobustnessOp {
+  const double min_time;
+  const double max_time;
+  const Trace& trace;
+  SignalPtr operator()(const ast::ConstPtr e);
+  SignalPtr operator()(const ast::PredicatePtr e);
+  SignalPtr operator()(const ast::NotPtr e);
+  SignalPtr operator()(const ast::AndPtr e);
+  SignalPtr operator()(const ast::OrPtr e);
+  SignalPtr operator()(const ast::EventuallyPtr e);
+  SignalPtr operator()(const ast::AlwaysPtr e);
+  SignalPtr operator()(const ast::UntilPtr e);
+};
+
 } // namespace
 
 template <>
 SignalPtr compute_robustness<Semantics::EFFICIENT>(
     const ast::Expr phi,
     const signal::Trace& trace) {
-  SignalPtr out;
+  struct MinMaxTime {
+    double begin{TOP};
+    double end{BOTTOM};
+    void operator()(const std::pair<std::string, SignalPtr>& entry) {
+      auto s = entry.second;
+      begin  = std::min(begin, s->begin_time());
+      end    = std::max(end, s->end_time());
+    }
+  };
+
+  const MinMaxTime minmaxtime =
+      std::for_each(trace.cbegin(), trace.cend(), MinMaxTime{});
+  double min_time = minmaxtime.begin;
+  double max_time = minmaxtime.end;
+
+  SignalPtr out = std::visit(RobustnessOp{min_time, max_time, trace}, phi);
 
   return out;
+}
+
+SignalPtr RobustnessOp::operator()(const ast::ConstPtr e) {
+  double val   = (e->value) ? TOP : BOTTOM;
+  auto samples = std::vector<Sample>{{min_time, val, 0.0}, {max_time, val, 0.0}};
+  return std::make_shared<Signal>(samples);
+}
+
+SignalPtr RobustnessOp::operator()(const ast::PredicatePtr e) {
+  return trace.at(e->name);
+}
+
+SignalPtr RobustnessOp::operator()(const ast::NotPtr e) {
+  auto y = compute_robustness<Semantics::EFFICIENT>(e->arg, trace);
+  return compute_not(y);
+}
+
+SignalPtr RobustnessOp::operator()(const ast::AndPtr e) {
+  auto ys = std::vector<SignalPtr>{};
+  ys.reserve(e->args.size());
+  std::transform(
+      e->args.begin(), e->args.end(), std::back_inserter(ys), [this](const auto arg) {
+        return compute_robustness<Semantics::EFFICIENT>(arg, this->trace);
+      });
+  assert(ys.size() == e->args.size());
+  return compute_and(ys);
+}
+
+SignalPtr RobustnessOp::operator()(const ast::OrPtr e) {
+  auto ys = std::vector<SignalPtr>{};
+  ys.reserve(e->args.size());
+  std::transform(
+      e->args.begin(), e->args.end(), std::back_inserter(ys), [this](const auto arg) {
+        return compute_robustness<Semantics::EFFICIENT>(arg, this->trace);
+      });
+  assert(ys.size() == e->args.size());
+  return compute_or(ys);
+}
+
+SignalPtr RobustnessOp::operator()(const ast::EventuallyPtr e) {
+  auto y = compute_robustness<Semantics::EFFICIENT>(e->arg, trace);
+  if (!e->interval.has_value()) {
+    return compute_eventually(y);
+  }
+
+  const auto [a, b] = *(e->interval);
+  if (b - a < 0) {
+    throw std::logic_error("Eventually operator: b < a in interval [a,b]");
+  } else if (b - a == 0) {
+    return y;
+  } else if (b - a >= y->end_time() - y->begin_time()) {
+    return compute_eventually(y);
+  } else {
+    return compute_eventually(y, b - a);
+  }
+}
+
+SignalPtr RobustnessOp::operator()(const ast::AlwaysPtr e) {
+  auto y = compute_robustness<Semantics::EFFICIENT>(e->arg, trace);
+  if (!e->interval.has_value()) {
+    return compute_always(y);
+  }
+
+  const auto [a, b] = *(e->interval);
+  if (b - a < 0) {
+    throw std::logic_error("Always operator: b < a in interval [a,b]");
+  } else if (b - a == 0) {
+    return y;
+  } else if (b - a >= y->end_time() - y->begin_time()) {
+    return compute_always(y);
+  } else {
+    return compute_always(y, b - a);
+  }
+}
+
+SignalPtr RobustnessOp::operator()(const ast::UntilPtr e) {
+  auto y1 = compute_robustness<Semantics::EFFICIENT>(e->args.first, trace);
+  auto y2 = compute_robustness<Semantics::EFFICIENT>(e->args.second, trace);
+  if (!e->interval.has_value()) {
+    return compute_until(y1, y2);
+  }
+
+  const auto [a, b] = *(e->interval);
+  if (std::isinf(b)) {
+    if (a == 0) {
+      return compute_until(y1, y2);
+    } else {
+      auto yalw1  = compute_always(y1, a);
+      auto yuntmp = compute_until(y1, y2)->shift(-a);
+      return compute_and(yalw1, yuntmp);
+    }
+  } else {
+    return compute_until(y1, y2, *(e->interval));
+  }
 }
 
 } // namespace semantics

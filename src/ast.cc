@@ -13,13 +13,17 @@ Expr AndHelper(const AndPtr& lhs, const Expr& rhs) {
 
   std::visit(
       overloaded{[&args](const auto e) { args.push_back(e); },
+                 [&args](const ConstPtr e) {
+                   if (!e->value) {
+                     args = {Expr{e}};
+                   }
+                 },
                  [&args](const AndPtr e) {
                    args.reserve(
                        args.size() + std::distance(e->args.begin(), e->args.end()));
                    args.insert(args.end(), e->args.begin(), e->args.end());
                  }},
       rhs);
-
   return And::as_expr(args);
 }
 
@@ -28,13 +32,17 @@ Expr OrHelper(const OrPtr& lhs, const Expr& rhs) {
 
   std::visit(
       overloaded{[&args](const auto e) { args.push_back(e); },
+                 [&args](const ConstPtr e) {
+                   if (e->value) {
+                     args = {Expr{e}};
+                   }
+                 },
                  [&args](const OrPtr e) {
                    args.reserve(
                        args.size() + std::distance(e->args.begin(), e->args.end()));
                    args.insert(args.end(), e->args.begin(), e->args.end());
                  }},
       rhs);
-
   return Or::as_expr(args);
 }
 
@@ -50,6 +58,7 @@ Expr operator&(const Expr& lhs, const Expr& rhs) {
       overloaded{[&lhs, &rhs](auto e) {
                    return And::as_expr({lhs, rhs});
                  },
+                 [&rhs](const ConstPtr e) { return (e->value) ? rhs : Expr{e}; },
                  [&rhs](const AndPtr e) {
                    return AndHelper(e, rhs);
                  }},
@@ -61,6 +70,7 @@ Expr operator|(const Expr& lhs, const Expr& rhs) {
       overloaded{[&lhs, &rhs](auto e) {
                    return Or::as_expr({lhs, rhs});
                  },
+                 [&rhs](const ConstPtr e) { return (e->value) ? Expr{e} : rhs; },
                  [&rhs](const OrPtr e) {
                    return OrHelper(e, rhs);
                  }},

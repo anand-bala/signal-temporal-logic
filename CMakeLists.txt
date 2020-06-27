@@ -6,8 +6,7 @@ set(PYBIND11_CPP_STANDARD -std=c++17)
 set(CMAKE_CXX_EXTENSIONS ON)
 add_subdirectory(third_party)
 
-set(STL_SOURCES src/ast.cc src/minmax.cc src/efficient_robustness.cc
-                src/signal.cc)
+set(STL_SOURCES src/ast.cc src/efficient_robustness.cc src/signal.cc)
 
 add_library(signaltl SHARED ${STL_SOURCES})
 target_include_directories(

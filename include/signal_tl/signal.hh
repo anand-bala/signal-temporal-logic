@@ -13,18 +13,30 @@ namespace signal {
 struct Sample {
   double time;
   double value;
-  double derivative;
+  double derivative = 0.0;
 
   /**
    * Linear interpolate the Sample (given the derivative) to get the value at time `t`.
    */
-  double interpolate(double t) const;
+  inline double interpolate(double t) const {
+    return value + derivative * (t - time);
+  }
   /**
    * Get the time point at which the lines associated with this Sample and the given
    * Sample intersect.
    */
-  double time_intersect(const Sample& point) const;
-  double area(double t) const;
+  inline double time_intersect(const Sample& point) const {
+    return (value - point.value + (point.derivative * point.time) -
+            (derivative * time)) /
+           (point.derivative - derivative);
+  }
+  inline double area(double t) const {
+    if (t > time) {
+      return (value + this->interpolate(t)) * (t - time) / 2;
+    } else {
+      return 0;
+    }
+  }
 
   friend std::ostream& operator<<(std::ostream& out, const Sample& sample);
 };
@@ -46,33 +58,45 @@ constexpr bool operator>=(const Sample& lhs, const Sample& rhs) {
  * Piecewise-linear, right-continuous signal
  */
 struct Signal {
-  Signal() : samples{} {}
+  double begin_time() const {
+    return (samples.empty()) ? 0.0 : samples.front().time;
+  }
 
-  Signal(const Signal& other);
+  double end_time() const {
+    return (samples.empty()) ? 0.0 : samples.back().time;
+  }
+
+  double interpolate(double t, size_t idx) const {
+    return this->samples.at(idx).interpolate(t);
+  }
+
+  double time_intersect(const Sample& point, size_t idx) const {
+    return this->samples.at(idx).time_intersect(point);
+  }
+
+  double area(double t, size_t idx) const {
+    return this->samples.at(idx).area(t);
+  }
+
+  Sample front() const {
+    return this->samples.front();
+  }
+
+  Sample back() const {
+    return this->samples.back();
+  }
+
+  Sample at_idx(size_t i) const {
+    return this->samples.at(i);
+  }
+
   /**
-   * Create a Signal from a sequence of amples
+   * Get the sample at time `t`.
+   *
+   * Does a binary search for the given time instance, and interpolates from
+   * the closest sample less than `t` if necessary.
    */
-  Signal(const std::vector<Sample>& data);
-  /**
-   * Create a Signal from a sequence of data points and time stamps
-   */
-  Signal(const std::vector<double>& points, const std::vector<double>& times);
-
-  /**
-   * Create a Signal from the given iterators
-   */
-  template <typename Iter>
-  Signal(const Iter start, const Iter end);
-
-  double begin_time() const;
-  double end_time() const;
-  double interpolate(double t, size_t idx) const;
-  double time_intersect(const Sample& point, size_t idx) const;
-  double area(double t, size_t idx) const;
-
-  Sample front() const;
-  Sample back() const;
-
+  Sample at(double t) const;
   /**
    * Get const_iterator to the start of the signal
    */
@@ -160,6 +184,24 @@ struct Signal {
   resize_shift(double start, double end, double fill, double dt) const;
 
   friend std::ostream& operator<<(std::ostream& os, const Signal& sig);
+
+  Signal() : samples{} {}
+
+  Signal(const Signal& other);
+  /**
+   * Create a Signal from a sequence of amples
+   */
+  Signal(const std::vector<Sample>& data);
+  /**
+   * Create a Signal from a sequence of data points and time stamps
+   */
+  Signal(const std::vector<double>& points, const std::vector<double>& times);
+
+  /**
+   * Create a Signal from the given iterators
+   */
+  // template <typename Iter>
+  // Signal(Iter start, Iter end);
 
  private:
   std::vector<Sample> samples;

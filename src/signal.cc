@@ -2,29 +2,13 @@
 
 #include "signal_tl/utils.hh"
 
+#include <algorithm>
 #include <cmath>
 #include <exception>
 #include <iterator>
 #include <numeric>
 
 namespace signal {
-
-inline double Sample::interpolate(double t) const {
-  return value + derivative * (t - time);
-}
-
-inline double Sample::time_intersect(const Sample& point) const {
-  return (value - point.value + (point.derivative * point.time) - (derivative * time)) /
-         (point.derivative - derivative);
-}
-
-inline double Sample::area(double t) const {
-  if (t > time) {
-    return (value + this->interpolate(t)) * (t - time) / 2;
-  } else {
-    return 0;
-  }
-}
 
 Signal::Signal(const std::vector<Sample>& data) {
   this->samples.reserve(data.size());
@@ -50,39 +34,26 @@ Signal::Signal(const std::vector<double>& points, const std::vector<double>& tim
   }
 }
 
-template <typename Iter>
-Signal::Signal(const Iter start, const Iter end) {
-  typename std::iterator_traits<Iter>::difference_type n = std::distance(start, end);
-  this->samples.reserve(n);
-  for (auto i = start; i != end; i = std::next(i)) { this->push_back(*i); }
-}
+// template <typename Iter>
+// Signal::Signal(Iter start, Iter end) {
+// size_t n = std::distance(start, end);
+// if (n > 0) {
+// this->samples.reserve(n);
+// for (auto i = start; i != end; i = std::next(i)) { this->push_back(*i); }
+// }
+// }
 
-double Signal::begin_time() const {
-  return (samples.empty()) ? 0.0 : samples.front().time;
-}
+Sample Signal::at(double t) const {
+  auto comp_time = [](const Sample& a, const Sample& b) -> bool {
+    return a.time < b.time;
+  };
 
-double Signal::end_time() const {
-  return (samples.empty()) ? 0.0 : samples.back().time;
-}
-
-double Signal::interpolate(double t, size_t idx) const {
-  return this->samples.at(idx).interpolate(t);
-}
-
-double Signal::time_intersect(const Sample& point, size_t idx) const {
-  return this->samples.at(idx).time_intersect(point);
-}
-
-double Signal::area(double t, size_t idx) const {
-  return this->samples.at(idx).area(t);
-}
-
-Sample Signal::front() const {
-  return this->samples.front();
-}
-
-Sample Signal::back() const {
-  return this->samples.back();
+  std::vector<Sample>::const_iterator it = std::lower_bound(
+      this->begin(), this->end(), Sample{t, 0.0}, comp_time); // it->time >= t
+  if (it->time == t) {
+    return *it;
+  }
+  return Sample{t, it->interpolate(t), it->derivative};
 }
 
 void Signal::push_back(Sample sample) {
@@ -183,7 +154,7 @@ SignalPtr Signal::resize_shift(double start, double end, double fill, double dt)
 } // namespace signal
 
 std::ostream& operator<<(std::ostream& out, const signal::Sample& sample) {
-  return out << "{" << sample.time << ";" << sample.value << ";" << sample.derivative
+  return out << "{" << sample.time << ";" << sample.value << ";"
              << "}";
 }
 

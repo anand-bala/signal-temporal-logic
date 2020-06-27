@@ -124,6 +124,9 @@ struct And {
   }
 
   static Expr as_expr(const std::vector<Expr>& args) {
+    if (args.size() == 1) {
+      return args[0];
+    }
     return Expr(std::make_shared<And>(args));
   };
 };
@@ -151,6 +154,9 @@ struct Or {
   }
 
   static Expr as_expr(const std::vector<Expr>& args) {
+    if (args.size() == 1) {
+      return args[0];
+    }
     return Expr(std::make_shared<Or>(args));
   };
 };

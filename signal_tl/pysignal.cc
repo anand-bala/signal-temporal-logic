@@ -17,7 +17,8 @@ void init_signal_module(py::module& parent) {
       .def(py::self < py::self)
       .def(py::self > py::self)
       .def(py::self >= py::self)
-      .def(py::self <= py::self);
+      .def(py::self <= py::self)
+      .def("__repr__", &repr<Sample>);
 
   py::class_<Signal, std::shared_ptr<Signal>>(m, "Signal")
       .def(py::init<>())
@@ -29,12 +30,14 @@ void init_signal_module(py::module& parent) {
           "times"_a)
       .def_property_readonly("begin_time", &Signal::begin_time)
       .def_property_readonly("end_time", &Signal::end_time)
+      .def("simplify", &Signal::simplify)
+      .def("resize", &Signal::resize, "start"_a, "end"_a, "fill"_a)
+      .def("shift", &Signal::shift, "dt"_a)
       .def("__str__", &repr<Signal>)
       .def(
           "__iter__",
           [](const Signal& s) { return py::make_iterator(s.begin(), s.end()); },
           py::keep_alive<0, 1>())
-      .def("simplify", &Signal::simplify)
-      .def("resize", &Signal::resize, "start"_a, "end"_a, "fill"_a)
-      .def("shift", &Signal::shift, "dt"_a);
+      .def("__getitem__", &Signal::at_idx)
+      .def("at", &Signal::at);
 }
