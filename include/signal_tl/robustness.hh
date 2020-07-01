@@ -11,13 +11,17 @@
 namespace semantics {
 
 enum struct Semantics {
+  CLASSIC,
   EFFICIENT,
   FILTERING,
   CUMULATIVE,
 };
 
 template <Semantics S>
-signal::SignalPtr compute_robustness(const ast::Expr phi, const signal::Trace& trace);
+signal::SignalPtr compute_robustness(
+    const ast::Expr phi,
+    const signal::Trace& trace,
+    bool synchronized = false);
 
 } // namespace semantics
 

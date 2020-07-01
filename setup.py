@@ -57,6 +57,7 @@ class CMakeBuild(build_ext):
             cmake_args += ["-GNinja"]
 
         cfg = "Debug" if self.debug else "Release"
+        print(f"-- Building in {cfg} mode")
         build_args = ["--config", cfg]
 
         if platform.system() == "Windows":

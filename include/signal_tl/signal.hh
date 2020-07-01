@@ -3,9 +3,11 @@
 #if !defined(__SIGNAL_TEMPORAL_LOGIC_SIGNAL_HH__)
 #define __SIGNAL_TEMPORAL_LOGIC_SIGNAL_HH__
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 #include <memory>
+#include <tuple>
 #include <vector>
 
 namespace signal {
@@ -18,19 +20,21 @@ struct Sample {
   /**
    * Linear interpolate the Sample (given the derivative) to get the value at time `t`.
    */
-  inline double interpolate(double t) const {
+  constexpr double interpolate(double t) const {
     return value + derivative * (t - time);
   }
+
   /**
    * Get the time point at which the lines associated with this Sample and the given
    * Sample intersect.
    */
-  inline double time_intersect(const Sample& point) const {
+  constexpr double time_intersect(const Sample& point) const {
     return (value - point.value + (point.derivative * point.time) -
             (derivative * time)) /
            (point.derivative - derivative);
   }
-  inline double area(double t) const {
+
+  constexpr double area(double t) const {
     if (t > time) {
       return (value + this->interpolate(t)) * (t - time) / 2;
     } else {
@@ -54,10 +58,18 @@ constexpr bool operator>=(const Sample& lhs, const Sample& rhs) {
   return !(lhs < rhs);
 }
 
+constexpr Sample operator-(const Sample& other) {
+  return {other.time, -other.value, -other.derivative};
+}
+
 /**
  * Piecewise-linear, right-continuous signal
  */
 struct Signal {
+ private:
+  std::vector<Sample> samples;
+
+ public:
   double begin_time() const {
     return (samples.empty()) ? 0.0 : samples.front().time;
   }
@@ -112,12 +124,17 @@ struct Signal {
   }
 
   /**
-   * Get const_iterator to the first element of the signal that is timed at or after `s`
+   * Get const_iterator to the first element of the signal that is timed at or after
+   * `s`
    */
   auto begin_at(double s) const {
-    auto it = this->begin();
-    while (it->time < s) it = std::next(it);
-    return it;
+    if (this->begin_time() >= s)
+      return this->begin();
+
+    constexpr auto comp_op = [](const Sample& a, const Sample& b) {
+      return a.time < b.time;
+    };
+    return std::lower_bound(this->begin(), this->end(), Sample{s, 0.0}, comp_op);
   }
 
   /**
@@ -183,29 +200,62 @@ struct Signal {
   std::shared_ptr<Signal>
   resize_shift(double start, double end, double fill, double dt) const;
 
-  friend std::ostream& operator<<(std::ostream& os, const Signal& sig);
-
   Signal() : samples{} {}
 
-  Signal(const Signal& other);
+  Signal(const Signal& other) {
+    this->samples.reserve(other.size());
+    for (const auto s : other) { this->push_back(s); }
+  }
+
   /**
    * Create a Signal from a sequence of amples
    */
-  Signal(const std::vector<Sample>& data);
+  template <
+      typename T,
+      typename = decltype(std::begin(std::declval<T>())),
+      typename = decltype(std::end(std::declval<T>()))>
+  Signal(const T& data) {
+    this->samples.reserve(data.size());
+    for (const auto s : data) { this->push_back(s); }
+  }
+
   /**
    * Create a Signal from a sequence of data points and time stamps
    */
-  Signal(const std::vector<double>& points, const std::vector<double>& times);
+  Signal(const std::vector<double>& points, const std::vector<double>& times) {
+    if (points.size() != times.size()) {
+      throw std::invalid_argument(
+          "Number of sample points and time points need to be equal.");
+    }
+
+    size_t n = points.size();
+    this->samples.reserve(n);
+    for (size_t i = 0; i < n; i++) { this->push_back(times.at(i), points.at(i)); }
+  }
 
   /**
    * Create a Signal from the given iterators
    */
-  // template <typename Iter>
-  // Signal(Iter start, Iter end);
+  template <
+      typename T,
+      typename TIter = decltype(std::begin(std::declval<T>())),
+      typename       = decltype(std::end(std::declval<T>()))>
+  Signal(TIter&& start, TIter&& end) {
+    for (auto i = start; i != end; i++) { this->push_back(*i); }
+  }
 
- private:
-  std::vector<Sample> samples;
+  friend std::ostream& operator<<(std::ostream& os, const Signal& sig);
 };
+
+/**
+ * Synchronize two signals by making sure that one is explicitely defined for all the
+ * time instances the other is defined.
+ *
+ * The output signals are confined to the time range where both of them are defined,
+ * thus can truncate a signal if the other isn't defined there.
+ */
+std::tuple<std::shared_ptr<Signal>, std::shared_ptr<Signal>>
+synchronize(const std::shared_ptr<Signal>& x, const std::shared_ptr<Signal>& y);
 
 using SignalPtr = std::shared_ptr<Signal>;
 using Trace     = std::map<std::string, SignalPtr>;

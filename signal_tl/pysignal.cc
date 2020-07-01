@@ -38,6 +38,10 @@ void init_signal_module(py::module& parent) {
           "__iter__",
           [](const Signal& s) { return py::make_iterator(s.begin(), s.end()); },
           py::keep_alive<0, 1>())
-      .def("__getitem__", &Signal::at_idx)
-      .def("at", &Signal::at);
+      .def(
+          "__getitem__", [](const SignalPtr s, size_t i) { return s->at_idx(i).value; })
+      .def("__len__", &Signal::size)
+      .def("at", [](const SignalPtr s, double t) { return s->at(t).value; });
+
+  m.def("synchronize", &synchronize, "x"_a, "y"_a);
 }

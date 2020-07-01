@@ -10,41 +10,11 @@
 
 namespace signal {
 
-Signal::Signal(const std::vector<Sample>& data) {
-  this->samples.reserve(data.size());
-
-  for (const auto s : data) { this->push_back(s); }
-}
-
-Signal::Signal(const Signal& other) {
-  this->samples.reserve(other.size());
-  for (const auto s : other) { this->push_back(s); }
-}
-
-Signal::Signal(const std::vector<double>& points, const std::vector<double>& times) {
-  if (points.size() != times.size()) {
-    throw std::invalid_argument(
-        "Number of sample points and time points need to be equal.");
-  }
-
-  size_t n = points.size();
-  this->samples.reserve(n);
-  for (size_t i = 0; i < n; i++) {
-    this->push_back(Sample{times.at(i), points.at(i), 0.0});
-  }
-}
-
-// template <typename Iter>
-// Signal::Signal(Iter start, Iter end) {
-// size_t n = std::distance(start, end);
-// if (n > 0) {
-// this->samples.reserve(n);
-// for (auto i = start; i != end; i = std::next(i)) { this->push_back(*i); }
-// }
-// }
-
 Sample Signal::at(double t) const {
-  auto comp_time = [](const Sample& a, const Sample& b) -> bool {
+  if (this->begin_time() > t or this->end_time() < t) {
+    throw std::invalid_argument("Signal is undefined for given time instance");
+  }
+  constexpr auto comp_time = [](const Sample& a, const Sample& b) -> bool {
     return a.time < b.time;
   };
 
@@ -63,7 +33,7 @@ void Signal::push_back(Sample sample) {
           "Trying to append a Sample timestamped before the Signal end_time, i.e., time is not strictly monotonically increasing");
     }
     const auto [t, v, d] = this->samples.back();
-    auto last            = this->samples.back();
+    auto& last           = this->samples.back();
 
     last.derivative = (sample.value - v) / (sample.time - t);
   }
@@ -81,7 +51,7 @@ void Signal::push_back_raw(Sample sample) {
           "Trying to append a Sample timestamped before the Signal end_time, i.e., time is not strictly monotonically increasing");
     }
     const auto [t, v, d] = this->samples.back();
-    auto last            = this->samples.back();
+    auto& last           = this->samples.back();
 
     last.derivative = (sample.value - v) / (sample.time - t);
   }
@@ -99,7 +69,9 @@ SignalPtr Signal::simplify() const {
       sig->push_back(s);
     }
   }
-
+  if (this->end_time() != sig->end_time()) {
+    sig->push_back(this->back());
+  }
   return sig;
 }
 
@@ -112,26 +84,22 @@ SignalPtr Signal::resize(double start, double end, double fill) const {
   }
 
   // Truncate the discard all samples where sample.time < start
-  for (const auto&& [current, s] : utils::enumerate(this->samples)) {
-    const auto [t, v, d] = s;
-    if (t < start) {
-      // If current sample is timed below start, ...
-      if (current + 1 < this->samples.size() and
-          this->samples.at(current + 1).time > start) {
-        // and next sample is timed after `start`, append an intermediate value
-        sig->push_back(Sample{start, s.interpolate(start), 0.0});
-      }
-      // Else we forget about the sample.
+  for (auto i = this->begin(); i != this->end(); i++) {
+    const auto [t, v, d] = *i;
+    // If current sample is timed below start, ...
+    if (std::next(i) != this->end() and std::next(i)->time > start) {
+      // and next sample is timed after `start`, append an intermediate value
+      sig->push_back(Sample{start, i->interpolate(start)});
     } else if (start <= t and t <= end) {
       // If the samples are within the desired time range, keep the samples.
-      sig->push_back(s);
+      sig->push_back(*i);
     } else if (t > end) {
       // If we are out of the range, ...
-      if (current - 1 >= 0 and this->samples.at(current - 1).time < end) {
+      if (i != this->begin() and std::prev(i)->time < end) {
         // and the previous sample is within the range, interpolate from the last.
-        sig->push_back(Sample{end, this->interpolate(end, current - 1), 0.0});
+        sig->push_back(Sample{end, std::prev(i)->interpolate(end)});
       } else {
-        // TODO Does it make sense to terminate early?
+        // TODO(anand): Does it make sense to terminate early?
         break;
       }
     }
@@ -151,18 +119,79 @@ SignalPtr Signal::resize_shift(double start, double end, double fill, double dt)
   auto out = this->resize(start, end, fill);
   for (auto& s : out->samples) { s.time += dt; }
   return out;
-} // namespace signal
+}
+
+std::tuple<std::shared_ptr<Signal>, std::shared_ptr<Signal>>
+synchronize(const std::shared_ptr<Signal>& x, const std::shared_ptr<Signal>& y) {
+  const double begin_time = std::max(x->begin_time(), y->begin_time());
+  const double end_time   = std::min(x->end_time(), y->end_time());
+  const size_t n          = 4 * std::max(x->size(), y->size());
+
+  // These will store the new series of Samples, containing a sample for every
+  // time instance in x and y, and the time points where they intersect.
+  auto xv = std::vector<Sample>{};
+  auto yv = std::vector<Sample>{};
+
+  // Iterator to the first element where element.time <= begin_time.
+  // If the iterator begins after begin_time, get the prev (if it exists) and
+  // interpolate from it.
+  constexpr auto comp_time = [](const Sample& a, const Sample& b) -> bool {
+    return a.time < b.time;
+  };
+  auto i = std::lower_bound(x->begin(), x->end(), Sample{begin_time, 0.0}, comp_time);
+  if (i->time > begin_time and i != x->begin()) {
+    xv.push_back(Sample{
+        begin_time, std::prev(i)->interpolate(begin_time), std::prev(i)->derivative});
+  }
+  auto j = std::lower_bound(y->begin(), y->end(), Sample{begin_time, 0.0}, comp_time);
+  if (j->time > begin_time and j != y->begin()) {
+    yv.push_back(Sample{
+        begin_time, std::prev(j)->interpolate(begin_time), std::prev(i)->derivative});
+  }
+
+  // Now, we have to track the timestamps.
+  while (i != x->end() and j != y->end()) {
+    if (i->time == j->time) {
+      // The samples remain in both.
+      xv.push_back(*i);
+      yv.push_back(*j);
+      i++;
+      j++;
+    } else if (i->time < j->time) {
+      // Add the current point
+      xv.push_back(*i);
+      yv.push_back(Sample{i->time, std::prev(j)->interpolate(i->time)});
+      // TODO: Intercept?
+      // We need to "catch up".
+      i++;
+    } else if (j->time < i->time) {
+      yv.push_back(*j);
+      xv.push_back(Sample{j->time, std::prev(i)->interpolate(j->time)});
+      j++;
+    }
+  }
+
+  if (const double t = xv.back().time; yv.back().time < t) {
+    yv.push_back(Sample{xv.back().time, yv.back().interpolate(t)});
+  }
+
+  if (const double t = yv.back().time; xv.back().time < t) {
+    xv.push_back(Sample{yv.back().time, xv.back().interpolate(t)});
+  }
+
+  return std::make_tuple(std::make_shared<Signal>(xv), std::make_shared<Signal>(yv));
+}
 
 std::ostream& operator<<(std::ostream& out, const signal::Sample& sample) {
-  return out << "{" << sample.time << ";" << sample.value << ";"
+  return out << "{" << sample.time << ";" << sample.value << ";" << sample.derivative
              << "}";
 }
 
 std::ostream& operator<<(std::ostream& os, const signal::Signal& sig) {
-  if (sig.samples.empty()) {
-    return os << "(0,0)[]";
-  }
-  os << "[" << sig.begin_time() << "," << sig.end_time() << "]";
+  // if (sig.samples.empty()) {
+  // return os << "(0,0)[]";
+  // }
+  // os << "[" << sig.begin_time() << "," << sig.end_time() << "]";
   os << "[";
   for (const auto& s : sig.samples) { os << s; }
   os << "]";

@@ -477,7 +477,8 @@ struct RobustnessOp {
 template <>
 SignalPtr compute_robustness<Semantics::EFFICIENT>(
     const ast::Expr phi,
-    const signal::Trace& trace) {
+    const signal::Trace& trace,
+    bool synchronized) {
   struct MinMaxTime {
     double begin{TOP};
     double end{BOTTOM};

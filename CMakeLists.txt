@@ -6,7 +6,8 @@ set(PYBIND11_CPP_STANDARD -std=c++17)
 set(CMAKE_CXX_EXTENSIONS ON)
 add_subdirectory(third_party)
 
-set(STL_SOURCES src/ast.cc src/efficient_robustness.cc src/signal.cc)
+set(STL_SOURCES src/ast.cc src/minmax.cc src/signal.cc
+                src/classic_robustness.cc src/efficient_robustness.cc)
 
 add_library(signaltl SHARED ${STL_SOURCES})
 target_include_directories(
@@ -22,3 +23,9 @@ set(BINDINGS_SOURCES signal_tl/pyast.cc signal_tl/pyrobustness.cc
 pybind11_add_module(_cext MODULE ${BINDINGS_SOURCES})
 target_include_directories(_cext PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/signal_tl)
 target_link_libraries(_cext PRIVATE signaltl)
+
+add_executable(test_signals test/test_signal.cc)
+target_link_libraries(test_signals PRIVATE signaltl)
+
+add_executable(test_robustness test/test_robustness.cc)
+target_link_libraries(test_robustness PRIVATE signaltl)
