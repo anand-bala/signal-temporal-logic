@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(signal_temporal_logic)
 
+# Options
+option(BUILD_EXAMPLES "Build the examples" ON)
+option(BUILD_TESTS "Build tests" ON)
+
 # Add libraries
 set(PYBIND11_CPP_STANDARD -std=c++17)
 set(CMAKE_CXX_EXTENSIONS ON)
@@ -24,8 +28,6 @@ pybind11_add_module(_cext MODULE ${BINDINGS_SOURCES})
 target_include_directories(_cext PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/signal_tl)
 target_link_libraries(_cext PRIVATE signaltl)
 
-add_executable(test_signals test/test_signal.cc)
-target_link_libraries(test_signals PRIVATE signaltl)
-
-add_executable(test_robustness test/test_robustness.cc)
-target_link_libraries(test_robustness PRIVATE signaltl)
+if(BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
