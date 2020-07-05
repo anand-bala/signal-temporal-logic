@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <iostream>
 
-using namespace signal;
+using namespace signal_tl::signal;
 
 int main() {
   auto xs = std::make_shared<Signal>(

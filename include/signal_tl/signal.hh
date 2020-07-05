@@ -10,6 +10,7 @@
 #include <tuple>
 #include <vector>
 
+namespace signal_tl {
 namespace signal {
 
 struct Sample {
@@ -261,4 +262,6 @@ using SignalPtr = std::shared_ptr<Signal>;
 using Trace     = std::map<std::string, SignalPtr>;
 
 } // namespace signal
+} // namespace signal_tl
+
 #endif

@@ -8,21 +8,22 @@
 
 #include <memory>
 
+namespace signal_tl {
 namespace semantics {
 
 enum struct Semantics {
   CLASSIC,
-  EFFICIENT,
   FILTERING,
   CUMULATIVE,
 };
 
-template <Semantics S>
+template <Semantics S = Semantics::CLASSIC>
 signal::SignalPtr compute_robustness(
     const ast::Expr phi,
     const signal::Trace& trace,
     bool synchronized = false);
 
 } // namespace semantics
+} // namespace signal_tl
 
 #endif /* end of include guard: __SIGNAL_TEMPORAL_LOGIC_ROBUSTNESS_HH__ */

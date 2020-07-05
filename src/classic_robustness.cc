@@ -1,3 +1,4 @@
+#include "signal_tl/exception.hh"
 #include "signal_tl/robustness.hh"
 #include "signal_tl/utils.hh"
 
@@ -13,6 +14,7 @@
 
 #include <cassert>
 
+namespace signal_tl {
 namespace semantics {
 using namespace signal;
 
@@ -182,16 +184,40 @@ SignalPtr compute_always(const SignalPtr x, double a, double b) {
   return compute_minmax_seq(x, a, b, std::less_equal<Sample>());
 }
 
-SignalPtr compute_until(const SignalPtr x, const SignalPtr y, bool synchronized) {
-  throw std::logic_error("Compute until not implemented");
+SignalPtr
+compute_until(const SignalPtr input_x, const SignalPtr input_y, bool synchronized) {
+  const auto [x, y] = (synchronized) ? std::make_tuple(input_x, input_y)
+                                     : synchronize(input_x, input_y);
+  assert(x->size() == y->size());
+  assert(x->begin_time() == y->begin_time());
+  assert(x->end_time() == y->end_time());
+
+  auto sigstack = std::vector<Sample>();
+
+  // TODO(anand): This doesn't handle crossing signals well...
+
+  double prev      = TOP;
+  double max_right = BOTTOM;
+
+  for (auto [i, j] = std::make_tuple(x->rbegin(), y->rbegin());
+       i != x->rend() and j != y->rend();
+       i++, j++) {
+    max_right = std::max(max_right, j->value);
+    prev      = std::max({j->value, std::min(i->value, prev), -max_right});
+    sigstack.push_back({i->time, prev});
+  }
+  std::reverse(sigstack.begin(), sigstack.end());
+  auto out = std::make_shared<Signal>(sigstack);
+  return out;
 }
+
 SignalPtr compute_until(
     const SignalPtr x,
     const SignalPtr y,
     double a,
     double b,
     bool synchronized) {
-  throw std::logic_error("Compute until not implemented");
+  throw not_implemented_error("Bounded compute_until has not been implemented yet.");
 }
 
 struct RobustnessOp {
@@ -327,3 +353,4 @@ SignalPtr RobustnessOp::operator()(const ast::UntilPtr e) {
 }
 
 } // namespace semantics
+} // namespace signal_tl

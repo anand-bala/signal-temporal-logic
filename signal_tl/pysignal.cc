@@ -33,7 +33,7 @@ void init_signal_module(py::module& parent) {
       .def("simplify", &Signal::simplify)
       .def("resize", &Signal::resize, "start"_a, "end"_a, "fill"_a)
       .def("shift", &Signal::shift, "dt"_a)
-      .def("__str__", &repr<Signal>)
+      .def("__repr__", &repr<Signal>)
       .def(
           "__iter__",
           [](const Signal& s) { return py::make_iterator(s.begin(), s.end()); },

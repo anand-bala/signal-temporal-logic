@@ -1,0 +1,10 @@
+get_filename_component(SIGNAL_TL_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+include(CMakeFindDependencyMacro)
+
+list(APPEND CMAKE_MODULE_PATH ${SIGNAL_TL_CMAKE_DIR})
+
+if(NOT TARGET signal_tl::signal_tl)
+  include("${SIGNAL_TL_CMAKE_DIR}/signal_tlTargets.cmake")
+endif()
+
+set(SIGNAL_TL_lIBRARIES signal_tl::signal_tl)

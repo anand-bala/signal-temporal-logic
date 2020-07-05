@@ -6,6 +6,7 @@
 #include <iterator>
 #include <tuple>
 
+namespace signal_tl {
 namespace utils {
 
 /**
@@ -77,5 +78,6 @@ constexpr auto reversed(T&& iterable) {
 }
 
 } // namespace utils
+} // namespace signal_tl
 
 #endif /* end of include guard: __SIGNAL_TEMPORAL_LOGIC_UTILS_HH__ */

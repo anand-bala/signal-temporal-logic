@@ -14,12 +14,11 @@
 
 #include <pybind11/operators.h>
 
-#include "signal_tl/ast.hh"
-#include "signal_tl/robustness.hh"
-#include "signal_tl/signal.hh"
+#include "signal_tl/signal_tl.hh"
 
 using namespace pybind11::literals;
 namespace py = pybind11;
+using namespace signal_tl;
 
 // PYBIND11_MAKE_OPAQUE(std::vector<signal::Sample>);
 // PYBIND11_MAKE_OPAQUE(std::map<std::string, signal::SignalPtr>);

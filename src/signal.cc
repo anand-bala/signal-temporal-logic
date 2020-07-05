@@ -8,6 +8,7 @@
 #include <iterator>
 #include <numeric>
 
+namespace signal_tl {
 namespace signal {
 
 Sample Signal::at(double t) const {
@@ -183,19 +184,20 @@ synchronize(const std::shared_ptr<Signal>& x, const std::shared_ptr<Signal>& y) 
 }
 
 std::ostream& operator<<(std::ostream& out, const signal::Sample& sample) {
-  return out << "{" << sample.time << ";" << sample.value << ";" << sample.derivative
-             << "}";
+  return out << "(" << sample.time << ", " << sample.value << ")";
 }
 
 std::ostream& operator<<(std::ostream& os, const signal::Signal& sig) {
-  // if (sig.samples.empty()) {
-  // return os << "(0,0)[]";
-  // }
-  // os << "[" << sig.begin_time() << "," << sig.end_time() << "]";
   os << "[";
-  for (const auto& s : sig.samples) { os << s; }
+  for (const auto& [i, s] : utils::enumerate(sig.samples)) {
+    if (i != 0) {
+      os << ", ";
+    }
+    os << s;
+  }
   os << "]";
   return os;
 }
 
 } // namespace signal
+} // namespace signal_tl

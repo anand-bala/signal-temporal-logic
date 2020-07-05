@@ -11,15 +11,13 @@ void init_robustness_module(py::module& parent) {
 
   py::enum_<Semantics>(m, "Semantics")
       .value("CLASSIC", Semantics::CLASSIC)
-      .value("EFFICIENT", Semantics::EFFICIENT)
-      .value("FILTERING", Semantics::FILTERING);
+      .value("FILTERING", Semantics::FILTERING)
+      .value("CUMULATIVE", Semantics::CUMULATIVE);
 
   m.def(
       "compute_robustness",
       [](const ast::Expr phi, Trace& trace, Semantics sem, bool synchronized) {
         switch (sem) {
-          case Semantics::EFFICIENT:
-            return compute_robustness<Semantics::EFFICIENT>(phi, trace, synchronized);
           case Semantics::CLASSIC:
             return compute_robustness<Semantics::CLASSIC>(phi, trace, synchronized);
           default:

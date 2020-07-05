@@ -14,6 +14,7 @@
 #include <variant>
 #include <vector>
 
+namespace signal_tl {
 namespace ast {
 
 /* Define Syntax Tree */
@@ -254,4 +255,5 @@ Expr operator|(const Expr& lhs, const Expr& rhs);
 Expr operator~(const Expr& expr);
 
 } // namespace ast
+} // namespace signal_tl
 #endif

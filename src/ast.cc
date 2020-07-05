@@ -3,6 +3,7 @@
 
 #include <iterator>
 
+namespace signal_tl {
 namespace ast {
 using utils::overloaded;
 
@@ -82,3 +83,4 @@ Expr operator~(const Expr& expr) {
 }
 
 } // namespace ast
+} // namespace signal_tl
