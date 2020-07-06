@@ -1,11 +1,5 @@
 strategy:
   matrix:
-    linux:
-      imageName: 'ubuntu-latest'
-    mac:
-      imageName: 'macos-latest'
-    windows:
-      imageName: 'windows-latest'
     Python35:
       python.version: '3.5'
     Python36:
@@ -13,15 +7,45 @@ strategy:
     Python37:
       python.version: '3.7' 
 
-pool:
-  vmImage: $(imageName)
+jobs:
+- job: linux
+  pool: {vmImage: 'ubuntu-latest'}
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+    - script: |
+        python -m pip install --upgrade pip
+        python -m pip install cibuildwheel==1.5.1
+        cibuildwheel --output-dir wheelhouse .
+    - task: PublishBuildArtifacts@1
+      inputs: {pathtoPublish: 'wheelhouse'}
+- job: macos
+  pool: {vmImage: 'macos-latest'}
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+    - script: |
+        python -m pip install --upgrade pip
+        python -m pip install cibuildwheel==1.5.1
+        cibuildwheel --output-dir wheelhouse .
+    - task: PublishBuildArtifacts@1
+      inputs: {pathtoPublish: 'wheelhouse'}
+- job: windows
+  pool: {vmImage: 'windows-latest'}
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+    - script: |
+        python -m pip install --upgrade pip
+        python -m pip install cibuildwheel==1.5.1
+        cibuildwheel --output-dir wheelhouse .
+    - task: PublishBuildArtifacts@1
+      inputs: {pathtoPublish: 'wheelhouse'}
 
-steps:
-- task: UsePythonVersion@0
-- script: |
-    python -m pip install --upgrade pip
-    python -m pip install cibuildwheel==1.5.1
-    cibuildwheel --output-dir wheelhouse .
-- task: PublishBuildArtifacts@1
-  inputs: {pathtoPublish: 'wheelhouse'}
+
+
+
 
