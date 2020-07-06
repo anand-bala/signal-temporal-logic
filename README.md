@@ -51,7 +51,31 @@ ways
 
 # Installing
 
+## Using `pip`
+
 TODO: Need to fill out once package is on [PyPI](https://pypi.org/).
+
+You will need the same requirements as when building from source. Once you have them,
+run:
+
+```shell
+$ python3 -m pip install git+https://github.com/anand-bala/signal-temporal-logic@master#egg=signal-temporal-logic
+```
+
+## Build from source
+
+**Requirements:** `cmake` >= 3.5, `git` and a C++ compiler that supports C++17.
+
+First clone the repo:
+
+```shell
+$ git clone https://github.com/anand-bala/signal-temporal-logic
+```
+
+Then install using `pip` if you want to use the Python package:
+```shell
+$ python3 -m pip install -U -e .
+```
 
 # Usage
 
