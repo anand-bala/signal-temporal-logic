@@ -5,3 +5,6 @@ from signal_tl._cext.semantics import compute_robustness
 F = Eventually
 G = Always
 U = Until
+
+TOP = Const(True)
+BOT = Const(False)

@@ -171,12 +171,20 @@ struct Always {
 
   Always() = delete;
   Always(const Expr& arg, const std::optional<Interval> interval = std::nullopt) :
-      arg(arg), interval(interval) {}
+      arg(arg), interval(interval) {
+    if (interval.has_value()) {
+      const auto [a, b] = interval.value();
+      if (a < 0 or b < 0) {
+        throw std::invalid_argument("Interval cannot have negative values");
+      } else if (b <= a) {
+        throw std::invalid_argument("Interval [a,b] cannot have b <= a");
+      }
+    }
+  }
 
   friend std::ostream& operator<<(std::ostream& out, const Always& expr) {
     if (expr.interval.has_value()) {
-      double a, b;
-      std::tie(a, b) = expr.interval.value();
+      const auto [a, b] = expr.interval.value();
       if (std::isinf(b)) {
         return out << "G " << expr.arg;
       }
@@ -197,7 +205,16 @@ struct Eventually {
 
   Eventually() = delete;
   Eventually(const Expr& arg, const std::optional<Interval> interval = std::nullopt) :
-      arg(arg), interval(interval) {}
+      arg(arg), interval(interval) {
+    if (interval.has_value()) {
+      const auto [a, b] = interval.value();
+      if (a < 0 or b < 0) {
+        throw std::invalid_argument("Interval cannot have negative values");
+      } else if (b <= a) {
+        throw std::invalid_argument("Interval [a,b] cannot have b <= a");
+      }
+    }
+  }
 
   friend std::ostream& operator<<(std::ostream& out, const Eventually& expr) {
     if (expr.interval.has_value()) {
@@ -226,7 +243,16 @@ struct Until {
       const Expr& arg0,
       const Expr& arg1,
       std::optional<Interval> interval = std::nullopt) :
-      args(std::make_pair(arg0, arg1)), interval(interval) {}
+      args(std::make_pair(arg0, arg1)), interval(interval) {
+    if (interval.has_value()) {
+      const auto [a, b] = interval.value();
+      if (a < 0 or b < 0) {
+        throw std::invalid_argument("Interval cannot have negative values");
+      } else if (b <= a) {
+        throw std::invalid_argument("Interval [a,b] cannot have b <= a");
+      }
+    }
+  }
 
   friend std::ostream& operator<<(std::ostream& out, const Until& expr) {
     if (expr.interval.has_value()) {

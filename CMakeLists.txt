@@ -8,11 +8,18 @@ project(
 
 # Check if signaltl is being used directly or via add_subdirectory
 set(SIGNALTL_MASTER_PROJECT OFF)
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(SIGNALTL_MASTER_PROJECT ON)
 endif()
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
 include(CMakePrintHelpers)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+include(CTest)
+
+include(ThirdPartyLibs)
 
 # Options
 option(SIGNALTL_TEST "Build signaltl test suite?" ${SIGNALTL_MASTER_PROJECT})
@@ -21,13 +28,21 @@ option(SIGNALTL_INSTALL "Install the library and header files?"
        ${SIGNALTL_MASTER_PROJECT})
 option(SIGNALTL_PYTHON_BINDINGS "Build the Python extension?" ON)
 
-# cmake_print_variables(SIGNALTL_TEST SIGNALTL_EXAMPLES SIGNALTL_INSTALL
-# SIGNALTL_PYTHON_BINDINGS)
-
-# Add libraries
+set(_SIGNALTL_BUILD_THE_TESTS
+    OFF
+    CACHE INTERNAL "Easy option to build the tests")
+if((SIGNALTL_MASTER_PROJECT OR SIGNALTL_TEST) AND BUILD_TESTING)
+  set(_SIGNALTL_BUILD_THE_TESTS
+      ON
+      CACHE INTERNAL "Easy option to build the tests")
+endif()
 set(PYBIND11_CPP_STANDARD -std=c++17)
 set(CMAKE_CXX_EXTENSIONS ON)
+
+# Third party libraries and dependencies
 add_subdirectory(third_party)
+
+# Add libraries
 
 set(STL_SOURCES src/ast.cc src/classic_robustness.cc src/signal.cc)
 
@@ -35,27 +50,42 @@ add_library(signaltl SHARED ${STL_SOURCES})
 add_library(signal_tl::signal_tl ALIAS signaltl)
 target_include_directories(
   signaltl PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-                  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+                  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
 target_compile_features(signaltl PUBLIC cxx_std_17)
 target_compile_options(signaltl PUBLIC -std=c++17)
 target_link_libraries(signaltl PRIVATE mono_wedge::mono_wedge)
 
 if(SIGNALTL_PYTHON_BINDINGS)
+
   set(BINDINGS_SOURCES signal_tl/pyast.cc signal_tl/pyrobustness.cc
                        signal_tl/pysignal.cc signal_tl/pysignal_tl.cc)
 
   pybind11_add_module(_cext MODULE ${BINDINGS_SOURCES})
-  target_include_directories(_cext
-                             PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/signal_tl)
+  target_include_directories(_cext PRIVATE ${CMAKE_CURRENT_LIST_DIR}/signal_tl)
   target_link_libraries(_cext PRIVATE signaltl)
 endif()
 
-add_subdirectory(examples)
+if(SIGNALTL_EXAMPLES)
+  add_subdirectory(examples)
+endif()
+
+if(_SIGNALTL_BUILD_THE_TESTS)
+  find_package(Catch2 QUIET)
+  if(Catch2_FOUND)
+    message(STATUS "System installation of Catch2 found")
+  else()
+    git_submodule(PATH third_party/Catch2 WORKING_DIRECTORY
+                  ${CMAKE_CURRENT_LIST_DIR})
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/third_party/Catch2)
+    list(APPEND CMAKE_MODULE_PATH
+         "${CMAKE_CURRENT_LIST_DIR}/third_party/Catch2/contrib")
+  endif()
+
+  add_subdirectory(tests)
+endif()
 
 # Installing
 if(SIGNALTL_INSTALL)
-  include(GNUInstallDirs)
-  include(CMakePackageConfigHelpers)
   set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/signal_tl)
 
   install(

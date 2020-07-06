@@ -79,6 +79,9 @@ Expr operator|(const Expr& lhs, const Expr& rhs) {
 }
 
 Expr operator~(const Expr& expr) {
+  if (const auto e = std::get_if<ConstPtr>(&expr)) {
+    return Const::as_expr(!(*e)->value);
+  }
   return Not::as_expr(expr);
 }
 
