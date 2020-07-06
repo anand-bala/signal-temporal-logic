@@ -36,9 +36,9 @@ steps:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '$(PYTHON_VERSION)'
-  - script: python -m pip install --upgrade pip setuptools wheel cibuildwheel
+  - script: python -m pip install --upgrade pip setuptools wheel
     displayName: 'Install tools'
-  - script: python -m cibuildwheel --output-dir wheelhouse .
+  - script: python -m pip wheel . -w wheelhouse
     displayName: 'Build wheel'
   - task: PublishBuildArtifacts@1
     inputs: {pathtoPublish: 'wheelhouse'}
