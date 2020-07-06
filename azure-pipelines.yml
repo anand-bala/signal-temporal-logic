@@ -1,26 +1,11 @@
 strategy:
   matrix:
-    linux_python35:
-      VM_IMAGE: 'ubuntu-latest'
-      PYTHON_VERSION: '3.5'
     linux_python36:
       VM_IMAGE: 'ubuntu-latest'
       PYTHON_VERSION: '3.6'
     linux_python37:
       VM_IMAGE: 'ubuntu-latest'
       PYTHON_VERSION: '3.7'
-    windows_python35:
-      VM_IMAGE: 'windows-latest'
-      PYTHON_VERSION: '3.5'
-    windows_python36:
-      VM_IMAGE: 'windows-latest'
-      PYTHON_VERSION: '3.6'
-    windows_python37:
-      VM_IMAGE: 'windows-latest'
-      PYTHON_VERSION: '3.7'
-    macos_python35:
-      VM_IMAGE: 'macos-latest'
-      PYTHON_VERSION: '3.5'
     macos_python36:
       VM_IMAGE: 'macos-latest'
       PYTHON_VERSION: '3.6'
