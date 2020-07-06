@@ -37,8 +37,8 @@ steps:
     inputs:
       versionSpec: '$(PYTHON_VERSION)'
   - script: |
-      python -m pip install --upgrade pip
-      python -m pip install --upgrade cibuildwheel
+      python3 -m pip install --upgrade pip
+      python3 -m pip install --upgrade cibuildwheel
       cibuildwheel --output-dir wheelhouse .
   - task: PublishBuildArtifacts@1
     inputs: {pathtoPublish: 'wheelhouse'}
