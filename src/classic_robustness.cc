@@ -8,9 +8,9 @@
 #include <cmath>
 #include <functional>
 #include <limits>
+#include <numeric>
 
 #include <deque>
-#include <execution>
 
 #include <cassert>
 
@@ -86,8 +86,7 @@ compute_minmax_pair(const std::vector<SignalPtr>& xs, Compare comp, bool synchro
   }
 
   // TODO(anand): Parallel execution policy?
-  SignalPtr out = std::reduce(
-      std::execution::seq,
+  SignalPtr out = std::accumulate(
       std::next(xs.cbegin()),
       xs.cend(),
       xs.at(0),
