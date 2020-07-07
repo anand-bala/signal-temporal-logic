@@ -174,7 +174,7 @@ struct Always {
       arg(arg), interval(interval) {
     if (interval.has_value()) {
       const auto [a, b] = interval.value();
-      if (a < 0 or b < 0) {
+      if (a < 0 || b < 0) {
         throw std::invalid_argument("Interval cannot have negative values");
       } else if (b <= a) {
         throw std::invalid_argument("Interval [a,b] cannot have b <= a");
@@ -208,7 +208,7 @@ struct Eventually {
       arg(arg), interval(interval) {
     if (interval.has_value()) {
       const auto [a, b] = interval.value();
-      if (a < 0 or b < 0) {
+      if (a < 0 || b < 0) {
         throw std::invalid_argument("Interval cannot have negative values");
       } else if (b <= a) {
         throw std::invalid_argument("Interval [a,b] cannot have b <= a");
@@ -218,8 +218,7 @@ struct Eventually {
 
   friend std::ostream& operator<<(std::ostream& out, const Eventually& expr) {
     if (expr.interval.has_value()) {
-      double a, b;
-      std::tie(a, b) = expr.interval.value();
+      const auto [a, b] = expr.interval.value();
       if (std::isinf(b)) {
         return out << "F " << expr.arg;
       }
@@ -246,7 +245,7 @@ struct Until {
       args(std::make_pair(arg0, arg1)), interval(interval) {
     if (interval.has_value()) {
       const auto [a, b] = interval.value();
-      if (a < 0 or b < 0) {
+      if (a < 0 || b < 0) {
         throw std::invalid_argument("Interval cannot have negative values");
       } else if (b <= a) {
         throw std::invalid_argument("Interval [a,b] cannot have b <= a");
@@ -256,8 +255,7 @@ struct Until {
 
   friend std::ostream& operator<<(std::ostream& out, const Until& expr) {
     if (expr.interval.has_value()) {
-      double a, b;
-      std::tie(a, b) = expr.interval.value();
+      const auto [a, b] = expr.interval.value();
       if (std::isinf(b)) {
         return out << std::get<0>(expr.args) << " U " << std::get<1>(expr.args);
       }
