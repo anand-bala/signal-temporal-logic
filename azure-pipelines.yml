@@ -58,9 +58,14 @@ stages:
     jobs:
       - job: upload_wheels
         steps:
+          - task: TwineAuthenticate@1
+            displayName: 'Twine Authenticate'
+            inputs:
+              pythonUploadServiceConnection: pypiupload
           - task: UsePythonVersion@0
           - script: python -m pip install --upgrade pip setuptools wheel twine
             displayName: Install tools
-          - script: python setup.py sdist --dist-dir wheelhouse
-          - script: python -m twine upload -r pypiupload wheelhouse/*
+          - script: |
+              python3 setup.py sdist --dist-dir wheelhouse
+              python -m twine upload -r "pypiupload" --config-file $(PYPIRC_PATH) wheelhouse/*
 
