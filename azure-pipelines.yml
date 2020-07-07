@@ -20,14 +20,36 @@ jobs:
   - job: Build_macos
     strategy:
       matrix:
-        macos_10_15:
+        macos-10.15-py35:
           VM_IMAGE: macos-10.15
-        macos_10_14:
+          PYTHON_VERSION: 3.5
+        macos-10.15-py36:
+          VM_IMAGE: macos-10.15
+          PYTHON_VERSION: 3.6
+        macos-10.15-py37:
+          VM_IMAGE: macos-10.15
+          PYTHON_VERSION: 3.7
+        macos-10.15-py38:
+          VM_IMAGE: macos-10.15
+          PYTHON_VERSION: 3.8
+        macos-10.14-py35:
           VM_IMAGE: macos-10.14
+          PYTHON_VERSION: 3.5
+        macos-10.14-py36:
+          VM_IMAGE: macos-10.14
+          PYTHON_VERSION: 3.6
+        macos-10.14-py37:
+          VM_IMAGE: macos-10.14
+          PYTHON_VERSION: 3.7
+        macos-10.14-py38:
+          VM_IMAGE: macos-10.14
+          PYTHON_VERSION: 3.8
     pool:
       vmImage: '$(VM_IMAGE)'
     steps:
       - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '$(PYTHON_VERSION)'
       - script: python -m pip install --upgrade pip setuptools wheel
         displayName: Install tools
       - script: python -m pip wheel -w wheelhouse .
