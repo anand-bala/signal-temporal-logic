@@ -1,30 +1,38 @@
 variables:
-  CIBW_BUILD: cp3?-*
-  CIBW_SKIP: "*-win32 *-manylinux_i686"
+  CIBW_BUILD: cp3?-manylinux_x86_64
+  CIBW_SKIP: "*-win32 *-macosx_x86_64"
   CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
   CIBW_DEPENDENCY_VERSIONS: latest
 
-strategy:
-  matrix:
-    linux_python37:
-      VM_IMAGE: 'ubuntu-latest'
-      PYTHON_VERSION: '3.7'
-    macos_python37:
-      VM_IMAGE: 'macos-latest'
-      PYTHON_VERSION: '3.7'
+jobs:
+  - job: Build_manylinux
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+      - task: UsePythonVersion@0
+      - script: python -m pip install --upgrade pip setuptools wheel cibuildwheel
+        displayName: Install tools
+      - script: python -m cibuildwheel --output-dir wheelhouse .
+        displayName: Build wheel
+      - task: PublishBuildArtifacts@1
+        inputs: {pathtoPublish: 'wheelhouse'}
 
+  - job: Build_macos
+    strategy:
+      matrix:
+        macos_10_15:
+          VM_IMAGE: macos-10.15
+        macos_10_14:
+          VM_IMAGE: macos-10.14
+    pool:
+      vmImage: '$(VM_IMAGE)'
+    steps:
+      - task: UsePythonVersion@0
+      - script: python -m pip install --upgrade pip setuptools wheel
+        displayName: Install tools
+      - script: python -m pip wheel -w wheelhouse .
+        displayName: Build wheel
+      - task: PublishBuildArtifacts@1
+        inputs: {pathtoPublish: 'wheelhouse'}
 
-pool:
-  vmImage: '$(VM_IMAGE)'
-
-steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(PYTHON_VERSION)'
-  - script: python -m pip install --upgrade pip setuptools wheel cibuildwheel
-    displayName: 'Install tools'
-  - script: python -m cibuildwheel --output-dir wheelhouse .
-    displayName: 'Build wheel'
-  - task: PublishBuildArtifacts@1
-    inputs: {pathtoPublish: 'wheelhouse'}
 
