@@ -67,7 +67,6 @@ stages:
               buildType: 'current'
               downloadType: 'single'
               artifactName: 'Wheels'
-              downloadPath: wheelhouse/
           - task: TwineAuthenticate@1
             displayName: 'Twine Authenticate'
             inputs:
@@ -76,6 +75,6 @@ stages:
           - script: python -m pip install --upgrade pip setuptools wheel twine
             displayName: Install tools
           - script: |
-              python -m twine upload -r "pypiupload" --config-file $(PYPIRC_PATH) wheelhouse/*
+              python -m twine upload -r "pypiupload" --config-file $(PYPIRC_PATH) Wheels/*
             displayName: Upload wheels
 
