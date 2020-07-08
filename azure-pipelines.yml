@@ -66,6 +66,6 @@ stages:
           - script: python -m pip install --upgrade pip setuptools wheel twine
             displayName: Install tools
           - script: |
-              python3 setup.py sdist --dist-dir wheelhouse
               python -m twine upload -r "pypiupload" --config-file $(PYPIRC_PATH) wheelhouse/*
+            displayName: Upload wheels
 
