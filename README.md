@@ -14,17 +14,16 @@ The library is inspired by the following projects:
   robustness of signals against STL/MTL.
 
 The `signal-temporal-logic` library aims to be different from the above in the following
-ways
+ways:
 
 - Written for speed and targets Python.
     - While [py-metric-temporal-logic] is written in Python, it doesn't perform
-    computations efficiently and quickly. This library has a ~ 10000X performance boost
-    (from cursory microbenchmarks).
+      computations efficiently and quickly.
 - Support for multiple quantitative semantics.
     - All the above tools have their own way of computing the quantitative semantics for
-    STL/MTL specifications.
+      STL/MTL specifications.
     - This tool will try to support common ways of computing the robustness, but will
-    also have support for other quantitative semantics of STL. 
+      also have support for other quantitative semantics of STL. 
 
 
 [CMake]: https://cmake.org/
@@ -49,37 +48,30 @@ ways
     Temporal Logic Specifications with Smooth Cumulative Quantitative Semantics,"
     arXiv:1904.11611 [cs], Apr. 2019.
 
-# Installing
+# Installing Python package
 
 ## Using `pip`
 
-TODO: Need to fill out once package is on [PyPI](https://pypi.org/).
-
-You will need the same requirements as when building from source. Once you have them,
-run:
-
 ```shell
-$ python3 -m pip install git+https://github.com/anand-bala/signal-temporal-logic@master#egg=signal-temporal-logic
+$ python3 -m pip install signal-temporal-logic
 ```
 
 ## Build from source
 
 **Requirements:** `cmake` >= 3.5, `git` and a C++ compiler that supports C++17.
 
-First clone the repo:
-
+First clone the repository:
 ```shell
 $ git clone https://github.com/anand-bala/signal-temporal-logic
 ```
 
-Then install using `pip` if you want to use the Python package:
+Then install using `pip`, install the package:
 ```shell
-$ python3 -m pip install -U -e .
+$ python3 -m pip install -U .
 ```
 
 # Usage
 
-See the [examples/ directory](examples/) for various usage examples in C++ and Python.
+See the [examples/ directory](examples/) for some usage examples in C++ and Python.
 
-TODO: Write Python examples.
 

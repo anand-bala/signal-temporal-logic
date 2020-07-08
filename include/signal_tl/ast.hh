@@ -65,19 +65,58 @@ struct Const {
   };
 };
 
+enum class ComparisonOp { GT, GE, LT, LE };
+
 struct Predicate {
   const std::string name;
+  const ComparisonOp op = ComparisonOp::GE;
+  const double lhs      = 0.0;
 
   Predicate() = delete;
-  Predicate(const std::string& name) : name(name) {}
-
-  friend std::ostream& operator<<(std::ostream& out, const Predicate& expr) {
-    return out << expr.name;
-  }
+  Predicate(const std::string& name) : name{name}, op{ComparisonOp::GE}, lhs{0.0} {}
+  Predicate(const std::string& name, const ComparisonOp op, const double lhs) :
+      name{name}, op{op}, lhs{lhs} {};
 
   static Expr as_expr(const std::string& name) {
     return Expr(std::make_shared<Predicate>(name));
   };
+
+  static Expr
+  as_expr(const std::string& name, const ComparisonOp op, const double lhs) {
+    return Expr(std::make_shared<Predicate>(name, op, lhs));
+  };
+
+  friend Expr operator>(const PredicatePtr& rhs, const double lhs) {
+    return Predicate::as_expr(rhs->name, ComparisonOp::GT, lhs);
+  };
+  friend Expr operator>=(const PredicatePtr& rhs, const double lhs) {
+    return Predicate::as_expr(rhs->name, ComparisonOp::GE, lhs);
+  };
+  friend Expr operator<(const PredicatePtr& rhs, const double lhs) {
+    return Predicate::as_expr(rhs->name, ComparisonOp::LT, lhs);
+  };
+  friend Expr operator<=(const PredicatePtr& rhs, const double lhs) {
+    return Predicate::as_expr(rhs->name, ComparisonOp::LE, lhs);
+  };
+
+  friend std::ostream& operator<<(std::ostream& out, const Predicate& expr) {
+    out << expr.name;
+    switch (expr.op) {
+      case ComparisonOp::GE:
+        out << " >= ";
+        break;
+      case ComparisonOp::GT:
+        out << " > ";
+        break;
+      case ComparisonOp::LE:
+        out << " <= ";
+        break;
+      case ComparisonOp::LT:
+        out << " < ";
+        break;
+    }
+    return out << expr.lhs;
+  }
 };
 
 /* Propositional Logic */

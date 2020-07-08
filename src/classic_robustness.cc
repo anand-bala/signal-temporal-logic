@@ -270,7 +270,25 @@ SignalPtr RobustnessOp::operator()(const ast::ConstPtr e) {
 }
 
 SignalPtr RobustnessOp::operator()(const ast::PredicatePtr e) {
-  return trace.at(e->name);
+  const auto& x = trace.at(e->name);
+  auto y        = std::make_shared<Signal>();
+  for (const auto [t, v, d] : *x) {
+    switch (e->op) {
+      case ast::ComparisonOp::GE:
+        y->push_back(t, v - e->lhs);
+        break;
+      case ast::ComparisonOp::GT:
+        y->push_back(t, v - e->lhs);
+        break;
+      case ast::ComparisonOp::LE:
+        y->push_back(t, e->lhs - v);
+        break;
+      case ast::ComparisonOp::LT:
+        y->push_back(t, e->lhs - v);
+        break;
+    }
+  }
+  return y;
 }
 
 SignalPtr RobustnessOp::operator()(const ast::NotPtr e) {

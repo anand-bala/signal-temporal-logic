@@ -24,7 +24,10 @@ void init_ast_module(py::module& parent) {
   using namespace ast;
 
   parent.def("Const", &Const::as_expr, "value"_a);
-  parent.def("Predicate", &Predicate::as_expr, "name"_a);
+  parent.def(
+      "Predicate",
+      py::overload_cast<const std::string&>(&Predicate::as_expr),
+      "name"_a);
   parent.def("Not", &Not::as_expr, "arg"_a);
   parent.def("And", &And::as_expr, "args"_a);
   parent.def("Or", &Or::as_expr, "args"_a);
@@ -42,13 +45,34 @@ void init_ast_module(py::module& parent) {
       .def("__or__", &or_op<Const>)
       .def("__invert__", &not_op<Const>);
 
+  py::enum_<ComparisonOp>(m, "ComparisonOp")
+      .value("GE", ComparisonOp::GE)
+      .value("GT", ComparisonOp::GT)
+      .value("LT", ComparisonOp::LT)
+      .value("LE", ComparisonOp::LE);
+
   py::class_<Predicate, PredicatePtr>(m, "Predicate")
       .def(py::init<const std::string&>(), "name"_a)
+      .def(
+          py::init<const std::string&, const ComparisonOp, const double>(),
+          "name"_a,
+          "op"_a,
+          "lhs"_a)
       .def_readonly("name", &Predicate::name)
-      .def("__repr__", &repr<Predicate>)
       .def("__and__", &and_op<Predicate>)
       .def("__or__", &or_op<Predicate>)
-      .def("__invert__", &not_op<Predicate>);
+      .def("__invert__", &not_op<Predicate>)
+      .def(
+          "__lt__", [](const PredicatePtr& lhs, const double rhs) { return lhs < rhs; })
+      .def(
+          "__le__",
+          [](const PredicatePtr& lhs, const double rhs) { return lhs <= rhs; })
+      .def(
+          "__gt__", [](const PredicatePtr& lhs, const double rhs) { return lhs > rhs; })
+      .def(
+          "__ge__",
+          [](const PredicatePtr& lhs, const double rhs) { return lhs >= rhs; })
+      .def("__repr__", &repr<Predicate>);
 
   py::class_<Not, NotPtr>(m, "Not")
       .def(py::init<const Expr&>(), "arg"_a)
