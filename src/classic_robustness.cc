@@ -44,30 +44,30 @@ SignalPtr compute_minmax_pair(
   const size_t n = x->size();
 
   // Used to keep track of the signal from which the last minmax winner was chosen.
-  enum Chosen { X, Y, NONE };
-  Chosen last_chosen = NONE;
+  enum struct Chosen { X, Y, NONE };
+  Chosen last_chosen = Chosen::NONE;
 
   auto out = std::make_shared<Signal>();
 
   for (auto [i, j] = std::make_tuple(x->begin(), y->begin());
-       i != x->end() and j != y->end();
+       i != x->end() && j != y->end();
        i++, j++) {
     if (comp(i->value, j->value)) {
-      if (last_chosen == Y) {
+      if (last_chosen == Chosen::Y) {
         double intercept_time = std::prev(j)->time_intersect(*std::prev(i));
         out->push_back(
             Sample{intercept_time, std::prev(j)->interpolate(intercept_time)});
       }
       out->push_back(*i);
-      last_chosen = X;
+      last_chosen = Chosen::X;
     } else {
-      if (last_chosen == X) {
+      if (last_chosen == Chosen::X) {
         double intercept_time = std::prev(i)->time_intersect(*std::prev(j));
         out->push_back(
             Sample{intercept_time, std::prev(i)->interpolate(intercept_time)});
       }
       out->push_back(*j);
-      last_chosen = Y;
+      last_chosen = Chosen::Y;
     }
   }
 
@@ -199,7 +199,7 @@ compute_until(const SignalPtr input_x, const SignalPtr input_y, bool synchronize
   double max_right = BOTTOM;
 
   for (auto [i, j] = std::make_tuple(x->rbegin(), y->rbegin());
-       i != x->rend() and j != y->rend();
+       i != x->rend() && j != y->rend();
        i++, j++) {
     max_right = std::max(max_right, j->value);
     prev      = std::max({j->value, std::min(i->value, prev), -max_right});
@@ -362,7 +362,7 @@ SignalPtr RobustnessOp::operator()(const ast::UntilPtr e) {
   }
 
   const auto [a, b] = *(e->interval);
-  if (std::isinf(b) and a == 0) {
+  if (std::isinf(b) && a == 0) {
     return compute_until(y1, y2, this->synchronized);
   } else {
     return compute_until(y1, y2, a, b, this->synchronized);

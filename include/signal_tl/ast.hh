@@ -147,7 +147,7 @@ struct And {
   And() = delete;
   And(const std::vector<Expr>& args) : args(args) {
     if (args.size() < 2) {
-      std::invalid_argument(
+      throw std::invalid_argument(
           "It doesn't make sense to have an And operator with < 2 operands");
     }
   }
@@ -177,7 +177,7 @@ struct Or {
   Or() = delete;
   Or(const std::vector<Expr>& args) : args(args) {
     if (args.size() < 2) {
-      std::invalid_argument(
+      throw std::invalid_argument(
           "It doesn't make sense to have an Or operator with < 2 operands");
     }
   }

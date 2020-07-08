@@ -36,7 +36,12 @@ if((SIGNALTL_MASTER_PROJECT OR SIGNALTL_TEST) AND BUILD_TESTING)
       ON
       CACHE INTERNAL "Easy option to build the tests")
 endif()
-set(PYBIND11_CPP_STANDARD -std=c++17)
+
+if(MSVC)
+    set(PYBIND11_CPP_STANDARD /std:c++17)
+else()
+    set(PYBIND11_CPP_STANDARD -std=c++17)
+endif()
 set(CMAKE_CXX_EXTENSIONS ON)
 
 # Third party libraries and dependencies
@@ -46,14 +51,20 @@ add_subdirectory(third_party)
 
 set(STL_SOURCES src/ast.cc src/classic_robustness.cc src/signal.cc)
 
+if(NOT MSVC)
 add_library(signaltl SHARED ${STL_SOURCES})
+else()
+# NOTE: This is some weird stuff for MSVC
+add_library(signaltl STATIC ${STL_SOURCES})
+endif()
 add_library(signal_tl::signal_tl ALIAS signaltl)
 target_include_directories(
   signaltl PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
                   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
 target_compile_features(signaltl PUBLIC cxx_std_17)
-target_compile_options(signaltl PUBLIC -std=c++17)
 target_link_libraries(signaltl PRIVATE mono_wedge::mono_wedge)
+
+
 
 if(SIGNALTL_PYTHON_BINDINGS)
 
@@ -62,7 +73,7 @@ if(SIGNALTL_PYTHON_BINDINGS)
 
   pybind11_add_module(_cext MODULE ${BINDINGS_SOURCES})
   target_include_directories(_cext PRIVATE ${CMAKE_CURRENT_LIST_DIR}/signal_tl)
-  target_link_libraries(_cext PRIVATE signaltl)
+  target_link_libraries(_cext PUBLIC signaltl)
 endif()
 
 if(SIGNALTL_EXAMPLES)
@@ -89,7 +100,7 @@ if(SIGNALTL_INSTALL)
   set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/signal_tl)
 
   install(
-    TARGETS signaltl
+    TARGETS signaltl mono_wedge
     EXPORT signal_tl-targets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})

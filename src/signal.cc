@@ -12,7 +12,7 @@ namespace signal_tl {
 namespace signal {
 
 Sample Signal::at(double t) const {
-  if (this->begin_time() > t or this->end_time() < t) {
+  if (this->begin_time() > t && this->end_time() < t) {
     throw std::invalid_argument("Signal is undefined for given time instance");
   }
   constexpr auto comp_time = [](const Sample& a, const Sample& b) -> bool {
@@ -66,7 +66,7 @@ SignalPtr Signal::simplify() const {
     if (sig->empty()) {
       sig->push_back(s);
     } else if (const auto& new_s = sig->back();
-               new_s.interpolate(t) != v or new_s.derivative != d) {
+               new_s.interpolate(t) != v || new_s.derivative != d) {
       sig->push_back(s);
     }
   }
@@ -88,15 +88,15 @@ SignalPtr Signal::resize(double start, double end, double fill) const {
   for (auto i = this->begin(); i != this->end(); i++) {
     const auto [t, v, d] = *i;
     // If current sample is timed below start, ...
-    if (std::next(i) != this->end() and std::next(i)->time > start) {
+    if (std::next(i) != this->end() && std::next(i)->time > start) {
       // and next sample is timed after `start`, append an intermediate value
       sig->push_back(Sample{start, i->interpolate(start)});
-    } else if (start <= t and t <= end) {
+    } else if (start <= t && t <= end) {
       // If the samples are within the desired time range, keep the samples.
       sig->push_back(*i);
     } else if (t > end) {
       // If we are out of the range, ...
-      if (i != this->begin() and std::prev(i)->time < end) {
+      if (i != this->begin() && std::prev(i)->time < end) {
         // and the previous sample is within the range, interpolate from the last.
         sig->push_back(Sample{end, std::prev(i)->interpolate(end)});
       } else {
@@ -140,18 +140,18 @@ synchronize(const std::shared_ptr<Signal>& x, const std::shared_ptr<Signal>& y) 
     return a.time < b.time;
   };
   auto i = std::lower_bound(x->begin(), x->end(), Sample{begin_time, 0.0}, comp_time);
-  if (i->time > begin_time and i != x->begin()) {
+  if (i->time > begin_time && i != x->begin()) {
     xv.push_back(Sample{
         begin_time, std::prev(i)->interpolate(begin_time), std::prev(i)->derivative});
   }
   auto j = std::lower_bound(y->begin(), y->end(), Sample{begin_time, 0.0}, comp_time);
-  if (j->time > begin_time and j != y->begin()) {
+  if (j->time > begin_time && j != y->begin()) {
     yv.push_back(Sample{
         begin_time, std::prev(j)->interpolate(begin_time), std::prev(i)->derivative});
   }
 
   // Now, we have to track the timestamps.
-  while (i != x->end() and j != y->end()) {
+  while (i != x->end() && j != y->end()) {
     if (i->time == j->time) {
       // The samples remain in both.
       xv.push_back(*i);
