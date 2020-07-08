@@ -22,7 +22,9 @@ stages:
           - script: python -m cibuildwheel --output-dir wheelhouse .
             displayName: Build wheel
           - task: PublishBuildArtifacts@1
-            inputs: {pathtoPublish: 'wheelhouse'}
+            inputs:
+              pathtoPublish: 'wheelhouse'
+              artifactName: 'Wheels'
 
       - job: Build_macos
         strategy:
@@ -50,7 +52,9 @@ stages:
           - script: python -m pip wheel -w wheelhouse .
             displayName: Build wheel
           - task: PublishBuildArtifacts@1
-            inputs: {pathtoPublish: 'wheelhouse'}
+            inputs:
+              pathtoPublish: 'wheelhouse'
+              artifactName: 'Wheels'
 
   - stage: PyPI
     displayName: "Upload wheels to PyPI"
@@ -58,6 +62,12 @@ stages:
     jobs:
       - job: upload_wheels
         steps:
+          - task: DownloadBuildArtifacts@0
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'Wheels'
+              downloadPath: wheelhouse/
           - task: TwineAuthenticate@1
             displayName: 'Twine Authenticate'
             inputs:
