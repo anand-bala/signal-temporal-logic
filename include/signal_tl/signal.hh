@@ -44,7 +44,8 @@ struct Sample {
   }
 
   friend std::ostream& operator<<(std::ostream& out, const Sample& sample);
-};
+
+}; // namespace signal
 
 constexpr bool operator<(const Sample& lhs, const Sample& rhs) {
   return lhs.value < rhs.value;
@@ -180,7 +181,7 @@ struct Signal {
    */
   void push_back(Sample s);
   void push_back(double time, double value);
-  void push_back_raw(Sample s);
+
   /**
    * Remove sampling points where (y, dy) is continuous
    */

@@ -31,7 +31,8 @@ void Signal::push_back(Sample sample) {
   if (!this->samples.empty()) {
     if (sample.time < this->end_time()) {
       throw std::invalid_argument(
-          "Trying to append a Sample timestamped before the Signal end_time, i.e., time is not strictly monotonically increasing");
+          "Trying to append a Sample timestamped before the Signal end_time,"
+          "i.e., time is not strictly monotonically increasing.");
     }
     const auto [t, v, d] = this->samples.back();
     auto& last           = this->samples.back();
@@ -43,20 +44,6 @@ void Signal::push_back(Sample sample) {
 
 void Signal::push_back(double time, double value) {
   this->push_back(Sample{time, value, 0.0});
-}
-
-void Signal::push_back_raw(Sample sample) {
-  if (!this->samples.empty()) {
-    if (sample.time < this->end_time()) {
-      throw std::invalid_argument(
-          "Trying to append a Sample timestamped before the Signal end_time, i.e., time is not strictly monotonically increasing");
-    }
-    const auto [t, v, d] = this->samples.back();
-    auto& last           = this->samples.back();
-
-    last.derivative = (sample.value - v) / (sample.time - t);
-  }
-  this->samples.push_back(sample);
 }
 
 SignalPtr Signal::simplify() const {
