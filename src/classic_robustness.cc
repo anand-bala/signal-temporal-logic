@@ -25,7 +25,7 @@ constexpr double BOTTOM = -TOP;
 SignalPtr compute_not(const SignalPtr x) {
   auto vec = std::vector<Sample>{};
   vec.reserve(x->size());
-  std::transform(x->begin(), x->end(), vec.begin(), std::negate<Sample>());
+  std::transform(x->begin(), x->end(), std::back_inserter(vec), std::negate<Sample>());
   return std::make_shared<Signal>(vec);
 }
 

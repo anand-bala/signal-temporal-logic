@@ -1,10 +1,9 @@
 #include "signal_tl/signal.hh"
-
+#include "signal_tl/fmt.hh"
 #include "signal_tl/utils.hh"
 
 #include <algorithm>
 #include <cmath>
-#include <exception>
 #include <iterator>
 #include <numeric>
 
@@ -13,7 +12,8 @@ namespace signal {
 
 Sample Signal::at(double t) const {
   if (this->begin_time() > t && this->end_time() < t) {
-    throw std::invalid_argument("Signal is undefined for given time instance");
+    throw std::invalid_argument(
+        fmt::format("Signal is undefined for given time instance {}", t));
   }
   constexpr auto comp_time = [](const Sample& a, const Sample& b) -> bool {
     return a.time < b.time;
@@ -29,10 +29,13 @@ Sample Signal::at(double t) const {
 
 void Signal::push_back(Sample sample) {
   if (!this->samples.empty()) {
-    if (sample.time < this->end_time()) {
-      throw std::invalid_argument(
-          "Trying to append a Sample timestamped before the Signal end_time,"
-          "i.e., time is not strictly monotonically increasing.");
+    if (sample.time <= this->end_time()) {
+      throw std::invalid_argument(fmt::format(
+          "Trying to append a Sample timestamped at or before the Signal end_time,"
+          "i.e., time is not strictly monotonically increasing."
+          "Current end_time is {}, given Sample is {}.",
+          this->end_time(),
+          sample));
     }
     const auto [t, v, d] = this->samples.back();
     auto& last           = this->samples.back();
@@ -168,22 +171,6 @@ synchronize(const std::shared_ptr<Signal>& x, const std::shared_ptr<Signal>& y) 
   }
 
   return std::make_tuple(std::make_shared<Signal>(xv), std::make_shared<Signal>(yv));
-}
-
-std::ostream& operator<<(std::ostream& out, const signal::Sample& sample) {
-  return out << "(" << sample.time << ", " << sample.value << ")";
-}
-
-std::ostream& operator<<(std::ostream& os, const signal::Signal& sig) {
-  os << "[";
-  for (const auto& [i, s] : utils::enumerate(sig.samples)) {
-    if (i != 0) {
-      os << ", ";
-    }
-    os << s;
-  }
-  os << "]";
-  return os;
 }
 
 } // namespace signal

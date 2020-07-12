@@ -1,7 +1,8 @@
 
 trigger:
-- master
-- releases/*
+  branches:
+    include:
+      - refs/tags/*
 
 stages:
   - stage: Build

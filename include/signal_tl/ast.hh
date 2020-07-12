@@ -3,12 +3,10 @@
 #if !defined(__SIGNAL_TEMPORAL_LOGIC_AST_HH__)
 #define __SIGNAL_TEMPORAL_LOGIC_AST_HH__
 
-#include <cmath>
 #include <exception>
-#include <iostream>
 #include <memory>
 #include <optional>
-#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <variant>
@@ -46,7 +44,6 @@ using Expr = std::variant<
     EventuallyPtr,
     UntilPtr>;
 using ExprPtr = std::shared_ptr<Expr>;
-std::ostream& operator<<(std::ostream& out, const Expr& expr);
 
 /* Atomic Predicates and Constants */
 
@@ -55,10 +52,6 @@ struct Const {
 
   Const() = delete;
   Const(bool value) : value(value) {}
-
-  friend std::ostream& operator<<(std::ostream& out, const Const& expr) {
-    return out << std::boolalpha << expr.value;
-  }
 
   static Expr as_expr(bool value) {
     return Expr(std::make_shared<Const>(value));
@@ -98,25 +91,6 @@ struct Predicate {
   friend Expr operator<=(const PredicatePtr& rhs, const double lhs) {
     return Predicate::as_expr(rhs->name, ComparisonOp::LE, lhs);
   };
-
-  friend std::ostream& operator<<(std::ostream& out, const Predicate& expr) {
-    out << expr.name;
-    switch (expr.op) {
-      case ComparisonOp::GE:
-        out << " >= ";
-        break;
-      case ComparisonOp::GT:
-        out << " > ";
-        break;
-      case ComparisonOp::LE:
-        out << " <= ";
-        break;
-      case ComparisonOp::LT:
-        out << " < ";
-        break;
-    }
-    return out << expr.lhs;
-  }
 };
 
 /* Propositional Logic */
@@ -126,10 +100,6 @@ struct Not {
 
   Not() = delete;
   Not(const Expr& arg) : arg(arg) {}
-
-  friend std::ostream& operator<<(std::ostream& out, const Not& expr) {
-    return out << "~" << expr.arg;
-  }
 
   static Expr as_expr(const Expr& arg) {
     if (auto cval = std::get_if<ConstPtr>(&arg)) {
@@ -152,17 +122,6 @@ struct And {
     }
   }
 
-  friend std::ostream& operator<<(std::ostream& out, const And& expr) {
-    out << "(";
-    for (size_t i = 0; i < expr.args.size(); i++) {
-      if (i != 0)
-        out << " & ";
-      out << expr.args[i];
-    }
-    out << ")";
-    return out;
-  }
-
   static Expr as_expr(const std::vector<Expr>& args) {
     if (args.size() == 1) {
       return args[0];
@@ -180,17 +139,6 @@ struct Or {
       throw std::invalid_argument(
           "It doesn't make sense to have an Or operator with < 2 operands");
     }
-  }
-
-  friend std::ostream& operator<<(std::ostream& out, const Or& expr) {
-    out << "(";
-    for (size_t i = 0; i < expr.args.size(); i++) {
-      if (i != 0)
-        out << " | ";
-      out << expr.args[i];
-    }
-    out << ")";
-    return out;
   }
 
   static Expr as_expr(const std::vector<Expr>& args) {
@@ -221,17 +169,6 @@ struct Always {
     }
   }
 
-  friend std::ostream& operator<<(std::ostream& out, const Always& expr) {
-    if (expr.interval.has_value()) {
-      const auto [a, b] = expr.interval.value();
-      if (std::isinf(b)) {
-        return out << "G " << expr.arg;
-      }
-      return out << "G[" << a << "," << b << "] " << expr.arg;
-    }
-    return out << "G " << expr.arg;
-  }
-
   static Expr
   as_expr(const Expr& arg, const std::optional<Interval> interval = std::nullopt) {
     return Expr(std::make_shared<Always>(arg, interval));
@@ -253,17 +190,6 @@ struct Eventually {
         throw std::invalid_argument("Interval [a,b] cannot have b <= a");
       }
     }
-  }
-
-  friend std::ostream& operator<<(std::ostream& out, const Eventually& expr) {
-    if (expr.interval.has_value()) {
-      const auto [a, b] = expr.interval.value();
-      if (std::isinf(b)) {
-        return out << "F " << expr.arg;
-      }
-      return out << "F[" << a << "," << b << "] " << expr.arg;
-    }
-    return out << "F " << expr.arg;
   }
 
   static Expr
@@ -292,18 +218,6 @@ struct Until {
     }
   }
 
-  friend std::ostream& operator<<(std::ostream& out, const Until& expr) {
-    if (expr.interval.has_value()) {
-      const auto [a, b] = expr.interval.value();
-      if (std::isinf(b)) {
-        return out << std::get<0>(expr.args) << " U " << std::get<1>(expr.args);
-      }
-      return out << std::get<0>(expr.args) << " U[" << a << "," << b << "] "
-                 << std::get<1>(expr.args);
-    }
-    return out << std::get<0>(expr.args) << " U " << std::get<1>(expr.args);
-  }
-
   static Expr as_expr(
       const Expr& arg0,
       const Expr& arg1,
@@ -312,7 +226,6 @@ struct Until {
   };
 };
 
-std::ostream& operator<<(std::ostream& out, const Expr& expr);
 Expr operator&(const Expr& lhs, const Expr& rhs);
 Expr operator|(const Expr& lhs, const Expr& rhs);
 Expr operator~(const Expr& expr);

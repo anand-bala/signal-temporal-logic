@@ -49,11 +49,6 @@ Expr OrHelper(const OrPtr& lhs, const Expr& rhs) {
 
 } // namespace
 
-std::ostream& operator<<(std::ostream& out, const Expr& expr) {
-  std::visit([&out](auto e) { out << *e; }, expr);
-  return out;
-}
-
 Expr operator&(const Expr& lhs, const Expr& rhs) {
   return std::visit(
       overloaded{[&lhs, &rhs](auto e) {

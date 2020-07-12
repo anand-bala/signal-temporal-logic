@@ -4,11 +4,14 @@
 #define __SIGNAL_TEMPORAL_LOGIC_SIGNAL_HH__
 
 #include <algorithm>
-#include <iostream>
+#include <exception>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <tuple>
 #include <vector>
+
+#include <fmt/core.h>
 
 namespace signal_tl {
 namespace signal {
@@ -42,8 +45,6 @@ struct Sample {
       return 0;
     }
   }
-
-  friend std::ostream& operator<<(std::ostream& out, const Sample& sample);
 
 }; // namespace signal
 
@@ -226,8 +227,10 @@ struct Signal {
    */
   Signal(const std::vector<double>& points, const std::vector<double>& times) {
     if (points.size() != times.size()) {
-      throw std::invalid_argument(
-          "Number of sample points and time points need to be equal.");
+      throw std::invalid_argument(fmt::format(
+          "Number of sample points ({}) and time points ({}) need to be equal.",
+          points.size(),
+          times.size()));
     }
 
     size_t n = points.size();
@@ -245,8 +248,6 @@ struct Signal {
   Signal(TIter&& start, TIter&& end) {
     for (auto i = start; i != end; i++) { this->push_back(*i); }
   }
-
-  friend std::ostream& operator<<(std::ostream& os, const Signal& sig);
 };
 
 /**
