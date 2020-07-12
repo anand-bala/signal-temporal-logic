@@ -42,7 +42,7 @@ else:
 
 
 # Install vcpkg dependencies
-subprocess.check_call([VCPKG_EXE, "install", "fmt", "catch2", "pybind11"])
+subprocess.check_call([str(VCPKG_EXE), "install", "fmt", "catch2", "pybind11"])
 
 
 class CMakeExtension(Extension):

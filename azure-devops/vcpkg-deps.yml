@@ -1,12 +1,13 @@
-- checkout: self
-  submodules: recursive
-- task: Cache@2
-  displayName: "Cache vcpkg artifacts"
-  inputs:
-    key: $(Build.SourcesDirectory)/third_party/vcpkg_deps.txt | "$(Build.SourcesDirectory)/.git/modules/third_party/vcpkg/HEAD" | "$(Agent.OS)"
-    path: '$(Build.SourcesDirectory)/third_party/vcpkg'
-- task: run-vcpkg@0
-  displayName: 'Run vcpkg'
-  inputs:
-    vcpkgArguments: @$(Build.SourcesDirectory)/third_party/vcpkg_deps.txt
-    vcpkgDirectory: $(Build.SourcesDirectory)/vcpkg
+steps:
+  - checkout: self
+    submodules: recursive
+  - task: Cache@2
+    displayName: "Cache vcpkg artifacts"
+    inputs:
+      key: $(Build.SourcesDirectory)/third_party/vcpkg_deps.txt | "$(Build.SourcesDirectory)/.git/modules/third_party/vcpkg/HEAD" | "$(Agent.OS)"
+      path: '$(Build.SourcesDirectory)/third_party/vcpkg'
+  - task: run-vcpkg@0
+    displayName: 'Run vcpkg'
+    inputs:
+      vcpkgArguments: "@$(Build.SourcesDirectory)/third_party/vcpkg_deps.txt"
+      vcpkgDirectory: "$(Build.SourcesDirectory)/third_party/vcpkg"

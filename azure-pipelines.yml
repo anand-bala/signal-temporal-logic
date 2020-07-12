@@ -14,11 +14,11 @@ stages:
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
       CIBW_DEPENDENCY_VERSIONS: latest
     jobs:
-      - template: azure-devops/vcpkg-deps.yml
       - job: Build_manylinux
         pool:
           vmImage: ubuntu-latest
         steps:
+          - template: azure-devops/vcpkg-deps.yml
           - task: UsePythonVersion@0
           - script: python -m pip install --upgrade pip setuptools wheel cibuildwheel
             displayName: Install tools
