@@ -13,7 +13,7 @@ endif()
 cmake_minimum_required(VERSION 3.5.0)
 project(
   signal_tl
-  VERSION 0.1.0
+  VERSION 0.1.1
   DESCRIPTION
     "A library for efficiently working with Signal Temporal Logic (STL) and its quantitative semantics"
   LANGUAGES CXX)
