@@ -1,4 +1,3 @@
-steps:
 - checkout: self
   submodules: recursive
 - task: Cache@2
