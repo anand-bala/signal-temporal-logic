@@ -1,6 +1,9 @@
 message(STATUS "Building Tests in ${CMAKE_CURRENT_LIST_DIR}")
 
 find_package(Catch2 CONFIG REQUIRED)
+if(Catch2_FOUND)
+    message(STATUS "Found Catch2 ${Catch2_VERSION}")
+endif()
 
 set(TEST_SRCS ${CMAKE_CURRENT_LIST_DIR}/test_signals.cc)
 

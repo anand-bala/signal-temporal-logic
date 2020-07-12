@@ -57,7 +57,16 @@ set(CMAKE_CXX_EXTENSIONS ON)
 # Third party libraries and dependencies
 include(ThirdPartyLibs)
 find_package(fmt CONFIG REQUIRED)
-add_subdirectory(third_party)
+if(fmt_FOUND)
+    message(STATUS "Found fmt ${fmt_VERSION}")
+endif()
+find_package(pybind11 CONFIG REQUIRED)
+if(pybind11_FOUND)
+    message(STATUS "Found pybind11 ${pybind11_VERSION}")
+endif()
+
+# External utility libs
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/mono_wedge)
 
 # Add library and module
 

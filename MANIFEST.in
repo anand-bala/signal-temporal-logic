@@ -1,0 +1,15 @@
+global-exclude __pycache__
+global-exclude *.py[co]
+
+include README.md LICENSE LICENSE-3rdParty MANIFEST.in 
+global-include *.md
+global-include CMakeLists.txt *.cmake
+
+graft cmake
+graft examples
+graft tests
+graft include
+graft third_party
+graft signal_tl
+graft src
+

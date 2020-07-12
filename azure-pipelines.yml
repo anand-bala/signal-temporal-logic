@@ -8,11 +8,12 @@ stages:
   - stage: Build
     displayName: "Build wheels for Linux and macOS"
     variables:
-      CIBW_BUILD: cp3?-manylinux_x86_64
+      CIBW_BUILD: "cp3?-manylinux* pp3?-manylinux*"
       CIBW_SKIP: "*-win32 *-macosx_x86_64"
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
       CIBW_DEPENDENCY_VERSIONS: latest
     jobs:
+      - template: azure-devops/vcpkg-deps.yml
       - job: Build_manylinux
         pool:
           vmImage: ubuntu-latest
@@ -57,6 +58,7 @@ stages:
         pool:
           vmImage: '$(VM_IMAGE)'
         steps:
+          - template: azure-devops/vcpkg-deps.yml
           - task: UsePythonVersion@0
             inputs:
               versionSpec: '$(PYTHON_VERSION)'
