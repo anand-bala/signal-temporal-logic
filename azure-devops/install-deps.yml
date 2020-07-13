@@ -4,10 +4,12 @@ steps:
   - task: Cache@2
     displayName: "Cache vcpkg artifacts"
     inputs:
-      key: $(Build.SourcesDirectory)/third_party/vcpkg_deps.txt | "$(Build.SourcesDirectory)/.git/modules/third_party/vcpkg/HEAD" | "$(Agent.OS)"
+      key: "vcpkg" | "$(Agent.OS)" | $(Build.SourcesDirectory)/third_party/vcpkg_deps.txt | "$(Build.SourcesDirectory)/.git/modules/third_party/vcpkg/HEAD"
       path: '$(Build.SourcesDirectory)/third_party/vcpkg'
   - task: run-vcpkg@0
     displayName: 'Run vcpkg'
     inputs:
       vcpkgArguments: "@$(Build.SourcesDirectory)/third_party/vcpkg_deps.txt"
       vcpkgDirectory: "$(Build.SourcesDirectory)/third_party/vcpkg"
+  - script: python -m pip install --upgrade pip setuptools wheel cibuildwheel
+    displayName: Install Python pip tools

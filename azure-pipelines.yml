@@ -18,10 +18,8 @@ stages:
         pool:
           vmImage: ubuntu-latest
         steps:
-          - template: azure-devops/vcpkg-deps.yml
           - task: UsePythonVersion@0
-          - script: python -m pip install --upgrade pip setuptools wheel cibuildwheel
-            displayName: Install tools
+          - template: azure-devops/install-deps.yml
           - script: python -m cibuildwheel --output-dir wheelhouse .
             displayName: Build wheel
           - task: PublishBuildArtifacts@1
@@ -59,12 +57,10 @@ stages:
         pool:
           vmImage: '$(VM_IMAGE)'
         steps:
-          - template: azure-devops/vcpkg-deps.yml
           - task: UsePythonVersion@0
             inputs:
               versionSpec: '$(PYTHON_VERSION)'
-          - script: python -m pip install --upgrade pip setuptools wheel
-            displayName: Install tools
+          - template: azure-devops/install-deps.yml
           - script: python -m pip wheel -w wheelhouse .
             displayName: Build wheel
           - task: PublishBuildArtifacts@1
