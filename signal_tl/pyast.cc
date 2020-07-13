@@ -40,7 +40,7 @@ void init_ast_module(py::module& parent) {
   py::class_<Const, ConstPtr>(m, "Const")
       .def(py::init<bool>(), "value"_a)
       .def_readonly("value", &Const::value)
-      .def("__repr__", &repr<Const>)
+      .def("__repr__", [](const Const& e) { return fmt::format("{}", e); })
       .def("__and__", &and_op<Const>)
       .def("__or__", &or_op<Const>)
       .def("__invert__", &not_op<Const>);
@@ -72,12 +72,12 @@ void init_ast_module(py::module& parent) {
       .def(
           "__ge__",
           [](const PredicatePtr& lhs, const double rhs) { return lhs >= rhs; })
-      .def("__repr__", &repr<Predicate>);
+      .def("__repr__", [](const Predicate& e) { return fmt::format("{}", e); });
 
   py::class_<Not, NotPtr>(m, "Not")
       .def(py::init<const Expr&>(), "arg"_a)
       .def_readonly("arg", &Not::arg)
-      .def("__repr__", &repr<Not>)
+      .def("__repr__", [](const Not& e) { return fmt::format("{}", e); })
       .def("__and__", &and_op<Not>)
       .def("__or__", &or_op<Not>)
       .def("__invert__", &not_op<Not>);
@@ -85,7 +85,7 @@ void init_ast_module(py::module& parent) {
   py::class_<And, AndPtr>(m, "And")
       .def(py::init<const std::vector<Expr>&>(), "args"_a)
       .def_readonly("args", &And::args)
-      .def("__repr__", &repr<And>)
+      .def("__repr__", [](const And& e) { return fmt::format("{}", e); })
       .def("__and__", &and_op<And>)
       .def("__or__", &or_op<And>)
       .def("__invert__", &not_op<And>);
@@ -93,7 +93,7 @@ void init_ast_module(py::module& parent) {
   py::class_<Or, OrPtr>(m, "Or")
       .def(py::init<const std::vector<Expr>&>(), "args"_a)
       .def_readonly("args", &Or::args)
-      .def("__repr__", &repr<Or>)
+      .def("__repr__", [](const Or& e) { return fmt::format("{}", e); })
       .def("__and__", &and_op<Or>)
       .def("__or__", &or_op<Or>)
       .def("__invert__", &not_op<Or>);
@@ -105,7 +105,7 @@ void init_ast_module(py::module& parent) {
           "interval"_a = std::nullopt)
       .def_readonly("arg", &Eventually::arg)
       .def_readonly("interval", &Eventually::arg)
-      .def("__repr__", &repr<Eventually>)
+      .def("__repr__", [](const Eventually& e) { return fmt::format("{}", e); })
       .def("__and__", &and_op<Eventually>)
       .def("__or__", &or_op<Eventually>)
       .def("__invert__", &not_op<Eventually>);
@@ -117,7 +117,7 @@ void init_ast_module(py::module& parent) {
           "interval"_a = std::nullopt)
       .def_readonly("arg", &Always::arg)
       .def_readonly("interval", &Always::arg)
-      .def("__repr__", &repr<Always>)
+      .def("__repr__", [](const Always& e) { return fmt::format("{}", e); })
       .def("__and__", &and_op<Always>)
       .def("__or__", &or_op<Always>)
       .def("__invert__", &not_op<Always>);
@@ -130,7 +130,7 @@ void init_ast_module(py::module& parent) {
           "interval"_a = std::nullopt)
       .def_readonly("args", &Until::args)
       .def_readonly("interval", &Until::args)
-      .def("__repr__", &repr<Until>)
+      .def("__repr__", [](const Until& e) { return fmt::format("{}", e); })
       .def("__and__", &and_op<Until>)
       .def("__or__", &or_op<Until>)
       .def("__invert__", &not_op<Until>);

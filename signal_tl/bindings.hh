@@ -23,11 +23,6 @@ using namespace signal_tl;
 // PYBIND11_MAKE_OPAQUE(std::vector<signal::Sample>);
 // PYBIND11_MAKE_OPAQUE(std::map<std::string, signal::SignalPtr>);
 
-template <typename T>
-constexpr auto repr(const T& expr) {
-  return fmt::format("{}", expr);
-}
-
 void init_ast_module(py::module&);
 void init_signal_module(py::module&);
 void init_robustness_module(py::module&);
