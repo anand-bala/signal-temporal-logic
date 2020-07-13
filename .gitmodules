@@ -1,4 +1,4 @@
 [submodule "third_party/vcpkg"]
 	path = third_party/vcpkg
-	url = git@github.com:anand-bala/vcpkg
+	url = https://github.com/anand-bala/vcpkg
 	branch = master
