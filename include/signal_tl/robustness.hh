@@ -4,8 +4,10 @@
 #define __SIGNAL_TEMPORAL_LOGIC_ROBUSTNESS_HH__
 
 #include "signal_tl/ast.hh"
+#include "signal_tl/fmt.hh"
 #include "signal_tl/signal.hh"
 
+#include <map>
 #include <memory>
 
 namespace signal_tl {

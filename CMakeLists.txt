@@ -1,15 +1,3 @@
-if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-  if(DEFINED ENV{VCPKG_ROOT})
-    set(CMAKE_TOOLCHAIN_FILE
-        "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        CACHE STRING "")
-  else()
-    set(CMAKE_TOOLCHAIN_FILE
-        "${CMAKE_CURRENT_LIST_DIR}/third_party/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        CACHE STRING "")
-  endif()
-endif()
-
 cmake_minimum_required(VERSION 3.5.0)
 project(
   signal_tl
@@ -47,37 +35,17 @@ if((SIGNALTL_MASTER_PROJECT OR SIGNALTL_TEST) AND BUILD_TESTING)
       CACHE INTERNAL "Easy option to build the tests")
 endif()
 
-if(MSVC)
-  set(PYBIND11_CPP_STANDARD /std:c++17)
-else()
-  set(PYBIND11_CPP_STANDARD -std=c++17)
-endif()
 set(CMAKE_CXX_EXTENSIONS ON)
 
 # Third party libraries and dependencies
 include(ThirdPartyLibs)
-find_package(fmt CONFIG REQUIRED)
-if(fmt_FOUND)
-    message(STATUS "Found fmt ${fmt_VERSION}")
-endif()
-find_package(pybind11 CONFIG REQUIRED)
-if(pybind11_FOUND)
-    message(STATUS "Found pybind11 ${pybind11_VERSION}")
-endif()
-
-# External utility libs
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/mono_wedge)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/third_party)
 
 # Add library and module
 
 set(STL_SOURCES src/ast.cc src/classic_robustness.cc src/signal.cc)
 
-if(NOT MSVC)
-  add_library(signaltl SHARED ${STL_SOURCES})
-else()
-  # NOTE: This is some weird stuff for MSVC
-  add_library(signaltl STATIC ${STL_SOURCES})
-endif()
+add_library(signaltl ${STL_SOURCES})
 add_library(signal_tl::signal_tl ALIAS signaltl)
 target_include_directories(
   signaltl PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -85,6 +53,7 @@ target_include_directories(
 target_compile_features(signaltl PUBLIC cxx_std_17)
 target_link_libraries(signaltl PRIVATE mono_wedge::mono_wedge)
 target_link_libraries(signaltl PUBLIC fmt::fmt)
+set_target_properties(signaltl PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(SIGNALTL_PYTHON_BINDINGS)
   set(BINDINGS_SOURCES signal_tl/pyast.cc signal_tl/pyrobustness.cc

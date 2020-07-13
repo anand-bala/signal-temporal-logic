@@ -1,3 +1,8 @@
+#pragma once
+
+#ifndef __SIGNAL_TEMPORAL_LOGIC_FMT_HH__
+#define __SIGNAL_TEMPORAL_LOGIC_FMT_HH__
+
 #include <fmt/format.h>
 
 #include <cmath>
@@ -177,3 +182,5 @@ struct fmt::formatter<signal_tl::signal::Signal> {
     return format_to(ctx.out(), "{}", fmt::join(s, ", "));
   }
 };
+
+#endif /* end of include guard: __SIGNAL_TEMPORAL_LOGIC_FMT_HH__ */

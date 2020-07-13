@@ -7,42 +7,8 @@ import subprocess
 import sys
 from distutils.version import LooseVersion
 
-import git
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
-
-# First we make sure vcpkg is correctly installed and install all the dependencies.
-VCPKG_ROOT = os.environ.get("VCPKG_ROOT", None)
-if VCPKG_ROOT is None:
-    # Use the submodule
-    try:
-        repo = git.Repo(pathlib.Path(__file__).parent.absolute())
-    except:
-        raise EnvironmentError(
-            "vcpkg isn't installed globally (no VCPKG_ROOT) and this package is not being installed from the git repository. One of these has to be true for me to continue..."
-        )
-    sm = repo.submodule("third_party/vcpkg")
-    sm.update(init=True, recursive=True)
-    VCPKG_ROOT = sm.module().working_tree_dir
-    VCPKG_EXE = pathlib.Path(VCPKG_ROOT) / "vcpkg"
-    CMAKE_TOOLCHAIN_FILE = pathlib.Path(VCPKG_ROOT) / "scripts/buildsystems/vcpkg.cmake"
-    # Boostrap vcpkg
-    if not VCPKG_EXE.exists():
-        if platform.system() == "Windows":
-            subprocess.check_call(
-                ["bootstrap-vcpkg.bat", "-disableMetrics"], cwd=VCPKG_ROOT
-            )
-        else:
-            subprocess.check_call(
-                ["./bootstrap-vcpkg.sh", "-disableMetrics"], cwd=VCPKG_ROOT
-            )
-else:
-    VCPKG_EXE = pathlib.Path(shutil.which("vcpkg"))
-    CMAKE_TOOLCHAIN_FILE = pathlib.Path(VCPKG_ROOT) / "scripts/buildsystems/vcpkg.cmake"
-
-
-# Install vcpkg dependencies
-subprocess.check_call([str(VCPKG_EXE), "install", "fmt", "catch2", "pybind11"])
 
 
 class CMakeExtension(Extension):
@@ -86,7 +52,6 @@ class CMakeBuild(build_ext):
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
-            "-DCMAKE_TOOLCHAIN_FILE=" + str(CMAKE_TOOLCHAIN_FILE),
         ]
 
         if self._use_ninja:

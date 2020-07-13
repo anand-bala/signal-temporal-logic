@@ -1,3 +1,0 @@
-fmt
-pybind11
-catch2
