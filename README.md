@@ -1,3 +1,5 @@
+[![pypi](https://badge.fury.io/py/signal-temporal-logic.svg)](https://badge.fury.io/py/signal-temporal-logic)
+
 # Signal Temporal Logic Monitoring
 
 This package provides an interface to define offline monitoring for Signal Temporal
