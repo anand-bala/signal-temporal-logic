@@ -43,7 +43,8 @@ add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/third_party)
 
 # Add library and module
 
-set(STL_SOURCES src/ast.cc src/classic_robustness.cc src/signal.cc)
+set(STL_SOURCES src/ast.cc src/classic_robustness.cc src/minmax.cc
+                src/signal.cc)
 
 add_library(signaltl ${STL_SOURCES})
 add_library(signal_tl::signal_tl ALIAS signaltl)

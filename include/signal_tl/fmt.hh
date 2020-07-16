@@ -4,32 +4,35 @@
 #define __SIGNAL_TEMPORAL_LOGIC_FMT_HH__
 
 #include <fmt/format.h>
-
-#include <cmath>
+#include <fmt/ostream.h>
 
 #include "signal_tl/ast.hh"
 #include "signal_tl/signal.hh"
 
+// NOTE(anand): This seems to fix the segfault that happens when formatting Expr. I have
+// no idea why...
+inline std::ostream& operator<<(std::ostream& os, const signal_tl::ast::Expr& expr) {
+  std::string s = std::visit([](const auto e) { return fmt::to_string(*e); }, expr);
+  return os << s;
+}
+
 template <>
-struct fmt::formatter<signal_tl::ast::Expr> : fmt::dynamic_formatter<> {
+struct fmt::formatter<signal_tl::ast::Expr> {
+  constexpr auto parse(format_parse_context& ctx) {
+    return ctx.begin();
+  }
+
   template <typename FormatContext>
-  auto format(const signal_tl::ast::Expr& v, FormatContext& ctx) {
+  auto format(const signal_tl::ast::Expr& expr, FormatContext& ctx) {
     return std::visit(
-        [&](const auto& val) { return dynamic_formatter<>::format(*val, ctx); }, v);
+        [&ctx](const auto& e) { return format_to(ctx.out(), "{}", *e); }, expr);
   }
 };
-
-inline constexpr auto default_parse(fmt::format_parse_context& ctx) {
-  auto it = ctx.begin(), end = ctx.end();
-  if (it != end && *it != '}')
-    throw fmt::format_error("invalid format");
-  return it;
-}
 
 template <>
 struct fmt::formatter<signal_tl::ast::Const> {
   constexpr auto parse(format_parse_context& ctx) {
-    return default_parse(ctx);
+    return ctx.begin();
   }
 
   template <typename FormatContext>
@@ -41,7 +44,7 @@ struct fmt::formatter<signal_tl::ast::Const> {
 template <>
 struct fmt::formatter<signal_tl::ast::Predicate> {
   constexpr auto parse(format_parse_context& ctx) {
-    return default_parse(ctx);
+    return ctx.begin();
   }
 
   template <typename FormatContext>
@@ -68,7 +71,7 @@ struct fmt::formatter<signal_tl::ast::Predicate> {
 template <>
 struct fmt::formatter<signal_tl::ast::Not> {
   constexpr auto parse(format_parse_context& ctx) {
-    return default_parse(ctx);
+    return ctx.begin();
   }
 
   template <typename FormatContext>
@@ -80,7 +83,7 @@ struct fmt::formatter<signal_tl::ast::Not> {
 template <>
 struct fmt::formatter<signal_tl::ast::And> {
   constexpr auto parse(format_parse_context& ctx) {
-    return default_parse(ctx);
+    return ctx.begin();
   }
 
   template <typename FormatContext>
@@ -92,7 +95,7 @@ struct fmt::formatter<signal_tl::ast::And> {
 template <>
 struct fmt::formatter<signal_tl::ast::Or> {
   constexpr auto parse(format_parse_context& ctx) {
-    return default_parse(ctx);
+    return ctx.begin();
   }
 
   template <typename FormatContext>
@@ -104,7 +107,7 @@ struct fmt::formatter<signal_tl::ast::Or> {
 template <>
 struct fmt::formatter<signal_tl::ast::Always> {
   constexpr auto parse(format_parse_context& ctx) {
-    return default_parse(ctx);
+    return ctx.begin();
   }
 
   template <typename FormatContext>
@@ -112,7 +115,7 @@ struct fmt::formatter<signal_tl::ast::Always> {
     if (e.interval.has_value()) {
       const auto [a, b] = e.interval.value();
       if (std::isinf(b)) {
-        return format_to(ctx.out(), "G {}", e.arg);
+        return format_to(ctx.out(), "G[{}, int) {}", a, e.arg);
       }
       return format_to(ctx.out(), "G[{},{}] {}", a, b, e.arg);
     }
@@ -123,7 +126,7 @@ struct fmt::formatter<signal_tl::ast::Always> {
 template <>
 struct fmt::formatter<signal_tl::ast::Eventually> {
   constexpr auto parse(format_parse_context& ctx) {
-    return default_parse(ctx);
+    return ctx.begin();
   }
 
   template <typename FormatContext>
@@ -131,7 +134,7 @@ struct fmt::formatter<signal_tl::ast::Eventually> {
     if (e.interval.has_value()) {
       const auto [a, b] = e.interval.value();
       if (std::isinf(b)) {
-        return format_to(ctx.out(), "F {}", e.arg);
+        return format_to(ctx.out(), "F[{}, inf] {}", a, e.arg);
       }
       return format_to(ctx.out(), "F[{},{}] {}", a, b, e.arg);
     }
@@ -142,7 +145,7 @@ struct fmt::formatter<signal_tl::ast::Eventually> {
 template <>
 struct fmt::formatter<signal_tl::ast::Until> {
   constexpr auto parse(format_parse_context& ctx) {
-    return default_parse(ctx);
+    return ctx.begin();
   }
 
   template <typename FormatContext>
@@ -151,9 +154,9 @@ struct fmt::formatter<signal_tl::ast::Until> {
     if (e.interval.has_value()) {
       const auto [a, b] = e.interval.value();
       if (std::isinf(b)) {
-        return format_to(ctx.out(), "{} U {}", e1, e2);
+        return format_to(ctx.out(), "{} U[{}, inf) {}", e1, a, e2);
       }
-      return format_to(ctx.out(), "{} U [{},{}] {}", e1, a, b, e2);
+      return format_to(ctx.out(), "{} U[{},{}] {}", e1, a, b, e2);
     }
     return format_to(ctx.out(), "{} U {}", e1, e2);
   }
@@ -162,7 +165,7 @@ struct fmt::formatter<signal_tl::ast::Until> {
 template <>
 struct fmt::formatter<signal_tl::signal::Sample> {
   constexpr auto parse(format_parse_context& ctx) {
-    return default_parse(ctx);
+    return ctx.begin();
   }
 
   template <typename FormatContext>
@@ -174,7 +177,7 @@ struct fmt::formatter<signal_tl::signal::Sample> {
 template <>
 struct fmt::formatter<signal_tl::signal::Signal> {
   constexpr auto parse(format_parse_context& ctx) {
-    return default_parse(ctx);
+    return ctx.begin();
   }
 
   template <typename FormatContext>

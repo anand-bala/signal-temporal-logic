@@ -1,6 +1,7 @@
 #include "signal_tl/signal.hh"
-#include "signal_tl/fmt.hh"
 #include "signal_tl/utils.hh"
+
+#include "signal_tl/fmt.hh"
 
 #include <algorithm>
 #include <cmath>

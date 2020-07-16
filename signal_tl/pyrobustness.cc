@@ -1,8 +1,10 @@
 #include "bindings.hh"
+#include "signal_tl/fmt.hh"
 #include "signal_tl/robustness.hh"
 
 #include <exception>
 
+using namespace signal_tl;
 using namespace semantics;
 using namespace signal;
 

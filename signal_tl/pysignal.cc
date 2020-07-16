@@ -1,5 +1,8 @@
 #include "bindings.hh"
+#include "signal_tl/fmt.hh"
 #include "signal_tl/signal.hh"
+
+using namespace signal_tl;
 
 void init_signal_module(py::module& parent) {
   using namespace signal;

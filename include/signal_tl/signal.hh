@@ -11,8 +11,6 @@
 #include <tuple>
 #include <vector>
 
-#include <fmt/core.h>
-
 namespace signal_tl {
 namespace signal {
 
@@ -227,10 +225,8 @@ struct Signal {
    */
   Signal(const std::vector<double>& points, const std::vector<double>& times) {
     if (points.size() != times.size()) {
-      throw std::invalid_argument(fmt::format(
-          "Number of sample points ({}) and time points ({}) need to be equal.",
-          points.size(),
-          times.size()));
+      throw std::invalid_argument(
+          "Number of sample points and time points need to be equal.");
     }
 
     size_t n = points.size();

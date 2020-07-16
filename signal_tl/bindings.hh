@@ -13,15 +13,8 @@
 
 #include <pybind11/operators.h>
 
-#include "signal_tl/fmt.hh"
-#include "signal_tl/signal_tl.hh"
-
 using namespace pybind11::literals;
 namespace py = pybind11;
-using namespace signal_tl;
-
-// PYBIND11_MAKE_OPAQUE(std::vector<signal::Sample>);
-// PYBIND11_MAKE_OPAQUE(std::map<std::string, signal::SignalPtr>);
 
 void init_ast_module(py::module&);
 void init_signal_module(py::module&);

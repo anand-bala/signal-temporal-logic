@@ -1,11 +1,12 @@
 #include "bindings.hh"
+#include "signal_tl/exception.hh"
 
 PYBIND11_MODULE(_cext, m) {
   py::register_exception_translator([](std::exception_ptr p) {
     try {
       if (p)
         std::rethrow_exception(p);
-    } catch (const not_implemented_error& e) {
+    } catch (const signal_tl::not_implemented_error& e) {
       PyErr_SetString(PyExc_NotImplementedError, e.what());
     }
   });

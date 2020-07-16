@@ -1,6 +1,8 @@
 #include "bindings.hh"
 #include "signal_tl/ast.hh"
+#include "signal_tl/fmt.hh"
 
+using namespace signal_tl;
 namespace {
 
 template <typename T>

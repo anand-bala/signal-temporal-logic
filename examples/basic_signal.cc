@@ -4,6 +4,8 @@
 #include "signal_tl/fmt.hh"
 #include "signal_tl/signal.hh"
 
+#include <fmt/format.h>
+
 using namespace signal_tl::signal;
 
 int main() {

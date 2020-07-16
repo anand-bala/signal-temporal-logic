@@ -1,14 +1,15 @@
 #include "signal_tl/fmt.hh"
 #include "signal_tl/signal_tl.hh"
 
-#include <iomanip>
-#include <iostream>
+#include <fmt/format.h>
 
 namespace stl = signal_tl;
 using namespace signal_tl::signal;
 
 int main() {
   const auto phi = stl::Predicate::as_expr("a") | stl::Predicate::as_expr("b");
+
+  fmt::print("phi := {}\n", phi);
 
   auto xs = std::make_shared<Signal>(
       std::vector<double>{0, 2, 1, -2, -1}, std::vector<double>{0, 2.5, 4.5, 6.5, 9});

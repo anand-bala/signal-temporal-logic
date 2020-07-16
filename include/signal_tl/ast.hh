@@ -232,4 +232,5 @@ Expr operator~(const Expr& expr);
 
 } // namespace ast
 } // namespace signal_tl
+
 #endif
