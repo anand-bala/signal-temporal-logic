@@ -1,18 +1,27 @@
 cmake_minimum_required(VERSION 3.5.0)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+file(
+  STRINGS ${CMAKE_CURRENT_LIST_DIR}/VERSION signal_tl_VERSION
+  LIMIT_COUNT 1
+  REGEX
+    "^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(-[.0-9A-Za-z-]+)?([+][.0-9A-Za-z-]+)?$"
+)
+
 project(
   signal_tl
-  VERSION 0.1.1
+  VERSION ${signal_tl_VERSION}
   DESCRIPTION
     "A library for efficiently working with Signal Temporal Logic (STL) and its quantitative semantics"
   LANGUAGES CXX)
+
+message(STATUS "signal_tl: v${signal_tl_VERSION}")
 
 # Check if signaltl is being used directly or via add_subdirectory
 set(SIGNALTL_MASTER_PROJECT OFF)
 if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(SIGNALTL_MASTER_PROJECT ON)
 endif()
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 include(CMakePrintHelpers)
 include(GNUInstallDirs)

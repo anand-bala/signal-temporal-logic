@@ -1,7 +1,7 @@
 global-exclude __pycache__
 global-exclude *.py[co]
 
-include README.md LICENSE LICENSE-3rdParty MANIFEST.in 
+include README.md LICENSE LICENSE-3rdParty MANIFEST.in VERSION
 global-include *.md
 global-include CMakeLists.txt *.cmake
 
