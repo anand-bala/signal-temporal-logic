@@ -17,10 +17,47 @@ namespace ast {
 
 /* Define Syntax Tree */
 
-struct Const;
+struct Const {
+  bool value;
+
+  // TODO: pybind11 doesn't like deleted default constructors
+  // Const() = delete;
+  Const(bool value) : value{value} {};
+
+  inline bool operator==(const Const& other) const {
+    return this->value == other.value;
+  };
+
+  inline bool operator!=(const Const& other) const {
+    return !(*this == other);
+  };
+};
 using ConstPtr = std::shared_ptr<Const>;
-struct Predicate;
+
+enum class ComparisonOp { GT, GE, LT, LE };
+
+struct Predicate {
+  std::string name;
+  ComparisonOp op = ComparisonOp::GE;
+  double lhs      = 0.0;
+
+  // Predicate() = delete;
+  Predicate(
+      const std::string& name,
+      const ComparisonOp op = ComparisonOp::GE,
+      const double lhs      = 0.0) :
+      name{name}, op{op}, lhs{lhs} {};
+
+  inline bool operator==(const Predicate& other) const {
+    return (name == other.name) && (op == other.op) && (lhs == other.lhs);
+  };
+
+  inline bool operator!=(const Predicate& other) const {
+    return !(*this == other);
+  };
+};
 using PredicatePtr = std::shared_ptr<Predicate>;
+
 struct Not;
 using NotPtr = std::shared_ptr<Not>;
 struct And;
@@ -35,8 +72,8 @@ struct Until;
 using UntilPtr = std::shared_ptr<Until>;
 
 using Expr = std::variant<
-    ConstPtr,
-    PredicatePtr,
+    Const,
+    Predicate,
     NotPtr,
     AndPtr,
     OrPtr,
@@ -45,118 +82,45 @@ using Expr = std::variant<
     UntilPtr>;
 using ExprPtr = std::shared_ptr<Expr>;
 
-/* Atomic Predicates and Constants */
-
-struct Const {
-  const bool value;
-
-  Const() = delete;
-  Const(bool value) : value(value) {}
-
-  static Expr as_expr(bool value) {
-    return Expr(std::make_shared<Const>(value));
-  };
-};
-
-enum class ComparisonOp { GT, GE, LT, LE };
-
-struct Predicate {
-  const std::string name;
-  const ComparisonOp op = ComparisonOp::GE;
-  const double lhs      = 0.0;
-
-  Predicate() = delete;
-  Predicate(const std::string& name) : name{name}, op{ComparisonOp::GE}, lhs{0.0} {}
-  Predicate(const std::string& name, const ComparisonOp op, const double lhs) :
-      name{name}, op{op}, lhs{lhs} {};
-
-  static Expr as_expr(const std::string& name) {
-    return Expr(std::make_shared<Predicate>(name));
-  };
-
-  static Expr
-  as_expr(const std::string& name, const ComparisonOp op, const double lhs) {
-    return Expr(std::make_shared<Predicate>(name, op, lhs));
-  };
-
-  friend Expr operator>(const PredicatePtr& rhs, const double lhs) {
-    return Predicate::as_expr(rhs->name, ComparisonOp::GT, lhs);
-  };
-  friend Expr operator>=(const PredicatePtr& rhs, const double lhs) {
-    return Predicate::as_expr(rhs->name, ComparisonOp::GE, lhs);
-  };
-  friend Expr operator<(const PredicatePtr& rhs, const double lhs) {
-    return Predicate::as_expr(rhs->name, ComparisonOp::LT, lhs);
-  };
-  friend Expr operator<=(const PredicatePtr& rhs, const double lhs) {
-    return Predicate::as_expr(rhs->name, ComparisonOp::LE, lhs);
-  };
-};
-
-/* Propositional Logic */
-
 struct Not {
-  const Expr arg;
+  Expr arg;
 
-  Not() = delete;
+  // Not() = delete;
   Not(const Expr& arg) : arg(arg) {}
-
-  static Expr as_expr(const Expr& arg) {
-    if (auto cval = std::get_if<ConstPtr>(&arg)) {
-      return Expr(std::make_shared<Const>(!(*cval)->value));
-    } else if (auto not_ = std::get_if<NotPtr>(&arg)) {
-      return Expr((*not_)->arg);
-    }
-    return Expr(std::make_shared<Not>(arg));
-  };
 };
 
 struct And {
-  const std::vector<Expr> args;
+  std::vector<Expr> args;
 
-  And() = delete;
+  // And() = delete;
   And(const std::vector<Expr>& args) : args(args) {
     if (args.size() < 2) {
       throw std::invalid_argument(
           "It doesn't make sense to have an And operator with < 2 operands");
     }
   }
-
-  static Expr as_expr(const std::vector<Expr>& args) {
-    if (args.size() == 1) {
-      return args[0];
-    }
-    return Expr(std::make_shared<And>(args));
-  };
 };
 
 struct Or {
-  const std::vector<Expr> args;
+  std::vector<Expr> args;
 
-  Or() = delete;
+  // Or() = delete;
   Or(const std::vector<Expr>& args) : args(args) {
     if (args.size() < 2) {
       throw std::invalid_argument(
           "It doesn't make sense to have an Or operator with < 2 operands");
     }
   }
-
-  static Expr as_expr(const std::vector<Expr>& args) {
-    if (args.size() == 1) {
-      return args[0];
-    }
-    return Expr(std::make_shared<Or>(args));
-  };
 };
 
 /* Modal Logic */
 using Interval = std::pair<double, double>;
 
 struct Always {
-  const Expr arg;
-  const std::optional<Interval> interval;
+  Expr arg;
+  std::optional<Interval> interval;
 
-  Always() = delete;
+  // Always() = delete;
   Always(const Expr& arg, const std::optional<Interval> interval = std::nullopt) :
       arg(arg), interval(interval) {
     if (interval.has_value()) {
@@ -168,18 +132,13 @@ struct Always {
       }
     }
   }
-
-  static Expr
-  as_expr(const Expr& arg, const std::optional<Interval> interval = std::nullopt) {
-    return Expr(std::make_shared<Always>(arg, interval));
-  };
 };
 
 struct Eventually {
-  const Expr arg;
-  const std::optional<Interval> interval;
+  Expr arg;
+  std::optional<Interval> interval;
 
-  Eventually() = delete;
+  // Eventually() = delete;
   Eventually(const Expr& arg, const std::optional<Interval> interval = std::nullopt) :
       arg(arg), interval(interval) {
     if (interval.has_value()) {
@@ -191,18 +150,13 @@ struct Eventually {
       }
     }
   }
-
-  static Expr
-  as_expr(const Expr& arg, const std::optional<Interval> interval = std::nullopt) {
-    return Expr(std::make_shared<Eventually>(arg, interval));
-  };
 };
 
 struct Until {
-  const std::pair<Expr, Expr> args;
-  const std::optional<Interval> interval;
+  std::pair<Expr, Expr> args;
+  std::optional<Interval> interval;
 
-  Until() = delete;
+  // Until() = delete;
   Until(
       const Expr& arg0,
       const Expr& arg1,
@@ -217,20 +171,39 @@ struct Until {
       }
     }
   }
-
-  static Expr as_expr(
-      const Expr& arg0,
-      const Expr& arg1,
-      const std::optional<Interval> interval = std::nullopt) {
-    return Expr(std::make_shared<Until>(arg0, arg1, interval));
-  };
 };
 
+Predicate operator>(const Predicate& lhs, const double bound);
+Predicate operator>=(const Predicate& lhs, const double bound);
+Predicate operator<(const Predicate& lhs, const double bound);
+Predicate operator<=(const Predicate& lhs, const double bound);
+
+Expr operator~(const Expr& e);
 Expr operator&(const Expr& lhs, const Expr& rhs);
 Expr operator|(const Expr& lhs, const Expr& rhs);
-Expr operator~(const Expr& expr);
+Expr operator>>(const Expr& lhs, const Expr& rhs);
 
 } // namespace ast
+
+using ast::Expr;
+
+ast::Const Const(bool value);
+ast::Predicate Predicate(const std::string& name);
+ast::Expr Not(const ast::Expr& arg);
+ast::Expr And(const std::vector<ast::Expr>& args);
+ast::Expr Or(const std::vector<ast::Expr>& args);
+ast::Expr Implies(const ast::Expr& arg1, const ast::Expr& arg2);
+ast::Expr Always(
+    const ast::Expr& arg,
+    const std::optional<ast::Interval> interval = std::nullopt);
+ast::Expr Eventually(
+    const ast::Expr& arg,
+    const std::optional<ast::Interval> interval = std::nullopt);
+ast::Expr Until(
+    const ast::Expr& arg1,
+    const ast::Expr& arg2,
+    const std::optional<ast::Interval> interval = std::nullopt);
+
 } // namespace signal_tl
 
 #endif

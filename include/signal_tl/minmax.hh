@@ -18,17 +18,17 @@ signal::SignalPtr compute_minmax_pair(
     const signal::SignalPtr input_x,
     const signal::SignalPtr input_y,
     Compare comp,
-    bool synchronized);
+    bool synchronized = false);
 
 signal::SignalPtr compute_elementwise_min(
     const signal::SignalPtr x,
     const signal::SignalPtr y,
-    bool synchronized);
+    bool synchronized = false);
 
 signal::SignalPtr compute_elementwise_max(
     const signal::SignalPtr x,
     const signal::SignalPtr y,
-    bool synchronized);
+    bool synchronized = false);
 
 /**
  * Compute the element-wise minimum/maximum (depending on value of Compare) between
@@ -38,13 +38,15 @@ template <typename Compare>
 signal::SignalPtr compute_minmax_pair(
     const std::vector<signal::SignalPtr>& xs,
     Compare comp,
-    bool synchronized);
+    bool synchronized = false);
 
-signal::SignalPtr
-compute_elementwise_min(const std::vector<signal::SignalPtr>& xs, bool synchronized);
+signal::SignalPtr compute_elementwise_min(
+    const std::vector<signal::SignalPtr>& xs,
+    bool synchronized = false);
 
-signal::SignalPtr
-compute_elementwise_max(const std::vector<signal::SignalPtr>& xs, bool synchronized);
+signal::SignalPtr compute_elementwise_max(
+    const std::vector<signal::SignalPtr>& xs,
+    bool synchronized = false);
 
 /**
  * Compute the rolling min/max of a signal, i.e., at time t, the min/max value is the

@@ -9,7 +9,6 @@
 #include "signal_tl/signal.hh"
 
 namespace signal_tl {
-using namespace ast;
 using namespace signal;
 using namespace semantics;
 } // namespace signal_tl

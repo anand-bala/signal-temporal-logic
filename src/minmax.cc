@@ -40,7 +40,7 @@ SignalPtr compute_minmax_pair(
   for (auto [i, j] = std::make_tuple(x->begin(), y->begin());
        i != x->end() && j != y->end();
        i++, j++) {
-    if (comp(i->value, j->value)) {
+    if (comp(*i, *j)) {
       if (last_chosen == Chosen::Y) {
         double intercept_time = std::prev(j)->time_intersect(*std::prev(i));
         if (intercept_time > out->end_time()) {
@@ -75,6 +75,8 @@ compute_minmax_pair(const std::vector<SignalPtr>& xs, Compare comp, bool synchro
     return out;
   } else if (xs.size() == 1) {
     return xs.at(0);
+  } else if (xs.size() == 2) {
+    return compute_minmax_pair(xs[0], xs[1], comp, synchronized);
   }
 
   // TODO(anand): Parallel execution policy?
@@ -90,14 +92,14 @@ compute_minmax_pair(const std::vector<SignalPtr>& xs, Compare comp, bool synchro
 
 template <typename Compare>
 SignalPtr compute_minmax_seq(const SignalPtr x, Compare comp) {
-  double opt = x->back().value;
-  auto z     = std::vector<Sample>{};
+  auto opt = x->back();
+  auto z   = std::vector<Sample>{};
   z.reserve(2 * x->size());
   z.push_back(x->back());
 
   for (auto i = std::next(x->rbegin()); i != x->rend(); i++) {
-    opt = (comp(i->value, opt)) ? i->value : opt;
-    z.push_back({i->time, opt});
+    opt = (comp(*i, opt)) ? *i : opt;
+    z.push_back({i->time, opt.value});
   }
 
   std::reverse(z.begin(), z.end());
@@ -145,28 +147,28 @@ SignalPtr compute_minmax_seq(const SignalPtr x, double a, double b, Compare comp
 
 SignalPtr
 compute_elementwise_min(const SignalPtr x, const SignalPtr y, bool synchronized) {
-  return compute_minmax_pair(x, y, std::less_equal<double>(), synchronized);
+  return compute_minmax_pair(x, y, std::less_equal<Sample>(), synchronized);
 }
 
 SignalPtr
 compute_elementwise_max(const SignalPtr x, const SignalPtr y, bool synchronized) {
-  return compute_minmax_pair(x, y, std::greater_equal<double>(), synchronized);
+  return compute_minmax_pair(x, y, std::greater_equal<Sample>(), synchronized);
 }
 
 SignalPtr compute_elementwise_min(const std::vector<SignalPtr>& xs, bool synchronized) {
-  return compute_minmax_pair(xs, std::less_equal<double>(), synchronized);
+  return compute_minmax_pair(xs, std::less_equal<Sample>(), synchronized);
 }
 
 SignalPtr compute_elementwise_max(const std::vector<SignalPtr>& xs, bool synchronized) {
-  return compute_minmax_pair(xs, std::greater_equal<double>(), synchronized);
+  return compute_minmax_pair(xs, std::greater_equal<Sample>(), synchronized);
 }
 
 SignalPtr compute_max_seq(const SignalPtr x) {
-  return compute_minmax_seq(x, std::greater_equal<double>());
+  return compute_minmax_seq(x, std::greater_equal<Sample>());
 }
 
 SignalPtr compute_min_seq(const SignalPtr x) {
-  return compute_minmax_seq(x, std::less_equal<double>());
+  return compute_minmax_seq(x, std::less_equal<Sample>());
 }
 
 SignalPtr compute_max_seq(const SignalPtr x, double a, double b) {

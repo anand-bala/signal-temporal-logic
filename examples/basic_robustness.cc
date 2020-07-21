@@ -7,7 +7,7 @@ namespace stl = signal_tl;
 using namespace signal_tl::signal;
 
 int main() {
-  const auto phi = stl::Predicate::as_expr("a") | stl::Predicate::as_expr("b");
+  const auto phi = stl::Predicate("a") | stl::Predicate("b");
 
   fmt::print("phi := {}\n", phi);
 

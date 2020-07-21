@@ -24,10 +24,8 @@ namespace {
 constexpr double TOP    = std::numeric_limits<double>::infinity();
 constexpr double BOTTOM = -TOP;
 
-SignalPtr
-compute_until(const SignalPtr input_x, const SignalPtr input_y, bool synchronized) {
-  const auto [x, y] = (synchronized) ? std::make_tuple(input_x, input_y)
-                                     : synchronize(input_x, input_y);
+SignalPtr compute_until(const SignalPtr input_x, const SignalPtr input_y) {
+  const auto [x, y] = synchronize(input_x, input_y);
   assert(x->size() == y->size());
   assert(x->begin_time() == y->begin_time());
   assert(x->end_time() == y->end_time());
@@ -51,29 +49,45 @@ compute_until(const SignalPtr input_x, const SignalPtr input_y, bool synchronize
   return out;
 }
 
-SignalPtr compute_until(
-    const SignalPtr x,
-    const SignalPtr y,
-    double a,
-    double b,
-    bool synchronized) {
+SignalPtr compute_until(const SignalPtr x, const SignalPtr y, double a, double b) {
   throw not_implemented_error("Bounded compute_until has not been implemented yet.");
 }
 
 struct RobustnessOp {
-  const double min_time;
-  const double max_time;
-  const Trace& trace;
-  const bool synchronized;
-  SignalPtr operator()(const ast::ConstPtr e);
-  SignalPtr operator()(const ast::PredicatePtr e);
-  SignalPtr operator()(const ast::NotPtr e);
-  SignalPtr operator()(const ast::AndPtr e);
-  SignalPtr operator()(const ast::OrPtr e);
-  SignalPtr operator()(const ast::EventuallyPtr e);
-  SignalPtr operator()(const ast::AlwaysPtr e);
-  SignalPtr operator()(const ast::UntilPtr e);
+  double min_time = 0.0;
+  double max_time = std::numeric_limits<double>::infinity();
+  Trace trace     = {};
+
+  SignalPtr operator()(const ast::Const e) const;
+  SignalPtr operator()(const ast::Predicate e) const;
+  SignalPtr operator()(const ast::NotPtr e) const;
+  SignalPtr operator()(const ast::AndPtr e) const;
+  SignalPtr operator()(const ast::OrPtr e) const;
+  SignalPtr operator()(const ast::EventuallyPtr e) const;
+  SignalPtr operator()(const ast::AlwaysPtr e) const;
+  SignalPtr operator()(const ast::UntilPtr e) const;
 };
+
+SignalPtr compute(const ast::Expr phi, const RobustnessOp& rob) {
+  if (auto eptr = std::get_if<ast::Const>(&phi)) {
+    return rob(*eptr);
+  } else if (auto eptr = std::get_if<ast::Predicate>(&phi)) {
+    return rob(*eptr);
+  } else if (auto eptr = std::get_if<ast::NotPtr>(&phi)) {
+    return rob(*eptr);
+  } else if (auto eptr = std::get_if<ast::AndPtr>(&phi)) {
+    return rob(*eptr);
+  } else if (auto eptr = std::get_if<ast::OrPtr>(&phi)) {
+    return rob(*eptr);
+  } else if (auto eptr = std::get_if<ast::AlwaysPtr>(&phi)) {
+    return rob(*eptr);
+  } else if (auto eptr = std::get_if<ast::EventuallyPtr>(&phi)) {
+    return rob(*eptr);
+  } else if (auto eptr = std::get_if<ast::UntilPtr>(&phi)) {
+    return rob(*eptr);
+  }
+  return {};
+}
 
 } // namespace
 
@@ -98,72 +112,73 @@ SignalPtr compute_robustness<Semantics::CLASSIC>(
   double min_time = minmaxtime.begin;
   double max_time = minmaxtime.end;
 
-  SignalPtr out =
-      std::visit(RobustnessOp{min_time, max_time, trace, synchronized}, phi);
+  auto rob = RobustnessOp{min_time, max_time, trace};
+
+  SignalPtr out = compute(phi, rob);
 
   return out;
 }
 
-SignalPtr RobustnessOp::operator()(const ast::ConstPtr e) {
-  double val   = (e->value) ? TOP : BOTTOM;
+SignalPtr RobustnessOp::operator()(const ast::Const e) const {
+  double val   = (e.value) ? TOP : BOTTOM;
   auto samples = std::vector<Sample>{{min_time, val, 0.0}, {max_time, val, 0.0}};
   return std::make_shared<Signal>(samples);
 }
 
-SignalPtr RobustnessOp::operator()(const ast::PredicatePtr e) {
-  const auto& x = trace.at(e->name);
+SignalPtr RobustnessOp::operator()(const ast::Predicate e) const {
+  const auto& x = trace.at(e.name);
   auto y        = std::make_shared<Signal>();
   for (const auto [t, v, d] : *x) {
-    switch (e->op) {
+    switch (e.op) {
       case ast::ComparisonOp::GE:
-        y->push_back(t, v - e->lhs);
+        y->push_back(t, v - e.lhs);
         break;
       case ast::ComparisonOp::GT:
-        y->push_back(t, v - e->lhs);
+        y->push_back(t, v - e.lhs);
         break;
       case ast::ComparisonOp::LE:
-        y->push_back(t, e->lhs - v);
+        y->push_back(t, e.lhs - v);
         break;
       case ast::ComparisonOp::LT:
-        y->push_back(t, e->lhs - v);
+        y->push_back(t, e.lhs - v);
         break;
     }
   }
   return y;
 }
 
-SignalPtr RobustnessOp::operator()(const ast::NotPtr e) {
-  auto x   = compute_robustness<Semantics::CLASSIC>(e->arg, trace);
+SignalPtr RobustnessOp::operator()(const ast::NotPtr e) const {
+  auto x   = compute(e->arg, *this);
   auto vec = std::vector<Sample>{};
   vec.reserve(x->size());
   std::transform(x->begin(), x->end(), std::back_inserter(vec), std::negate<Sample>());
   return std::make_shared<Signal>(vec);
 }
 
-SignalPtr RobustnessOp::operator()(const ast::AndPtr e) {
+SignalPtr RobustnessOp::operator()(const ast::AndPtr e) const {
   auto ys = std::vector<SignalPtr>{};
   ys.reserve(e->args.size());
   std::transform(
       e->args.begin(), e->args.end(), std::back_inserter(ys), [this](const auto arg) {
-        return compute_robustness<Semantics::CLASSIC>(arg, this->trace);
+        return compute(arg, *this);
       });
   assert(ys.size() == e->args.size());
-  return compute_elementwise_min(ys, this->synchronized);
+  return compute_elementwise_min(ys);
 }
 
-SignalPtr RobustnessOp::operator()(const ast::OrPtr e) {
+SignalPtr RobustnessOp::operator()(const ast::OrPtr e) const {
   auto ys = std::vector<SignalPtr>{};
   ys.reserve(e->args.size());
   std::transform(
       e->args.begin(), e->args.end(), std::back_inserter(ys), [this](const auto arg) {
-        return compute_robustness<Semantics::CLASSIC>(arg, this->trace);
+        return compute(arg, *this);
       });
   assert(ys.size() == e->args.size());
-  return compute_elementwise_max(ys, this->synchronized);
+  return compute_elementwise_max(ys);
 }
 
-SignalPtr RobustnessOp::operator()(const ast::EventuallyPtr e) {
-  auto y = compute_robustness<Semantics::CLASSIC>(e->arg, trace);
+SignalPtr RobustnessOp::operator()(const ast::EventuallyPtr e) const {
+  auto y = compute(e->arg, *this);
   if (!e->interval.has_value()) {
     return compute_max_seq(y);
   }
@@ -180,8 +195,8 @@ SignalPtr RobustnessOp::operator()(const ast::EventuallyPtr e) {
   }
 }
 
-SignalPtr RobustnessOp::operator()(const ast::AlwaysPtr e) {
-  auto y = compute_robustness<Semantics::CLASSIC>(e->arg, trace);
+SignalPtr RobustnessOp::operator()(const ast::AlwaysPtr e) const {
+  auto y = compute(e->arg, *this);
   if (!e->interval.has_value()) {
     return compute_min_seq(y);
   }
@@ -198,18 +213,18 @@ SignalPtr RobustnessOp::operator()(const ast::AlwaysPtr e) {
   }
 }
 
-SignalPtr RobustnessOp::operator()(const ast::UntilPtr e) {
-  auto y1 = compute_robustness<Semantics::CLASSIC>(e->args.first, trace);
-  auto y2 = compute_robustness<Semantics::CLASSIC>(e->args.second, trace);
+SignalPtr RobustnessOp::operator()(const ast::UntilPtr e) const {
+  auto y1 = compute(e->args.first, *this);
+  auto y2 = compute(e->args.second, *this);
   if (!e->interval.has_value()) {
-    return compute_until(y1, y2, this->synchronized);
+    return compute_until(y1, y2);
   }
 
   const auto [a, b] = *(e->interval);
   if (std::isinf(b) && a == 0) {
-    return compute_until(y1, y2, this->synchronized);
+    return compute_until(y1, y2);
   } else {
-    return compute_until(y1, y2, a, b, this->synchronized);
+    return compute_until(y1, y2, a, b);
   }
 }
 
