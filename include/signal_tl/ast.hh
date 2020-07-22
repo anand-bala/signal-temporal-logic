@@ -18,10 +18,10 @@ namespace ast {
 /* Define Syntax Tree */
 
 struct Const {
-  bool value;
+  bool value = false;
 
   // TODO: pybind11 doesn't like deleted default constructors
-  // Const() = delete;
+  Const() = default;
   Const(bool value) : value{value} {};
 
   inline bool operator==(const Const& other) const {

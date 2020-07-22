@@ -3,10 +3,13 @@
 
 #include <fmt/format.h>
 
+#include <catch2/catch.hpp>
+
 namespace stl = signal_tl;
 using namespace signal_tl::signal;
 using signal_tl::ast::Expr;
 
+namespace {
 Expr get_phi() {
   auto theta1 = stl::Predicate("theta") <= 1.0;
   auto theta2 = stl::Predicate("theta") < 0.25;
@@ -56,15 +59,13 @@ Trace get_trace() {
                {"x", std::make_shared<Signal>(x, t)},
                {"x_dot", std::make_shared<Signal>(x_dot, t)}};
 }
+} // namespace
 
-int main() {
-  const auto phi = get_phi();
-  fmt::print("phi := {}\n", phi);
-
+TEST_CASE(
+    "Computing robustness does not mess up the timestamps",
+    "[signal][robustness]") {
+  const auto phi   = get_phi();
   const auto trace = get_trace();
 
-  auto rob = stl::compute_robustness(phi, trace, true);
-  fmt::print("robustness at time 0 = {}", rob->at(0.0).value);
-
-  return 0;
+  REQUIRE_NOTHROW(stl::compute_robustness(phi, trace, true));
 }
