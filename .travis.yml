@@ -1,6 +1,7 @@
 language: cpp
 dist: bionic
-compiler: gcc
+compiler: clang
+python: "3.6"
 
 branches:
   only:
