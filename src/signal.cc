@@ -40,8 +40,9 @@ void Signal::push_back(Sample sample) {
           this->end_time(),
           sample));
     }
-    const auto [t, v, d] = this->samples.back();
-    auto& last           = this->samples.back();
+    const auto t = this->samples.back().time;
+    const auto v = this->samples.back().value;
+    auto& last   = this->samples.back();
 
     last.derivative = (sample.value - v) / (sample.time - t);
   }
@@ -79,7 +80,7 @@ SignalPtr Signal::resize(double start, double end, double fill) const {
 
   // Truncate the discard all samples where sample.time < start
   for (auto i = this->begin(); i != this->end(); i++) {
-    const auto [t, v, d] = *i;
+    const double t = i->time;
     // If current sample is timed below start, ...
     if (std::next(i) != this->end() && std::next(i)->time > start) {
       // and next sample is timed after `start`, append an intermediate value
