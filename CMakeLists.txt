@@ -52,7 +52,25 @@ include(ThirdPartyLibs)
 add_subdirectory(third_party)
 
 # Add library and module
-add_subdirectory(src)
+set(STL_SOURCES src/ast.cc src/classic_robustness.cc src/minmax.cc
+                src/signal.cc)
+
+add_library(signaltl ${STL_SOURCES})
+add_library(signal_tl::signal_tl ALIAS signaltl)
+target_include_directories(
+  signaltl PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+                  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+target_compile_features(signaltl PUBLIC cxx_std_17)
+target_link_libraries(signaltl PRIVATE mono_wedge::mono_wedge)
+target_link_libraries(signaltl PUBLIC fmt::fmt)
+set_target_properties(signaltl PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if(MSVC)
+  target_compile_options(signaltl PRIVATE /W4 /WX /utf-8)
+else()
+  target_compile_options(signaltl PRIVATE -pedantic -Wall -Wextra -Werror)
+endif()
+
+# if(SIGNALTL_COVERAGE) add_coverage(signaltl) endif()
 
 if(SIGNALTL_PYTHON_BINDINGS)
   set(BINDINGS_SOURCES signal_tl/pyast.cc signal_tl/pyrobustness.cc
