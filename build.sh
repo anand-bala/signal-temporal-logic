@@ -17,3 +17,4 @@ cmake --build . --config Debug -- -j $(nproc)
 # Test
 ctest -j $(nproc) --output-on-failure
 
+cmake --build . --config Debug --target gcov
