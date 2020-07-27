@@ -29,10 +29,13 @@ jobs:
     pool:
       vmImage: '$(VM_IMAGE)'
     steps:
+      - checkout: self
+        submodules: recursive
       - task: UsePythonVersion@0
         inputs:
           versionSpec: '$(PYTHON_VERSION)'
-      - template: ci/install-deps.yml
+      - script: python -m pip install --upgrade pip setuptools wheel cibuildwheel
+        displayName: Install Python pip tools
       - script: python -m pip wheel -w wheelhouse .
         displayName: Build wheel
       - task: PublishBuildArtifacts@1

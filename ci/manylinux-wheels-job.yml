@@ -10,10 +10,9 @@ jobs:
     steps:
       - checkout: self
         submodules: recursive
+      - task: UsePythonVersion@0
       - script: python -m pip install --upgrade pip setuptools wheel cibuildwheel
         displayName: Install Python pip tools
-      - task: UsePythonVersion@0
-      - template: ci/install-deps.yml
       - script: python -m cibuildwheel --output-dir wheelhouse .
         displayName: Build wheel
       - task: PublishBuildArtifacts@1
