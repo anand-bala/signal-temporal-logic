@@ -16,7 +16,7 @@ before_install:
 - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo apt-key add -
 - sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
 - sudo apt-get -q update
-- sudo apt-get -y install cmake
+- sudo apt-get -y install cmake lcov
 
 script: ./build.sh
 

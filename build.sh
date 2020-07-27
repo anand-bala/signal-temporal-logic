@@ -4,6 +4,8 @@ set -euo pipefail
 
 mkdir -p build && cd build
 
+cmake --version
+
 # Configure
 cmake -DSIGNALTL_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug \
   -DPYTHON_EXECUTABLE=$(python-config --prefix)/bin/python3.6 \
