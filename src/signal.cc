@@ -8,6 +8,8 @@
 #include <iterator>
 #include <numeric>
 
+#include <cassert>
+
 namespace signal_tl {
 namespace signal {
 
@@ -117,7 +119,6 @@ std::tuple<std::shared_ptr<Signal>, std::shared_ptr<Signal>>
 synchronize(const std::shared_ptr<Signal>& x, const std::shared_ptr<Signal>& y) {
   const double begin_time = std::max(x->begin_time(), y->begin_time());
   const double end_time   = std::min(x->end_time(), y->end_time());
-  const size_t n          = 4 * std::max(x->size(), y->size());
 
   // These will store the new series of Samples, containing a sample for every
   // time instance in x and y, and the time points where they intersect.
@@ -170,6 +171,9 @@ synchronize(const std::shared_ptr<Signal>& x, const std::shared_ptr<Signal>& y) 
   if (const double t = yv.back().time; xv.back().time < t) {
     xv.push_back(Sample{yv.back().time, xv.back().interpolate(t)});
   }
+
+  assert(xv.back().time == end_time);
+  assert(yv.back().time == end_time);
 
   return std::make_tuple(std::make_shared<Signal>(xv), std::make_shared<Signal>(yv));
 }

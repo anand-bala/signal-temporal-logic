@@ -49,7 +49,7 @@ SignalPtr compute_until(const SignalPtr input_x, const SignalPtr input_y) {
   return out;
 }
 
-SignalPtr compute_until(const SignalPtr x, const SignalPtr y, double a, double b) {
+SignalPtr compute_until(const SignalPtr, const SignalPtr, double, double) {
   throw not_implemented_error("Bounded compute_until has not been implemented yet.");
 }
 
@@ -80,7 +80,7 @@ template <>
 SignalPtr compute_robustness<Semantics::CLASSIC>(
     const ast::Expr phi,
     const signal::Trace& trace,
-    bool synchronized) {
+    bool) {
   // Compute the start and end of the trace.
   struct MinMaxTime {
     double begin{TOP};

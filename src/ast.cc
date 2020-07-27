@@ -9,19 +9,19 @@ namespace ast {
 
 Predicate operator>(const Predicate& lhs, const double bound) {
   return Predicate{lhs.name, ComparisonOp::GT, bound};
-};
+}
 
 Predicate operator>=(const Predicate& lhs, const double bound) {
   return Predicate{lhs.name, ComparisonOp::GE, bound};
-};
+}
 
 Predicate operator<(const Predicate& lhs, const double bound) {
   return Predicate{lhs.name, ComparisonOp::LT, bound};
-};
+}
 
 Predicate operator<=(const Predicate& lhs, const double bound) {
   return Predicate{lhs.name, ComparisonOp::LE, bound};
-};
+}
 
 using utils::overloaded;
 
@@ -78,11 +78,11 @@ Expr operator&(const Expr& lhs, const Expr& rhs) {
 
 Expr operator|(const Expr& lhs, const Expr& rhs) {
   if (const auto e_ptr = std::get_if<Const>(&lhs)) {
-    return (e_ptr->value) ? rhs : *e_ptr;
-  } else if (const AndPtr* e_ptr = std::get_if<AndPtr>(&lhs)) {
-    return AndHelper(*e_ptr, rhs);
+    return (!e_ptr->value) ? rhs : *e_ptr;
+  } else if (const OrPtr* e_ptr = std::get_if<OrPtr>(&lhs)) {
+    return OrHelper(*e_ptr, rhs);
   }
-  return std::make_shared<And>(std::vector{lhs, rhs});
+  return std::make_shared<Or>(std::vector{lhs, rhs});
 }
 
 Expr operator~(const Expr& expr) {

@@ -8,3 +8,6 @@
 [submodule "third_party/Catch2"]
 	path = third_party/Catch2
 	url = https://github.com/catchorg/Catch2
+[submodule "third_party/CMake-codecov"]
+	path = third_party/CMake-codecov
+	url = git://github.com/RWTH-HPC/CMake-codecov.git

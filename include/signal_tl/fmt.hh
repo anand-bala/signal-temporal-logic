@@ -163,7 +163,7 @@ struct fmt::formatter<signal_tl::ast::Expr>
                                        return format_to(ctx.out(), "{}", *e);
                                      }},
         expr);
-  };
+  }
 };
 
 template <>

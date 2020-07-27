@@ -1,16 +1,9 @@
 cmake_minimum_required(VERSION 3.5.0)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-file(
-  STRINGS ${CMAKE_CURRENT_LIST_DIR}/VERSION signal_tl_VERSION
-  LIMIT_COUNT 1
-  REGEX
-    "^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(-[.0-9A-Za-z-]+)?([+][.0-9A-Za-z-]+)?$"
-)
-
 project(
   signal_tl
-  VERSION ${signal_tl_VERSION}
+  VERSION 0.1.3
   DESCRIPTION
     "A library for efficiently working with Signal Temporal Logic (STL) and its quantitative semantics"
   LANGUAGES CXX)
@@ -30,6 +23,8 @@ include(CTest)
 
 # Options
 option(SIGNALTL_TEST "Build signaltl test suite?" ${SIGNALTL_MASTER_PROJECT})
+option(SIGNALTL_COVERAGE "Generate coverage.xml for test suite?"
+       ${SIGNALTL_MASTER_PROJECT})
 option(SIGNALTL_EXAMPLES "Build the examples?" ${SIGNALTL_MASTER_PROJECT})
 option(SIGNALTL_INSTALL "Install the library and header files?"
        ${SIGNALTL_MASTER_PROJECT})
@@ -44,33 +39,27 @@ if((SIGNALTL_MASTER_PROJECT OR SIGNALTL_TEST) AND BUILD_TESTING)
       CACHE INTERNAL "Easy option to build the tests")
 endif()
 
+if(SIGNALTL_COVERAGE)
+  set(ENABLE_COVERAGE
+      ON
+      CACHE BOOL "Enable coverage build." FORCE)
+endif()
+
 set(CMAKE_CXX_EXTENSIONS ON)
 
 # Third party libraries and dependencies
 include(ThirdPartyLibs)
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/third_party)
+add_subdirectory(third_party)
 
 # Add library and module
-
-set(STL_SOURCES src/ast.cc src/classic_robustness.cc src/minmax.cc
-                src/signal.cc)
-
-add_library(signaltl ${STL_SOURCES})
-add_library(signal_tl::signal_tl ALIAS signaltl)
-target_include_directories(
-  signaltl PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-                  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
-target_compile_features(signaltl PUBLIC cxx_std_17)
-target_link_libraries(signaltl PRIVATE mono_wedge::mono_wedge)
-target_link_libraries(signaltl PUBLIC fmt::fmt)
-set_target_properties(signaltl PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_subdirectory(src)
 
 if(SIGNALTL_PYTHON_BINDINGS)
   set(BINDINGS_SOURCES signal_tl/pyast.cc signal_tl/pyrobustness.cc
                        signal_tl/pysignal.cc signal_tl/pysignal_tl.cc)
 
   pybind11_add_module(_cext MODULE ${BINDINGS_SOURCES})
-  target_include_directories(_cext PRIVATE ${CMAKE_CURRENT_LIST_DIR}/signal_tl)
+  target_include_directories(_cext PRIVATE ${PROJECT_SOURCE_DIR}/signal_tl)
   target_link_libraries(_cext PUBLIC signaltl)
 endif()
 
@@ -80,6 +69,9 @@ endif()
 
 if(_SIGNALTL_BUILD_THE_TESTS)
   add_subdirectory(tests)
+  if(SIGNALTL_COVERAGE)
+    coverage_evaluate()
+  endif()
 endif()
 
 # Installing

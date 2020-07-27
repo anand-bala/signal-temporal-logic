@@ -29,8 +29,6 @@ SignalPtr compute_minmax_pair(
   assert(x->begin_time() == y->begin_time());
   assert(x->end_time() == y->end_time());
 
-  const size_t n = x->size();
-
   // Used to keep track of the signal from which the last minmax winner was chosen.
   enum struct Chosen { X, Y, NONE };
   Chosen last_chosen = Chosen::NONE;

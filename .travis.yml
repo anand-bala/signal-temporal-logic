@@ -1,0 +1,22 @@
+language: cpp
+dist: bionic
+compiler: gcc
+
+branches:
+  only:
+  - master
+  - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+
+cache: # see https://docs.travis-ci.com/user/caching/
+- directories:
+  - $HOME/.cache
+
+addons:
+  apt:
+    packages: lcov
+
+script: ./build.sh
+
+after_success:
+- bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
+

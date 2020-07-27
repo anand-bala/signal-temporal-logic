@@ -7,4 +7,7 @@ target_include_directories(signaltl_tests PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(signaltl_tests PUBLIC signal_tl::signal_tl Catch2::Catch2)
 
 include(Catch)
+if(SIGNALTL_COVERAGE)
+  add_coverage(signaltl_tests)
+endif()
 catch_discover_tests(signaltl_tests)
