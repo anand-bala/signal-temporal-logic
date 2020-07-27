@@ -1,5 +1,5 @@
 jobs:
-  - job: build-wheels
+  - job: build_wheels
     strategy:
       matrix:
         macos-latest-py35:

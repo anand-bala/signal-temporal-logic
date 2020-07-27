@@ -1,5 +1,5 @@
 jobs:
-  - job: build-wheels.manylinux
+  - job: build_wheels_manylinux
     pool:
       vmImage: ubuntu-latest
     variables:
