@@ -12,6 +12,8 @@ cache: # see https://docs.travis-ci.com/user/caching/
 - directories:
   - $HOME/.cache
 
+before_install:
+  - 'wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null'
 addons:
   apt:
     sources:

@@ -8,6 +8,7 @@ stages:
   - template: ci/compiler-tests.yml
   - template: ci/unit-tests.yml
   - stage: Build
+    dependsOn: [compiler_tests, unit_tests]
     displayName: "Build wheels for Linux, macOS, and Windows"
     jobs:
       - template: ci/manylinux-wheels-job.yml
