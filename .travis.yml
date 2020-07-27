@@ -13,15 +13,10 @@ cache: # see https://docs.travis-ci.com/user/caching/
   - $HOME/.cache
 
 before_install:
-  - 'wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null'
-addons:
-  apt:
-    sources:
-    - sourceline: 'deb https://apt.kitware.com/ubuntu/ bionic main'
-    packages:
-    - lcov
-    - cmake
-
+- wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo apt-key add -
+- sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
+- sudo apt-get -q update
+- sudo apt-get -y install cmake
 
 script: ./build.sh
 
