@@ -113,7 +113,9 @@ SignalPtr RobustnessOp::operator()(const ast::Const e) const {
 SignalPtr RobustnessOp::operator()(const ast::Predicate e) const {
   const auto& x = trace.at(e.name);
   auto y        = std::make_shared<Signal>();
-  for (const auto [t, v, d] : *x) {
+  for (const auto sample : *x) {
+    const double t = sample.time;
+    const double v = sample.value;
     switch (e.op) {
       case ast::ComparisonOp::GE:
         y->push_back(t, v - e.lhs);
