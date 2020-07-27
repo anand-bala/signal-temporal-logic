@@ -26,6 +26,7 @@ jobs:
         windows-latest-py38:
           VM_IMAGE: windows-latest
           PYTHON_VERSION: 3.8
+    continueOnError: true
     pool:
       vmImage: '$(VM_IMAGE)'
     steps:

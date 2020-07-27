@@ -14,7 +14,12 @@ cache: # see https://docs.travis-ci.com/user/caching/
 
 addons:
   apt:
-    packages: lcov
+    sources:
+    - sourceline: 'deb https://apt.kitware.com/ubuntu/ bionic main'
+    packages:
+    - lcov
+    - cmake
+
 
 script: ./build.sh
 
