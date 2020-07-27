@@ -43,7 +43,7 @@ SignalPtr compute_minmax_pair(
     if (comp(*i, *j)) {
       if (last_chosen == Chosen::Y) {
         double intercept_time = std::prev(j)->time_intersect(*std::prev(i));
-        if (intercept_time > out->end_time()) {
+        if (intercept_time > out->end_time() && intercept_time != i->time) {
           out->push_back(
               Sample{intercept_time, std::prev(j)->interpolate(intercept_time)});
         }
@@ -53,7 +53,7 @@ SignalPtr compute_minmax_pair(
     } else {
       if (last_chosen == Chosen::X) {
         double intercept_time = std::prev(i)->time_intersect(*std::prev(j));
-        if (intercept_time > out->end_time()) {
+        if (intercept_time > out->end_time() && intercept_time != j->time) {
           out->push_back(
               Sample{intercept_time, std::prev(i)->interpolate(intercept_time)});
         }

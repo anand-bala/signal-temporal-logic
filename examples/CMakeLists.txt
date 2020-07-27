@@ -8,3 +8,6 @@ target_link_libraries(basic_signal PUBLIC signaltl)
 
 add_executable(basic_robustness ${CMAKE_CURRENT_LIST_DIR}/basic_robustness.cc)
 target_link_libraries(basic_robustness PUBLIC signaltl)
+
+# add_executable(test_append_error ${CMAKE_CURRENT_LIST_DIR}/test_append_error.cc)
+# target_link_libraries(test_append_error PUBLIC signaltl)

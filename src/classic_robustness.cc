@@ -58,6 +58,8 @@ struct RobustnessOp {
   double max_time = std::numeric_limits<double>::infinity();
   Trace trace     = {};
 
+  RobustnessOp() = default;
+
   SignalPtr operator()(const ast::Const e) const;
   SignalPtr operator()(const ast::Predicate e) const;
   SignalPtr operator()(const ast::NotPtr e) const;
@@ -69,24 +71,7 @@ struct RobustnessOp {
 };
 
 SignalPtr compute(const ast::Expr phi, const RobustnessOp& rob) {
-  if (auto eptr = std::get_if<ast::Const>(&phi)) {
-    return rob(*eptr);
-  } else if (auto eptr = std::get_if<ast::Predicate>(&phi)) {
-    return rob(*eptr);
-  } else if (auto eptr = std::get_if<ast::NotPtr>(&phi)) {
-    return rob(*eptr);
-  } else if (auto eptr = std::get_if<ast::AndPtr>(&phi)) {
-    return rob(*eptr);
-  } else if (auto eptr = std::get_if<ast::OrPtr>(&phi)) {
-    return rob(*eptr);
-  } else if (auto eptr = std::get_if<ast::AlwaysPtr>(&phi)) {
-    return rob(*eptr);
-  } else if (auto eptr = std::get_if<ast::EventuallyPtr>(&phi)) {
-    return rob(*eptr);
-  } else if (auto eptr = std::get_if<ast::UntilPtr>(&phi)) {
-    return rob(*eptr);
-  }
-  return {};
+  return std::visit([&](auto&& e) { return rob(e); }, phi);
 }
 
 } // namespace
