@@ -94,7 +94,10 @@ endif()
 
 # Installing
 if(SIGNALTL_INSTALL)
-  set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/signal_tl)
+  set(SIGNALTL_CMAKECONFIG_INSTALL_DIR
+      "share/cmake/${PROJECT_NAME}"
+      CACHE STRING "install path for pybind11Config.cmake")
+  set(INSTALL_CONFIGDIR ${SIGNALTL_CMAKECONFIG_INSTALL_DIR})
 
   install(
     TARGETS signaltl mono_wedge
