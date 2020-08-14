@@ -1,0 +1,39 @@
+name: Run Unit Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - run: "pip3 install -U pip setuptools wheel"
+      - name: Install Ninja and Conan
+        run: "pip3 install ninja conan"
+      - name: Install Lcov
+        run: sudo apt-get install lcov
+      - name: Cache Conan dependencies
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-conan-deps
+        with:
+          path: ~/.conan/data
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      - name: CMake configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DSIGNALTL_COVERAGE=ON -DSIGNALTL_TEST=ON
+        env:
+          CC: clang-9
+          CXX: clang++-9
+      - name: CMake build
+        run: cmake --build build --config Debug -j --clean-first
+      - name: CTest
+        run: cmake --build build --config Debug --target test
+
+

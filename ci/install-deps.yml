@@ -1,5 +1,0 @@
-steps:
-  - checkout: self
-    submodules: recursive
-  - script: python -m pip install --upgrade pip setuptools wheel cibuildwheel
-    displayName: Install Python pip tools

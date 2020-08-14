@@ -1,0 +1,49 @@
+name: Compiler Tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        config:
+          - os: ubuntu-18.04
+            cc: clang-9
+            cxx: clang++-9
+          - os: ubuntu-18.04
+            cc: gcc
+            cxx: g++
+          - os: macos-latest
+          - os: windows-latest
+    runs-on: ${{ matrix.config.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - run: "pip3 install -U pip setuptools wheel"
+      - name: Install Ninja and Conan
+        run: "pip3 install ninja conan"
+      - name: Cache Conan dependencies
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-conan-deps
+        with:
+          path: ~/.conan/data
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      - name: CMake configure (Ubuntu)
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        env:
+          CC: ${{ matrix.config.cc }}
+          CXX: ${{ matrix.config.cxx }}
+        if: startsWith(matrix.config.os, 'ubuntu')
+      - name: CMake configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - name: CMake build
+        run: cmake --build build --config Release -j --clean-first
+
+
