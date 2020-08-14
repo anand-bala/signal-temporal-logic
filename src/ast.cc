@@ -37,9 +37,10 @@ Expr AndHelper(const AndPtr& lhs, const Expr& rhs) {
                      args = {Expr{e}};
                    }
                  },
-                 [&args](const AndPtr e) {
+                 [&args](const AndPtr& e) {
                    args.reserve(
-                       args.size() + std::distance(e->args.begin(), e->args.end()));
+                       args.size() + static_cast<size_t>(std::distance(
+                                         e->args.begin(), e->args.end())));
                    args.insert(args.end(), e->args.begin(), e->args.end());
                  }},
       rhs);
@@ -56,9 +57,10 @@ Expr OrHelper(const OrPtr& lhs, const Expr& rhs) {
                      args = {Expr{e}};
                    }
                  },
-                 [&args](const OrPtr e) {
+                 [&args](const OrPtr& e) {
                    args.reserve(
-                       args.size() + std::distance(e->args.begin(), e->args.end()));
+                       args.size() + static_cast<size_t>(std::distance(
+                                         e->args.begin(), e->args.end())));
                    args.insert(args.end(), e->args.begin(), e->args.end());
                  }},
       rhs);
@@ -68,8 +70,8 @@ Expr OrHelper(const OrPtr& lhs, const Expr& rhs) {
 } // namespace
 
 Expr operator&(const Expr& lhs, const Expr& rhs) {
-  if (const auto e_ptr = std::get_if<Const>(&lhs)) {
-    return (e_ptr->value) ? rhs : *e_ptr;
+  if (const auto c_ptr = std::get_if<Const>(&lhs)) {
+    return (c_ptr->value) ? rhs : *c_ptr;
   } else if (const AndPtr* e_ptr = std::get_if<AndPtr>(&lhs)) {
     return AndHelper(*e_ptr, rhs);
   }
@@ -77,8 +79,8 @@ Expr operator&(const Expr& lhs, const Expr& rhs) {
 }
 
 Expr operator|(const Expr& lhs, const Expr& rhs) {
-  if (const auto e_ptr = std::get_if<Const>(&lhs)) {
-    return (!e_ptr->value) ? rhs : *e_ptr;
+  if (const auto c_ptr = std::get_if<Const>(&lhs)) {
+    return (!c_ptr->value) ? rhs : *c_ptr;
   } else if (const OrPtr* e_ptr = std::get_if<OrPtr>(&lhs)) {
     return OrHelper(*e_ptr, rhs);
   }

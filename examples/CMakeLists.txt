@@ -1,13 +1,11 @@
 message(STATUS "Building Examples in ${CMAKE_CURRENT_LIST_DIR}")
 
-add_executable(basic_formulas ${CMAKE_CURRENT_LIST_DIR}/basic_formulas.cc)
-target_link_libraries(basic_formulas PUBLIC signaltl)
+function(add_example TARGET)
+  add_executable(${TARGET} ${ARGN})
+  target_link_libraries(${TARGET} PUBLIC signaltl)
+  # if(SIGNALTL_COVERAGE) add_coverage(${TARGET}) endif()
+endfunction()
 
-add_executable(basic_signal ${CMAKE_CURRENT_LIST_DIR}/basic_signal.cc)
-target_link_libraries(basic_signal PUBLIC signaltl)
-
-add_executable(basic_robustness ${CMAKE_CURRENT_LIST_DIR}/basic_robustness.cc)
-target_link_libraries(basic_robustness PUBLIC signaltl)
-
-# add_executable(test_append_error ${CMAKE_CURRENT_LIST_DIR}/test_append_error.cc)
-# target_link_libraries(test_append_error PUBLIC signaltl)
+add_example(basic_formulas ${CMAKE_CURRENT_LIST_DIR}/basic_formulas.cc)
+add_example(basic_signal ${CMAKE_CURRENT_LIST_DIR}/basic_signal.cc)
+add_example(basic_robustness ${CMAKE_CURRENT_LIST_DIR}/basic_robustness.cc)

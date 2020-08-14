@@ -1,14 +1,6 @@
-cmake_minimum_required(VERSION 3.13.0)
+cmake_minimum_required(VERSION 3.13)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-project(
-  signal_tl
-  VERSION 0.1.3
-  DESCRIPTION
-    "A library for efficiently working with Signal Temporal Logic (STL) and its quantitative semantics"
-  LANGUAGES CXX)
-
-message(STATUS "signal_tl: v${signal_tl_VERSION}")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Check if signaltl is being used directly or via add_subdirectory
 set(SIGNALTL_MASTER_PROJECT OFF)
@@ -16,9 +8,25 @@ if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(SIGNALTL_MASTER_PROJECT ON)
 endif()
 
-include(CMakePrintHelpers)
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
+# Set version from a common file.
+include(./signaltl_version.cmake)
+set(signal_tl_VERSION
+    ${SIGNALTL_MAJOR}.${SIGNALTL_MINOR}.${SIGNALTL_PATCHLEVEL})
+message(STATUS "signal_tl: v${signal_tl_VERSION}")
+
+project(
+  signal_tl
+  VERSION ${signal_tl_VERSION}
+  DESCRIPTION
+    "A library for efficiently working with Signal Temporal Logic (STL) and its quantitative semantics"
+  LANGUAGES CXX)
+
+include(StandardProjectSettings)
+include(PreventInSourceBuilds)
+include(CompilerWarnings)
+include(Conan)
+# include(cmake/Cache.cmake)
+
 include(CTest)
 
 # Options
@@ -28,7 +36,8 @@ option(SIGNALTL_COVERAGE "Generate coverage.xml for test suite?"
 option(SIGNALTL_EXAMPLES "Build the examples?" ${SIGNALTL_MASTER_PROJECT})
 option(SIGNALTL_INSTALL "Install the library and header files?"
        ${SIGNALTL_MASTER_PROJECT})
-option(SIGNALTL_PYTHON_BINDINGS "Build the Python extension?" ON)
+option(SIGNALTL_PYTHON_BINDINGS "Build the Python extension?"
+       ${SIGNALTL_MASTER_PROJECT})
 
 set(_SIGNALTL_BUILD_THE_TESTS
     OFF
@@ -43,12 +52,15 @@ if(SIGNALTL_COVERAGE)
   set(ENABLE_COVERAGE
       ON
       CACHE BOOL "Enable coverage build." FORCE)
+  find_package(codecov REQUIRED)
 endif()
 
 set(CMAKE_CXX_EXTENSIONS ON)
 
 # Third party libraries and dependencies
-include(ThirdPartyLibs)
+find_package(fmt REQUIRED)
+find_package(pybind11 REQUIRED)
+find_package(Catch2 REQUIRED)
 add_subdirectory(third_party)
 
 # Add library and module
@@ -64,11 +76,7 @@ target_compile_features(signaltl PUBLIC cxx_std_17)
 target_link_libraries(signaltl PRIVATE mono_wedge::mono_wedge)
 target_link_libraries(signaltl PUBLIC fmt::fmt)
 set_target_properties(signaltl PROPERTIES POSITION_INDEPENDENT_CODE ON)
-if(MSVC)
-  target_compile_options(signaltl PRIVATE /W4 /WX /utf-8)
-else()
-  target_compile_options(signaltl PRIVATE -pedantic -Wall -Wextra -Werror)
-endif()
+set_project_warnings(signaltl)
 
 # if(SIGNALTL_COVERAGE) add_coverage(signaltl) endif()
 
@@ -87,16 +95,22 @@ endif()
 
 if(_SIGNALTL_BUILD_THE_TESTS)
   add_subdirectory(tests)
+
+  list(APPEND LCOV_REMOVE_PATTERNS "'/usr/*'"
+       "'${PROJECT_SOURCE_DIR}/third_party/*'")
   if(SIGNALTL_COVERAGE)
     coverage_evaluate()
   endif()
+
 endif()
 
 # Installing
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 if(SIGNALTL_INSTALL)
   set(SIGNALTL_CMAKECONFIG_INSTALL_DIR
       "share/cmake/${PROJECT_NAME}"
-      CACHE STRING "install path for pybind11Config.cmake")
+      CACHE STRING "install path for signal_tlConfig.cmake")
   set(INSTALL_CONFIGDIR ${SIGNALTL_CMAKECONFIG_INSTALL_DIR})
 
   install(

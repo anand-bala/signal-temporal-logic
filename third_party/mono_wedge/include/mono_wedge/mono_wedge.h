@@ -53,7 +53,7 @@ namespace mono_wedge {
 */
 template <class Iterator, class T, class Compare>
 Iterator mono_wedge_search(Iterator begin, Iterator end, const T& value, Compare comp) {
-  size_t size = std::distance(begin, end);
+  size_t size = static_cast<size_t>(std::distance(begin, end));
   if (size <= 0ul)
     return end;
 
@@ -139,7 +139,7 @@ template <class Wedge, class T, class Compare>
 void mono_wedge_update(Wedge& wedge, T&& value, Compare comp) {
   typename Wedge::iterator i =
       mono_wedge_search(wedge.begin(), wedge.end(), value, comp);
-  size_t erase_count = std::distance(i, wedge.end());
+  size_t erase_count = static_cast<size_t>(std::distance(i, wedge.end()));
   while (erase_count--) wedge.pop_back();
   wedge.push_back(std::forward<T>(value));
 }
