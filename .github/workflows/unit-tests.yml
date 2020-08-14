@@ -10,9 +10,9 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.x'
-      - run: "pip3 install -U pip setuptools wheel"
+      - run: "python -m pip install -U pip setuptools wheel"
       - name: Install Ninja and Conan
-        run: "pip3 install ninja conan"
+        run: "python -m pip install ninja conan"
       - name: Install Lcov
         run: sudo apt-get install lcov
       - name: Cache Conan dependencies
