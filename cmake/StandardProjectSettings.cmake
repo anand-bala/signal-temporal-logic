@@ -10,10 +10,6 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
                                                "MinSizeRel" "RelWithDebInfo")
 endif()
 
-# Generate compile_commands.json to make it easier to work with clang based
-# tools
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 option(ENABLE_LTO "Enable link time optimization?" OFF)
 
 include(CheckIPOSupported)
@@ -28,13 +24,17 @@ if(result)
       CACHE BOOL "Enable link time optimization?" FORCE)
 endif()
 
-if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
-  # Force color in compiler output as it will be easier to debug...
-  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    # using Clang
-    add_compile_options(-fcolor-diagnostics)
-  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    # using GCC
-    add_compile_options(-fdiagnostics-color=always)
+function(set_default_compile_options target)
+
+  if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
+    # Force color in compiler output as it will be easier to debug...
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      # using Clang
+      target_compile_options(${target} PRIVATE -fcolor-diagnostics)
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      # using GCC
+      target_compile_options(${target} PRIVATE -fdiagnostics-color=always)
+    endif()
   endif()
-endif()
+
+endfunction()

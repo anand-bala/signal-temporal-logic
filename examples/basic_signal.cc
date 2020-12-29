@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <vector>
 
-#include "signal_tl/fmt.hh"
-#include "signal_tl/signal.hh"
+#include "signal_tl/fmt.hpp"
+#include "signal_tl/signal.hpp"
 
 #include <fmt/format.h>
 

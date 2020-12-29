@@ -4,12 +4,12 @@ global-exclude *.py[co]
 include README.md LICENSE LICENSE-3rdParty MANIFEST.in VERSION
 global-include *.md
 global-include CMakeLists.txt *.cmake
+global-include conanfile.txt
 
 graft cmake
 graft examples
 graft tests
 graft include
-graft third_party
 graft signal_tl
 graft src
 

@@ -1,9 +1,9 @@
-#include "signal_tl/robustness.hh"
+#include "signal_tl/robustness.hpp"
 
-#include "signal_tl/exception.hh"
-#include "signal_tl/minmax.hh"
+#include "signal_tl/exception.hpp"
+#include "signal_tl/minmax.hpp"
 
-#include "mono_wedge/mono_wedge.h"
+#include "signal_tl/mono_wedge.h"
 
 #include <algorithm>
 #include <cmath>
@@ -15,8 +15,7 @@
 
 #include <cassert>
 
-namespace signal_tl {
-namespace semantics {
+namespace signal_tl::semantics {
 using namespace signal;
 using namespace minmax;
 
@@ -24,7 +23,7 @@ namespace {
 constexpr double TOP    = std::numeric_limits<double>::infinity();
 constexpr double BOTTOM = -TOP;
 
-SignalPtr compute_until(const SignalPtr input_x, const SignalPtr input_y) {
+SignalPtr compute_until(const SignalPtr& input_x, const SignalPtr& input_y) {
   const auto [x, y] = synchronize(input_x, input_y);
   assert(x->size() == y->size());
   assert(x->begin_time() == y->begin_time());
@@ -49,7 +48,7 @@ SignalPtr compute_until(const SignalPtr input_x, const SignalPtr input_y) {
   return out;
 }
 
-SignalPtr compute_until(const SignalPtr, const SignalPtr, double, double) {
+SignalPtr compute_until(const SignalPtr&, const SignalPtr&, double, double) {
   throw not_implemented_error("Bounded compute_until has not been implemented yet.");
 }
 
@@ -61,26 +60,22 @@ struct RobustnessOp {
   RobustnessOp() = default;
 
   SignalPtr operator()(const ast::Const e) const;
-  SignalPtr operator()(const ast::Predicate e) const;
-  SignalPtr operator()(const ast::NotPtr e) const;
-  SignalPtr operator()(const ast::AndPtr e) const;
-  SignalPtr operator()(const ast::OrPtr e) const;
-  SignalPtr operator()(const ast::EventuallyPtr e) const;
-  SignalPtr operator()(const ast::AlwaysPtr e) const;
-  SignalPtr operator()(const ast::UntilPtr e) const;
+  SignalPtr operator()(const ast::Predicate& e) const;
+  SignalPtr operator()(const ast::NotPtr& e) const;
+  SignalPtr operator()(const ast::AndPtr& e) const;
+  SignalPtr operator()(const ast::OrPtr& e) const;
+  SignalPtr operator()(const ast::EventuallyPtr& e) const;
+  SignalPtr operator()(const ast::AlwaysPtr& e) const;
+  SignalPtr operator()(const ast::UntilPtr& e) const;
 };
 
-SignalPtr compute(const ast::Expr phi, const RobustnessOp& rob) {
+SignalPtr compute(const ast::Expr& phi, const RobustnessOp& rob) {
   return std::visit([&](auto&& e) { return rob(e); }, phi);
 }
 
 } // namespace
 
-template <>
-SignalPtr compute_robustness<Semantics::CLASSIC>(
-    const ast::Expr phi,
-    const signal::Trace& trace,
-    bool) {
+SignalPtr compute_robustness(const ast::Expr& phi, const signal::Trace& trace, bool) {
   // Compute the start and end of the trace.
   struct MinMaxTime {
     double begin{TOP};
@@ -105,12 +100,12 @@ SignalPtr compute_robustness<Semantics::CLASSIC>(
 }
 
 SignalPtr RobustnessOp::operator()(const ast::Const e) const {
-  double val   = (e.value) ? TOP : BOTTOM;
-  auto samples = std::vector<Sample>{{min_time, val, 0.0}, {max_time, val, 0.0}};
+  const double val = (e.value) ? static_cast<double>(TOP) : static_cast<double>(BOTTOM);
+  auto samples     = std::vector<Sample>{{min_time, val, 0.0}, {max_time, val, 0.0}};
   return std::make_shared<Signal>(samples);
 }
 
-SignalPtr RobustnessOp::operator()(const ast::Predicate e) const {
+SignalPtr RobustnessOp::operator()(const ast::Predicate& e) const {
   const auto& x = trace.at(e.name);
   auto y        = std::make_shared<Signal>();
   for (const auto sample : *x) {
@@ -118,14 +113,10 @@ SignalPtr RobustnessOp::operator()(const ast::Predicate e) const {
     const double v = sample.value;
     switch (e.op) {
       case ast::ComparisonOp::GE:
-        y->push_back(t, v - e.lhs);
-        break;
       case ast::ComparisonOp::GT:
         y->push_back(t, v - e.lhs);
         break;
       case ast::ComparisonOp::LE:
-        y->push_back(t, e.lhs - v);
-        break;
       case ast::ComparisonOp::LT:
         y->push_back(t, e.lhs - v);
         break;
@@ -134,15 +125,15 @@ SignalPtr RobustnessOp::operator()(const ast::Predicate e) const {
   return y;
 }
 
-SignalPtr RobustnessOp::operator()(const ast::NotPtr e) const {
+SignalPtr RobustnessOp::operator()(const ast::NotPtr& e) const {
   auto x   = compute(e->arg, *this);
   auto vec = std::vector<Sample>{};
   vec.reserve(x->size());
-  std::transform(x->begin(), x->end(), std::back_inserter(vec), std::negate<Sample>());
+  std::transform(x->begin(), x->end(), std::back_inserter(vec), std::negate<>());
   return std::make_shared<Signal>(vec);
 }
 
-SignalPtr RobustnessOp::operator()(const ast::AndPtr e) const {
+SignalPtr RobustnessOp::operator()(const ast::AndPtr& e) const {
   auto ys = std::vector<SignalPtr>{};
   ys.reserve(e->args.size());
   std::transform(
@@ -153,7 +144,7 @@ SignalPtr RobustnessOp::operator()(const ast::AndPtr e) const {
   return compute_elementwise_min(ys);
 }
 
-SignalPtr RobustnessOp::operator()(const ast::OrPtr e) const {
+SignalPtr RobustnessOp::operator()(const ast::OrPtr& e) const {
   auto ys = std::vector<SignalPtr>{};
   ys.reserve(e->args.size());
   std::transform(
@@ -164,7 +155,7 @@ SignalPtr RobustnessOp::operator()(const ast::OrPtr e) const {
   return compute_elementwise_max(ys);
 }
 
-SignalPtr RobustnessOp::operator()(const ast::EventuallyPtr e) const {
+SignalPtr RobustnessOp::operator()(const ast::EventuallyPtr& e) const {
   auto y = compute(e->arg, *this);
   if (!e->interval.has_value()) {
     return compute_max_seq(y);
@@ -182,7 +173,7 @@ SignalPtr RobustnessOp::operator()(const ast::EventuallyPtr e) const {
   }
 }
 
-SignalPtr RobustnessOp::operator()(const ast::AlwaysPtr e) const {
+SignalPtr RobustnessOp::operator()(const ast::AlwaysPtr& e) const {
   auto y = compute(e->arg, *this);
   if (!e->interval.has_value()) {
     return compute_min_seq(y);
@@ -200,7 +191,7 @@ SignalPtr RobustnessOp::operator()(const ast::AlwaysPtr e) const {
   }
 }
 
-SignalPtr RobustnessOp::operator()(const ast::UntilPtr e) const {
+SignalPtr RobustnessOp::operator()(const ast::UntilPtr& e) const {
   auto y1 = compute(e->args.first, *this);
   auto y2 = compute(e->args.second, *this);
   if (!e->interval.has_value()) {
@@ -215,5 +206,4 @@ SignalPtr RobustnessOp::operator()(const ast::UntilPtr e) const {
   }
 }
 
-} // namespace semantics
-} // namespace signal_tl
+} // namespace signal_tl::semantics

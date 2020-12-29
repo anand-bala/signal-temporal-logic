@@ -1,6 +1,6 @@
-#include "signal_tl/minmax.hh"
+#include "signal_tl/minmax.hpp"
 
-#include "mono_wedge/mono_wedge.h"
+#include "signal_tl/mono_wedge.h"
 
 #include <algorithm>
 #include <cmath>
@@ -13,14 +13,13 @@
 
 #include <cassert>
 
-namespace signal_tl {
-namespace minmax {
+namespace signal_tl::minmax {
 using namespace signal;
 
 template <typename Compare>
 SignalPtr compute_minmax_pair(
-    const SignalPtr input_x,
-    const SignalPtr input_y,
+    const SignalPtr& input_x,
+    const SignalPtr& input_y,
     Compare comp,
     bool synchronized) {
   const auto [x, y] = (synchronized) ? std::make_tuple(input_x, input_y)
@@ -89,7 +88,7 @@ compute_minmax_pair(const std::vector<SignalPtr>& xs, Compare comp, bool synchro
 }
 
 template <typename Compare>
-SignalPtr compute_minmax_seq(const SignalPtr x, Compare comp) {
+SignalPtr compute_minmax_seq(const SignalPtr& x, Compare comp) {
   auto opt = x->back();
   auto z   = std::vector<Sample>{};
   z.reserve(2 * x->size());
@@ -105,7 +104,7 @@ SignalPtr compute_minmax_seq(const SignalPtr x, Compare comp) {
 }
 
 template <typename Compare>
-SignalPtr compute_minmax_seq(const SignalPtr x, double a, double b, Compare comp) {
+SignalPtr compute_minmax_seq(const SignalPtr& x, double a, double b, Compare comp) {
   const auto width      = b - a;
   const auto begin_time = x->begin_time();
   const auto end_time   = x->end_time();
@@ -131,9 +130,10 @@ SignalPtr compute_minmax_seq(const SignalPtr x, double a, double b, Compare comp
       // Add the sample for time M.front + a
       i = samples.insert(
           i,
-          Sample{window.front().time + a,
-                 std::prev(i)->interpolate(window.front().time + a),
-                 0.0});
+          Sample{
+              window.front().time + a,
+              std::prev(i)->interpolate(window.front().time + a),
+              0.0});
     }
     mono_wedge::mono_wedge_update(window, *i, comp);
     while (window.front().time <= i->time - a) { window.pop_front(); }
@@ -144,39 +144,37 @@ SignalPtr compute_minmax_seq(const SignalPtr x, double a, double b, Compare comp
 }
 
 SignalPtr
-compute_elementwise_min(const SignalPtr x, const SignalPtr y, bool synchronized) {
-  return compute_minmax_pair(x, y, std::less_equal<Sample>(), synchronized);
+compute_elementwise_min(const SignalPtr& x, const SignalPtr& y, bool synchronized) {
+  return compute_minmax_pair(x, y, std::less_equal<>(), synchronized);
 }
 
 SignalPtr
-compute_elementwise_max(const SignalPtr x, const SignalPtr y, bool synchronized) {
-  return compute_minmax_pair(x, y, std::greater_equal<Sample>(), synchronized);
+compute_elementwise_max(const SignalPtr& x, const SignalPtr& y, bool synchronized) {
+  return compute_minmax_pair(x, y, std::greater_equal<>(), synchronized);
 }
 
 SignalPtr compute_elementwise_min(const std::vector<SignalPtr>& xs, bool synchronized) {
-  return compute_minmax_pair(xs, std::less_equal<Sample>(), synchronized);
+  return compute_minmax_pair(xs, std::less_equal<>(), synchronized);
 }
 
 SignalPtr compute_elementwise_max(const std::vector<SignalPtr>& xs, bool synchronized) {
-  return compute_minmax_pair(xs, std::greater_equal<Sample>(), synchronized);
+  return compute_minmax_pair(xs, std::greater_equal<>(), synchronized);
 }
 
-SignalPtr compute_max_seq(const SignalPtr x) {
-  return compute_minmax_seq(x, std::greater_equal<Sample>());
+SignalPtr compute_max_seq(const SignalPtr& x) {
+  return compute_minmax_seq(x, std::greater_equal<>());
 }
 
-SignalPtr compute_min_seq(const SignalPtr x) {
-  return compute_minmax_seq(x, std::less_equal<Sample>());
+SignalPtr compute_min_seq(const SignalPtr& x) {
+  return compute_minmax_seq(x, std::less_equal<>());
 }
 
-SignalPtr compute_max_seq(const SignalPtr x, double a, double b) {
-  return compute_minmax_seq(x, a, b, std::greater_equal<Sample>());
+SignalPtr compute_max_seq(const SignalPtr& x, double a, double b) {
+  return compute_minmax_seq(x, a, b, std::greater_equal<>());
 }
 
-SignalPtr compute_min_seq(const SignalPtr x, double a, double b) {
-  return compute_minmax_seq(x, a, b, std::less_equal<Sample>());
+SignalPtr compute_min_seq(const SignalPtr& x, double a, double b) {
+  return compute_minmax_seq(x, a, b, std::less_equal<>());
 }
 
-} // namespace minmax
-
-} // namespace signal_tl
+} // namespace signal_tl::minmax

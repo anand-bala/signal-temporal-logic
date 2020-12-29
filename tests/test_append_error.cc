@@ -1,5 +1,5 @@
-#include "signal_tl/fmt.hh"
-#include "signal_tl/signal_tl.hh"
+#include "signal_tl/fmt.hpp"
+#include "signal_tl/signal_tl.hpp"
 
 #include <fmt/format.h>
 

@@ -1,8 +1,8 @@
-#include "bindings.hh"
-#include "signal_tl/exception.hh"
+#include "bindings.hpp"
+#include "signal_tl/exception.hpp"
 
 PYBIND11_MODULE(_cext, m) {
-  py::register_exception_translator([](std::exception_ptr p) {
+  py::register_exception_translator([](const std::exception_ptr& p) {
     try {
       if (p)
         std::rethrow_exception(p);

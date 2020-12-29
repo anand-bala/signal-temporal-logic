@@ -1,6 +1,6 @@
-#include "bindings.hh"
-#include "signal_tl/ast.hh"
-#include "signal_tl/fmt.hh"
+#include "bindings.hpp"
+#include "signal_tl/ast.hpp"
+#include "signal_tl/fmt.hpp"
 
 using namespace signal_tl;
 namespace {
@@ -59,7 +59,7 @@ void init_ast_module(py::module& parent) {
       .def("__and__", &and_op<ast::NotPtr>)
       .def("__or__", &or_op<ast::NotPtr>)
       .def("__invert__", &not_op<ast::NotPtr>)
-      .def("__repr__", [](const ast::NotPtr e) { return fmt::format("{}", *e); });
+      .def("__repr__", [](const ast::NotPtr& e) { return fmt::format("{}", *e); });
 
   py::class_<ast::And, ast::AndPtr>(m, "And")
       .def(py::init<const std::vector<Expr>&>(), "args"_a)

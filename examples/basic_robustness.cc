@@ -1,5 +1,5 @@
-#include "signal_tl/fmt.hh"
-#include "signal_tl/signal_tl.hh"
+#include "signal_tl/fmt.hpp"
+#include "signal_tl/signal_tl.hpp"
 
 #include <fmt/format.h>
 
@@ -20,14 +20,14 @@ int main() {
 
   {
     const auto trace1 = Trace{{"a", xs}, {"b", ys}};
-    const auto rob1   = stl::compute_robustness<stl::Semantics::CLASSIC>(phi, trace1);
+    const auto rob1   = stl::compute_robustness(phi, trace1);
     fmt::print("unsynched robustness:\t{}\n", *rob1);
   }
   {
     const auto [xs_, ys_] = synchronize(xs, ys);
     const auto trace1     = Trace{{"a", xs_}, {"b", ys_}};
     const auto rob1 =
-        stl::compute_robustness<stl::Semantics::CLASSIC>(phi, trace1, true);
+        stl::compute_robustness(phi, trace1, true);
 
     fmt::print("synched robustness:\t{}\n", *rob1);
   }

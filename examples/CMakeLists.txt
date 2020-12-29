@@ -1,5 +1,8 @@
 message(STATUS "Building Examples in ${CMAKE_CURRENT_LIST_DIR}")
 
+unset(CMAKE_CXX_CLANG_TIDY)
+unset(CMAKE_CXX_INCLUDE_WHAT_YOU_USE)
+
 function(add_example TARGET)
   add_executable(${TARGET} ${ARGN})
   target_link_libraries(${TARGET} PUBLIC signaltl)

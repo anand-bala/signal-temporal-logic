@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef __SIGNAL_TL_PYTHON_BINDINGS_HH__
-#define __SIGNAL_TL_PYTHON_BINDINGS_HH__
+#ifndef SIGNAL_TL_PYTHON_BINDINGS_HPP
+#define SIGNAL_TL_PYTHON_BINDINGS_HPP
 
 #include <memory>
 #include <sstream>
@@ -20,4 +20,4 @@ void init_ast_module(py::module&);
 void init_signal_module(py::module&);
 void init_robustness_module(py::module&);
 
-#endif /* end of include guard: __SIGNAL_TL_PYTHON_BINDINGS_HH__ */
+#endif

@@ -2,11 +2,7 @@
 # NOTE there must be no spaces before the '-', so put the comma last.
 Checks: '-*,
 bugprone-*,
--bugprone-forward-declaration-namespace,
--bugprone-macro-parentheses,
--bugprone-lambda-function-name,
 cppcoreguidelines-*,
--cppcoreguidelines-interfaces-global-init,
 -cppcoreguidelines-owning-memory,
 -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
 -cppcoreguidelines-pro-bounds-constant-array-index,
@@ -20,15 +16,11 @@ cppcoreguidelines-*,
 hicpp-exception-baseclass,
 hicpp-avoid-goto,
 modernize-*,
--modernize-return-braced-init-list,
--modernize-use-auto,
--modernize-use-default-member-init,
--modernize-use-using,
 -modernize-use-trailing-return-type,
 performance-*,
 -performance-noexcept-move-constructor,
   '
-HeaderFilterRegex: 'include/.*'
-AnalyzeTemporaryDtors: false
-CheckOptions:
+WarningsAsErrors: '*'
+HeaderFilterRegex: ''
+FormatStyle: 'file'
 ...

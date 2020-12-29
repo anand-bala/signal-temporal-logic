@@ -1,5 +1,8 @@
 message(STATUS "Building Tests in ${CMAKE_CURRENT_LIST_DIR}")
 
+unset(CMAKE_CXX_CLANG_TIDY)
+unset(CMAKE_CXX_INCLUDE_WHAT_YOU_USE)
+
 set(TEST_SRCS signaltl_tests.cc test_append_error.cc test_signals.cc)
 
 add_executable(signaltl_tests ${TEST_SRCS})

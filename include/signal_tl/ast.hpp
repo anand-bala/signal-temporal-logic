@@ -1,14 +1,13 @@
 #pragma once
 
-#if !defined(__SIGNAL_TEMPORAL_LOGIC_AST_HH__)
-#define __SIGNAL_TEMPORAL_LOGIC_AST_HH__
+#ifndef SIGNAL_TEMPORAL_LOGIC_AST_HPP
+#define SIGNAL_TEMPORAL_LOGIC_AST_HPP
 
-#include <exception>
 #include <memory>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -22,7 +21,7 @@ struct Const {
 
   // TODO: pybind11 doesn't like deleted default constructors
   Const() = default;
-  Const(bool value) : value{value} {};
+  Const(bool boolean_value) : value{boolean_value} {};
 
   inline bool operator==(const Const& other) const {
     return this->value == other.value;
@@ -43,10 +42,10 @@ struct Predicate {
 
   // Predicate() = delete;
   Predicate(
-      const std::string& name,
-      const ComparisonOp op = ComparisonOp::GE,
-      const double lhs      = 0.0) :
-      name{name}, op{op}, lhs{lhs} {};
+      std::string ap_name,
+      ComparisonOp operation = ComparisonOp::GE,
+      double constant_val    = 0.0) :
+      name{std::move(ap_name)}, op{operation}, lhs{constant_val} {};
 
   inline bool operator==(const Predicate& other) const {
     return (name == other.name) && (op == other.op) && (lhs == other.lhs);
@@ -86,14 +85,14 @@ struct Not {
   Expr arg;
 
   // Not() = delete;
-  Not(const Expr& arg) : arg(arg) {}
+  Not(Expr sub_expr) : arg(std::move(sub_expr)) {}
 };
 
 struct And {
   std::vector<Expr> args;
 
   // And() = delete;
-  And(const std::vector<Expr>& args) : args(args) {
+  And(std::vector<Expr> operands) : args(std::move(operands)) {
     if (args.size() < 2) {
       throw std::invalid_argument(
           "It doesn't make sense to have an And operator with < 2 operands");
@@ -105,7 +104,7 @@ struct Or {
   std::vector<Expr> args;
 
   // Or() = delete;
-  Or(const std::vector<Expr>& args) : args(args) {
+  Or(std::vector<Expr> operands) : args(std::move(operands)) {
     if (args.size() < 2) {
       throw std::invalid_argument(
           "It doesn't make sense to have an Or operator with < 2 operands");
@@ -121,8 +120,8 @@ struct Always {
   std::optional<Interval> interval;
 
   // Always() = delete;
-  Always(const Expr& arg, const std::optional<Interval> interval = std::nullopt) :
-      arg(arg), interval(interval) {
+  Always(Expr operand, const std::optional<Interval> time_interval = std::nullopt) :
+      arg(std::move(operand)), interval(time_interval) {
     if (interval.has_value()) {
       const auto [a, b] = interval.value();
       if (a < 0 || b < 0) {
@@ -139,8 +138,8 @@ struct Eventually {
   std::optional<Interval> interval;
 
   // Eventually() = delete;
-  Eventually(const Expr& arg, const std::optional<Interval> interval = std::nullopt) :
-      arg(arg), interval(interval) {
+  Eventually(Expr operand, const std::optional<Interval> time_interval = std::nullopt) :
+      arg(std::move(operand)), interval(time_interval) {
     if (interval.has_value()) {
       const auto [a, b] = interval.value();
       if (a < 0 || b < 0) {
@@ -157,11 +156,9 @@ struct Until {
   std::optional<Interval> interval;
 
   // Until() = delete;
-  Until(
-      const Expr& arg0,
-      const Expr& arg1,
-      std::optional<Interval> interval = std::nullopt) :
-      args(std::make_pair(arg0, arg1)), interval(interval) {
+  Until(Expr arg0, Expr arg1, std::optional<Interval> time_interval = std::nullopt) :
+      args(std::make_pair(std::move(arg0), std::move(arg1))),
+      interval(std::move(time_interval)) {
     if (interval.has_value()) {
       const auto [a, b] = interval.value();
       if (a < 0 || b < 0) {

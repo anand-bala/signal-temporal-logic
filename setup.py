@@ -52,10 +52,11 @@ class CMakeBuild(build_ext):
         cmake_args = [
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
-            "-DSIGNALTL_TEST=OFF",
-            "-DSIGNALTL_COVERAGE=OFF",
-            "-DSIGNALTL_EXAMPLES=OFF",
-            "-DSIGNALTL_INSTALL=OFF",
+            "-DBUILD_EXAMPLES=OFF",
+            "-DBUILD_PYTHON_BINDINGS=ON",
+            "-DENABLE_TESTING=OFF",
+            "-DENABLE_COVERAGE=OFF",
+            "-DENABLE_ALL_STATIC_ANALYZERS=OFF",
         ]
 
         if self._use_ninja:

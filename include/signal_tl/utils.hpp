@@ -1,13 +1,12 @@
 #pragma once
 
-#ifndef __SIGNAL_TEMPORAL_LOGIC_UTILS_HH__
-#define __SIGNAL_TEMPORAL_LOGIC_UTILS_HH__
+#ifndef SIGNAL_TEMPORAL_LOGIC_UTILS_HPP
+#define SIGNAL_TEMPORAL_LOGIC_UTILS_HPP
 
 #include <iterator>
 #include <tuple>
 
-namespace signal_tl {
-namespace utils {
+namespace signal_tl::utils {
 
 /**
  * Visit helper for a set of visitor lambdas.
@@ -19,7 +18,7 @@ struct overloaded : Ts... {
   using Ts::operator()...;
 };
 template <class... Ts>
-overloaded(Ts...)->overloaded<Ts...>;
+overloaded(Ts...) -> overloaded<Ts...>;
 
 /**
  * Python-style enumerate function for range-based for loops.
@@ -77,7 +76,6 @@ constexpr auto reversed(T&& iterable) {
   return iterable_wrapper{std::forward<T>(iterable)};
 }
 
-} // namespace utils
-} // namespace signal_tl
+} // namespace signal_tl::utils
 
-#endif /* end of include guard: __SIGNAL_TEMPORAL_LOGIC_UTILS_HH__ */
+#endif

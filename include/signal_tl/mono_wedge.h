@@ -1,3 +1,34 @@
+/*
+  This code is available under the MIT license:
+
+    Copyright (c) 2016 Evan Balster
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this
+    software and associated documentation files (the "Software"), to deal in the
+  Software without restriction, including without limitation the rights to use, copy,
+  modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+  and to permit persons to whom the Software is furnished to do so, subject to the
+  following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+  PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+  CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+  OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+  The original Lemire algorithm is "patent-free".  For more information on the Lemire
+  algorithm:
+
+    Code:  https://github.com/lemire/runningmaxmin
+
+    Paper: https://arxiv.org/abs/cs/0610046
+*/
+
 #ifndef MONOTONIC_WEDGE_H
 #define MONOTONIC_WEDGE_H
 
@@ -53,7 +84,7 @@ namespace mono_wedge {
 */
 template <class Iterator, class T, class Compare>
 Iterator mono_wedge_search(Iterator begin, Iterator end, const T& value, Compare comp) {
-  size_t size = static_cast<size_t>(std::distance(begin, end));
+  auto size = static_cast<size_t>(std::distance(begin, end));
   if (size <= 0ul)
     return end;
 
@@ -139,7 +170,7 @@ template <class Wedge, class T, class Compare>
 void mono_wedge_update(Wedge& wedge, T&& value, Compare comp) {
   typename Wedge::iterator i =
       mono_wedge_search(wedge.begin(), wedge.end(), value, comp);
-  size_t erase_count = static_cast<size_t>(std::distance(i, wedge.end()));
+  auto erase_count = static_cast<size_t>(std::distance(i, wedge.end()));
   while (erase_count--) wedge.pop_back();
   wedge.push_back(std::forward<T>(value));
 }
@@ -157,34 +188,3 @@ void max_wedge_update(Wedge& wedge, T&& value) {
 } // namespace mono_wedge
 
 #endif // MONOTONIC_WEDGE_H
-
-/*
-  This code is available under the MIT license:
-
-    Copyright (c) 2016 Evan Balster
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy of this
-    software and associated documentation files (the "Software"), to deal in the
-  Software without restriction, including without limitation the rights to use, copy,
-  modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-  and to permit persons to whom the Software is furnished to do so, subject to the
-  following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-  PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
-  CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-  OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
-  The original Lemire algorithm is "patent-free".  For more information on the Lemire
-  algorithm:
-
-    Code:  https://github.com/lemire/runningmaxmin
-
-    Paper: https://arxiv.org/abs/cs/0610046
-*/

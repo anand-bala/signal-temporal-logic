@@ -3,7 +3,7 @@
  */
 #include <catch2/catch.hpp>
 
-#include "signal_tl/signal.hh"
+#include "signal_tl/signal.hpp"
 
 #include <random>
 
@@ -14,19 +14,20 @@ class MonotonicIncreasingTimestampedSignal
     : public Catch::Generators::IGenerator<Sample> {
   std::default_random_engine rng;
   std::uniform_real_distribution<> dist;
-  double current_end_time;
+  double current_end_time{0.0};
   Sample current_last_sample;
 
  public:
   MonotonicIncreasingTimestampedSignal(
-      double interval_size = 10.0,
-      double delta         = 0.1) :
+      double interval_size = 10.0, // NOLINT(cppcoreguidelines-avoid-magic-numbers)
+      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers)
+      double delta = 0.1) :
       rng(std::random_device{}()), dist(delta, interval_size) {
-    current_end_time    = 0.0;
-    current_last_sample = Sample{current_end_time, 10.0};
+    current_last_sample =
+        Sample{current_end_time, 10.0}; // NOLINT(cppcoreguidelines-avoid-magic-numbers)
   }
 
-  Sample const& get() const override;
+  [[nodiscard]] Sample const& get() const override;
 
   bool next() override {
     current_end_time += dist(rng);
@@ -35,8 +36,9 @@ class MonotonicIncreasingTimestampedSignal
   }
 };
 
-Catch::Generators::GeneratorWrapper<Sample>
-mono_increase_sample(double interval_size = 10.0, double delta = 0.1) {
+Catch::Generators::GeneratorWrapper<Sample> mono_increase_sample(
+    double interval_size = 10.0, // NOLINT(cppcoreguidelines-avoid-magic-numbers)
+    double delta         = 0.1) {        // NOLINT(cppcoreguidelines-avoid-magic-numbers)
   return Catch::Generators::GeneratorWrapper<Sample>(
       std::unique_ptr<Catch::Generators::IGenerator<Sample>>(
           new MonotonicIncreasingTimestampedSignal(interval_size, delta)));
@@ -50,15 +52,20 @@ Sample const& MonotonicIncreasingTimestampedSignal::get() const {
 
 TEST_CASE("Signals are monotonically increasing", "[signal]") {
   SECTION("Manually created signal") {
-    auto points   = std::vector<double>{25.0, 15.0, 22.0, -1.0};
-    auto time_pts = std::vector<double>{0, 0.25, 5, 6.25};
-    auto sig      = std::make_shared<Signal>(points, time_pts);
+    auto points = std::vector<double>{
+        25.0, 15.0, 22.0, -1.0}; // NOLINT(cppcoreguidelines-avoid-magic-numbers)
+    auto time_pts = std::vector<double>{
+        0, 0.25, 5, 6.25}; // NOLINT(cppcoreguidelines-avoid-magic-numbers)
+    auto sig = std::make_shared<Signal>(points, time_pts);
 
     REQUIRE(sig->size() == 4);
     REQUIRE(sig->begin_time() == Approx(0));
-    REQUIRE(sig->end_time() == Approx(6.25));
+    REQUIRE(
+        sig->end_time() ==
+        Approx(6.25)); // NOLINT(cppcoreguidelines-avoid-magic-numbers)
 
-    auto time_point = GENERATE(take(100, random(0.0, 6.25)));
+    auto time_point = GENERATE(
+        take(100, random(0.0, 6.25))); // NOLINT(cppcoreguidelines-avoid-magic-numbers)
     REQUIRE_THROWS(sig->push_back(time_point, 0.0));
   }
 

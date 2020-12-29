@@ -1,18 +1,18 @@
+
 #pragma once
 
-#ifndef __SIGNAL_TEMPORAL_LOGIC_FMT_HH__
-#define __SIGNAL_TEMPORAL_LOGIC_FMT_HH__
+#ifndef SIGNAL_TEMPORAL_LOGIC_FMT_HPP
+#define SIGNAL_TEMPORAL_LOGIC_FMT_HPP
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
-#include "signal_tl/ast.hh"
-#include "signal_tl/signal.hh"
+#include "signal_tl/ast.hpp"
+#include "signal_tl/signal.hpp"
 
-#include "signal_tl/utils.hh"
+#include "signal_tl/utils.hpp"
 
-namespace signal_tl {
-namespace ast {
+namespace signal_tl::ast {
 std::ostream& operator<<(std::ostream& os, const Expr& expr);
 
 template <typename Node>
@@ -22,8 +22,7 @@ struct formatter {
   }
 };
 
-} // namespace ast
-} // namespace signal_tl
+} // namespace signal_tl::ast
 
 template <>
 struct fmt::formatter<signal_tl::ast::Const>
@@ -153,15 +152,16 @@ struct fmt::formatter<signal_tl::ast::Expr>
   template <typename FormatContext>
   auto format(const signal_tl::ast::Expr& expr, FormatContext& ctx) {
     return std::visit(
-        signal_tl::utils::overloaded{[&](const signal_tl::ast::Const& e) {
-                                       return format_to(ctx.out(), "{}", e);
-                                     },
-                                     [&](const signal_tl::ast::Predicate& e) {
-                                       return format_to(ctx.out(), "{}", e);
-                                     },
-                                     [&](const auto& e) {
-                                       return format_to(ctx.out(), "{}", *e);
-                                     }},
+        signal_tl::utils::overloaded{
+            [&](const signal_tl::ast::Const& e) {
+              return format_to(ctx.out(), "{}", e);
+            },
+            [&](const signal_tl::ast::Predicate& e) {
+              return format_to(ctx.out(), "{}", e);
+            },
+            [&](const auto& e) {
+              return format_to(ctx.out(), "{}", *e);
+            }},
         expr);
   }
 };
@@ -190,4 +190,4 @@ struct fmt::formatter<signal_tl::signal::Signal> {
   }
 };
 
-#endif /* end of include guard: __SIGNAL_TEMPORAL_LOGIC_FMT_HH__ */
+#endif

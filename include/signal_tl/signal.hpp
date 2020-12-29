@@ -1,7 +1,7 @@
 #pragma once
 
-#if !defined(__SIGNAL_TEMPORAL_LOGIC_SIGNAL_HH__)
-#define __SIGNAL_TEMPORAL_LOGIC_SIGNAL_HH__
+#ifndef SIGNAL_TEMPORAL_LOGIC_SIGNAL_HPP
+#define SIGNAL_TEMPORAL_LOGIC_SIGNAL_HPP
 
 #include <algorithm>
 #include <exception>
@@ -11,8 +11,7 @@
 #include <tuple>
 #include <vector>
 
-namespace signal_tl {
-namespace signal {
+namespace signal_tl::signal {
 
 struct Sample {
   double time;
@@ -22,7 +21,7 @@ struct Sample {
   /**
    * Linear interpolate the Sample (given the derivative) to get the value at time `t`.
    */
-  constexpr double interpolate(double t) const {
+  [[nodiscard]] constexpr double interpolate(double t) const {
     return value + derivative * (t - time);
   }
 
@@ -30,13 +29,13 @@ struct Sample {
    * Get the time point at which the lines associated with this Sample and the given
    * Sample intersect.
    */
-  constexpr double time_intersect(const Sample& point) const {
+  [[nodiscard]] constexpr double time_intersect(const Sample& point) const {
     return (value - point.value + (point.derivative * point.time) -
             (derivative * time)) /
            (point.derivative - derivative);
   }
 
-  constexpr double area(double t) const {
+  [[nodiscard]] constexpr double area(double t) const {
     if (t > time) {
       return (value + this->interpolate(t)) * (t - time) / 2;
     } else {
@@ -71,35 +70,35 @@ struct Signal {
   std::vector<Sample> samples;
 
  public:
-  double begin_time() const {
+  [[nodiscard]] double begin_time() const {
     return (samples.empty()) ? 0.0 : samples.front().time;
   }
 
-  double end_time() const {
+  [[nodiscard]] double end_time() const {
     return (samples.empty()) ? 0.0 : samples.back().time;
   }
 
-  double interpolate(double t, size_t idx) const {
+  [[nodiscard]] double interpolate(double t, size_t idx) const {
     return this->samples.at(idx).interpolate(t);
   }
 
-  double time_intersect(const Sample& point, size_t idx) const {
+  [[nodiscard]] double time_intersect(const Sample& point, size_t idx) const {
     return this->samples.at(idx).time_intersect(point);
   }
 
-  double area(double t, size_t idx) const {
+  [[nodiscard]] double area(double t, size_t idx) const {
     return this->samples.at(idx).area(t);
   }
 
-  Sample front() const {
+  [[nodiscard]] Sample front() const {
     return this->samples.front();
   }
 
-  Sample back() const {
+  [[nodiscard]] Sample back() const {
     return this->samples.back();
   }
 
-  Sample at_idx(size_t i) const {
+  [[nodiscard]] Sample at_idx(size_t i) const {
     return this->samples.at(i);
   }
 
@@ -109,18 +108,18 @@ struct Signal {
    * Does a binary search for the given time instance, and interpolates from
    * the closest sample less than `t` if necessary.
    */
-  Sample at(double t) const;
+  [[nodiscard]] Sample at(double t) const;
   /**
    * Get const_iterator to the start of the signal
    */
-  auto begin() const {
+  [[nodiscard]] auto begin() const {
     return this->samples.cbegin();
   }
 
   /**
    * Get const_iterator to the end of the signal
    */
-  auto end() const {
+  [[nodiscard]] auto end() const {
     return this->samples.cend();
   }
 
@@ -128,7 +127,7 @@ struct Signal {
    * Get const_iterator to the first element of the signal that is timed at or after
    * `s`
    */
-  auto begin_at(double s) const {
+  [[nodiscard]] auto begin_at(double s) const {
     if (this->begin_time() >= s)
       return this->begin();
 
@@ -142,7 +141,7 @@ struct Signal {
    * Get const_iterator to the element after the last element of the signal
    * that is timed at or before `t`
    */
-  auto end_at(double t) const {
+  [[nodiscard]] auto end_at(double t) const {
     if (this->end_time() <= t)
       return this->end();
 
@@ -156,22 +155,22 @@ struct Signal {
   /**
    * Get const reverse_iterator to the samples.
    */
-  auto rbegin() const {
+  [[nodiscard]] auto rbegin() const {
     return this->samples.crbegin();
   }
 
   /**
    * Get const reverse_iterator to the samples.
    */
-  auto rend() const {
+  [[nodiscard]] auto rend() const {
     return this->samples.crend();
   }
 
-  size_t size() const {
+  [[nodiscard]] size_t size() const {
     return this->samples.size();
   }
 
-  bool empty() const {
+  [[nodiscard]] bool empty() const {
     return this->samples.empty();
   }
 
@@ -184,21 +183,22 @@ struct Signal {
   /**
    * Remove sampling points where (y, dy) is continuous
    */
-  std::shared_ptr<Signal> simplify() const;
+  [[nodiscard]] std::shared_ptr<Signal> simplify() const;
   /**
    * Restrict/extend the signal to [s,t] with default value v where not defined.
    */
-  std::shared_ptr<Signal> resize(double start, double end, double fill) const;
+  [[nodiscard]] std::shared_ptr<Signal>
+  resize(double start, double end, double fill) const;
   /**
    * Shift the signal by dt time units
    */
-  std::shared_ptr<Signal> shift(double dt) const;
+  [[nodiscard]] std::shared_ptr<Signal> shift(double dt) const;
 
   /**
    * Resize and shift a signal without creating copies. We use this often, so it makes
    * sense to combine it.
    */
-  std::shared_ptr<Signal>
+  [[nodiscard]] std::shared_ptr<Signal>
   resize_shift(double start, double end, double fill, double dt) const;
 
   Signal() : samples{} {}
@@ -259,7 +259,6 @@ synchronize(const std::shared_ptr<Signal>& x, const std::shared_ptr<Signal>& y);
 using SignalPtr = std::shared_ptr<Signal>;
 using Trace     = std::map<std::string, SignalPtr>;
 
-} // namespace signal
-} // namespace signal_tl
+} // namespace signal_tl::signal
 
 #endif

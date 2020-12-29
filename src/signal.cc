@@ -1,7 +1,7 @@
-#include "signal_tl/signal.hh"
-#include "signal_tl/utils.hh"
+#include "signal_tl/signal.hpp"
+#include "signal_tl/utils.hpp"
 
-#include "signal_tl/fmt.hh"
+#include "signal_tl/fmt.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -10,8 +10,7 @@
 
 #include <cassert>
 
-namespace signal_tl {
-namespace signal {
+namespace signal_tl::signal {
 
 Sample Signal::at(double t) const {
   if (this->begin_time() > t && this->end_time() < t) {
@@ -22,7 +21,7 @@ Sample Signal::at(double t) const {
     return a.time < b.time;
   };
 
-  std::vector<Sample>::const_iterator it = std::lower_bound(
+  auto it = std::lower_bound(
       this->begin(), this->end(), Sample{t, 0.0}, comp_time); // it->time >= t
   if (it->time == t) {
     return *it;
@@ -57,10 +56,8 @@ SignalPtr Signal::simplify() const {
   auto sig = std::make_shared<Signal>();
   for (const auto& s : this->samples) {
     const auto [t, v, d] = s;
-    if (sig->empty()) {
-      sig->push_back(s);
-    } else if (const auto& new_s = sig->back();
-               new_s.interpolate(t) != v || new_s.derivative != d) {
+    if ((sig->empty()) ||
+        (sig->back().interpolate(t) != v || sig->back().derivative != d)) {
       sig->push_back(s);
     }
   }
@@ -176,5 +173,4 @@ synchronize(const std::shared_ptr<Signal>& x, const std::shared_ptr<Signal>& y) 
   return std::make_tuple(std::make_shared<Signal>(xv), std::make_shared<Signal>(yv));
 }
 
-} // namespace signal
-} // namespace signal_tl
+} // namespace signal_tl::signal
