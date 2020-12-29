@@ -27,7 +27,7 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
       - name: CMake configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DSIGNALTL_COVERAGE=ON -DSIGNALTL_TEST=ON
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON -DENABLE_TESTING=ON -DENABLE_ALL_STATIC_ANALYZERS=OFF
         env:
           CC: clang-9
           CXX: clang++-9

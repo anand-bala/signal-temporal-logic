@@ -43,7 +43,7 @@ jobs:
           CXX: ${{ matrix.config.cxx }}
         if: startsWith(matrix.config.os, 'ubuntu')
       - name: CMake configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_ALL_STATIC_ANALYZERS=OFF
       - name: CMake build
         run: cmake --build build --config Release -j --clean-first
 
