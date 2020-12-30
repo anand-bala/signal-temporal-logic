@@ -208,7 +208,7 @@ struct Signal {
 
   Signal(const Signal& other) {
     this->samples.reserve(other.size());
-    for (const auto s : other) { this->push_back(s); }
+    for (const auto& s : other) { this->push_back(s); }
   }
 
   /**
@@ -220,7 +220,7 @@ struct Signal {
       typename = decltype(std::end(std::declval<T>()))>
   Signal(const T& data) {
     this->samples.reserve(data.size());
-    for (const auto s : data) { this->push_back(s); }
+    for (const auto& s : data) { this->push_back(s); }
   }
 
   /**
