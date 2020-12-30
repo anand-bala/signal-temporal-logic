@@ -1,15 +1,9 @@
 #include "bindings.hpp"
 #include "signal_tl/exception.hpp"
 
-PYBIND11_MODULE(_cext, m) {
-  py::register_exception_translator([](const std::exception_ptr& p) {
-    try {
-      if (p)
-        std::rethrow_exception(p);
-    } catch (const signal_tl::not_implemented_error& e) {
-      PyErr_SetString(PyExc_NotImplementedError, e.what());
-    }
-  });
+PYBIND11_MODULE(_cext, m) { // NOLINT
+  py::register_exception<signal_tl::not_implemented_error>(
+      m, "FunctionNotImplemented", PyExc_NotImplementedError);
 
   m.doc() = "Signal Temporal Logic library.";
   init_ast_module(m);

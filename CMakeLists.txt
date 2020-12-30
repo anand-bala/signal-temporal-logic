@@ -69,8 +69,6 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 # Third party libraries and dependencies
 find_package(fmt REQUIRED)
-find_package(pybind11 REQUIRED)
-find_package(Catch2 REQUIRED)
 
 # Add library and module
 set(STL_SOURCES src/ast.cc src/classic_robustness.cc src/minmax.cc
@@ -88,6 +86,7 @@ set_default_compile_options(signaltl)
 set_project_warnings(signaltl)
 
 if(BUILD_PYTHON_BINDINGS)
+  find_package(pybind11 REQUIRED)
   set(BINDINGS_SOURCES signal_tl/pyast.cc signal_tl/pyrobustness.cc
                        signal_tl/pysignal.cc signal_tl/pysignal_tl.cc)
 

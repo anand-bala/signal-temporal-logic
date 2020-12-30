@@ -1,3 +1,4 @@
+find_package(Catch2 REQUIRED)
 message(STATUS "Building Tests in ${CMAKE_CURRENT_LIST_DIR}")
 
 unset(CMAKE_CXX_CLANG_TIDY)
