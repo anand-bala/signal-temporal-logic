@@ -35,5 +35,9 @@ jobs:
         run: cmake --build build --config Debug -j --clean-first
       - name: CTest
         run: cmake --build build --config Debug --target test
+      - name: Generate gcov reports
+        run: cmake --build build --config Debug --target gcov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
 
 
