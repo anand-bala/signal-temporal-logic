@@ -14,7 +14,7 @@ jobs:
       - name: Install Ninja and Conan
         run: "python -m pip install ninja conan"
       - name: Install Lcov
-        run: sudo apt-get install lcov
+        run: sudo apt-get install lcov clang-tidy llvm
       - name: Cache Conan dependencies
         uses: actions/cache@v2
         env:
@@ -27,10 +27,10 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
       - name: CMake configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON -DENABLE_TESTING=ON -DENABLE_ALL_STATIC_ANALYZERS=OFF
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON -DENABLE_TESTING=ON -DENABLE_CLANG_TIDY=ON
         env:
-          CC: clang-9
-          CXX: clang++-9
+          CC: clang
+          CXX: clang++
       - name: CMake build
         run: cmake --build build --config Debug -j --clean-first
       - name: CTest

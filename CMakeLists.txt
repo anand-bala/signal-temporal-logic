@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -84,6 +84,8 @@ target_link_libraries(signaltl PUBLIC fmt::fmt)
 set_target_properties(signaltl PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_default_compile_options(signaltl)
 set_project_warnings(signaltl)
+enable_clang_tidy(signaltl)
+enable_include_what_you_use(signaltl)
 
 if(BUILD_PYTHON_BINDINGS)
   find_package(pybind11 REQUIRED)

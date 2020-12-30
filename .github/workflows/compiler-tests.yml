@@ -14,6 +14,12 @@ jobs:
           - os: ubuntu-18.04
             cc: gcc
             cxx: g++
+          - os: ubuntu-20.04
+            cc: clang-9
+            cxx: clang++-9
+          - os: ubuntu-20.04
+            cc: gcc
+            cxx: g++
           - os: macos-latest
           - os: windows-latest
     runs-on: ${{ matrix.config.os }}
