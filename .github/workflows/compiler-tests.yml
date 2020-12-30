@@ -37,7 +37,7 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
       - name: CMake configure (Ubuntu)
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_ALL_STATIC_ANALYZERS=OFF
         env:
           CC: ${{ matrix.config.cc }}
           CXX: ${{ matrix.config.cxx }}
