@@ -3,8 +3,7 @@
 
 #include "signal_tl/signal.hpp"
 
-#include <functional>
-#include <numeric>
+#include <vector>
 
 namespace signal_tl::minmax {
 

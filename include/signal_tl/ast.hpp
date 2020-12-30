@@ -5,14 +5,33 @@
 
 #include <memory>
 #include <optional>
+#include <stdexcept> // for invalid_argument
 #include <string>
-#include <tuple>
+#include <type_traits> // for remove_reference<>::type
 #include <utility>
 #include <variant>
 #include <vector>
 
 namespace signal_tl {
 namespace ast {
+
+struct Const;
+struct Predicate;
+struct Not;
+struct And;
+struct Or;
+struct Always;
+struct Eventually;
+struct Until;
+
+using ConstPtr      = std::shared_ptr<Const>;
+using PredicatePtr  = std::shared_ptr<Predicate>;
+using NotPtr        = std::shared_ptr<Not>;
+using AndPtr        = std::shared_ptr<And>;
+using OrPtr         = std::shared_ptr<Or>;
+using AlwaysPtr     = std::shared_ptr<Always>;
+using EventuallyPtr = std::shared_ptr<Eventually>;
+using UntilPtr      = std::shared_ptr<Until>;
 
 /* Define Syntax Tree */
 
@@ -31,7 +50,6 @@ struct Const {
     return !(*this == other);
   };
 };
-using ConstPtr = std::shared_ptr<Const>;
 
 enum class ComparisonOp { GT, GE, LT, LE };
 
@@ -55,20 +73,6 @@ struct Predicate {
     return !(*this == other);
   };
 };
-using PredicatePtr = std::shared_ptr<Predicate>;
-
-struct Not;
-using NotPtr = std::shared_ptr<Not>;
-struct And;
-using AndPtr = std::shared_ptr<And>;
-struct Or;
-using OrPtr = std::shared_ptr<Or>;
-struct Always;
-using AlwaysPtr = std::shared_ptr<Always>;
-struct Eventually;
-using EventuallyPtr = std::shared_ptr<Eventually>;
-struct Until;
-using UntilPtr = std::shared_ptr<Until>;
 
 using Expr = std::variant<
     Const,

@@ -1,19 +1,24 @@
-#include "signal_tl/robustness.hpp"
-
+#include "signal_tl/ast.hpp"
 #include "signal_tl/exception.hpp"
 #include "signal_tl/minmax.hpp"
+#include "signal_tl/robustness.hpp"
+#include "signal_tl/signal.hpp"
 
-#include "signal_tl/mono_wedge.h"
-
-#include <algorithm>
-#include <cmath>
-#include <functional>
-#include <limits>
-#include <numeric>
-
-#include <deque>
-
-#include <cassert>
+#include <algorithm>  // for max, min, transform, for_each
+#include <cassert>    // for assert
+#include <cmath>      // for isinf
+#include <functional> // for negate
+#include <iterator>   // for back_insert_iterator, back_inserter
+#include <limits>     // for numeric_limits
+#include <map>        // for operator!=
+#include <memory>     // for __shared_ptr_access, make_shared
+#include <optional>   // for optional
+#include <stdexcept>  // for logic_error
+#include <string>     // for string
+#include <tuple>      // for make_tuple, tuple_element<>::type
+#include <utility>    // for tuple_element<>::type, pair
+#include <variant>    // for visit
+#include <vector>     // for vector
 
 namespace signal_tl::semantics {
 using namespace signal;

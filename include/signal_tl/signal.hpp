@@ -3,13 +3,16 @@
 #ifndef SIGNAL_TEMPORAL_LOGIC_SIGNAL_HPP
 #define SIGNAL_TEMPORAL_LOGIC_SIGNAL_HPP
 
-#include <algorithm>
-#include <exception>
-#include <map>
-#include <memory>
-#include <stdexcept>
-#include <tuple>
-#include <vector>
+#include <algorithm>   // for lower_bound
+#include <cstddef>     // for size_t
+#include <iterator>    // for next, prev
+#include <map>         // for map
+#include <memory>      // for shared_ptr, allocator_traits<>::value_type
+#include <stdexcept>   // for invalid_argument
+#include <string>      // for string
+#include <tuple>       // for tuple
+#include <type_traits> // for declval
+#include <vector>      // for vector
 
 namespace signal_tl::signal {
 

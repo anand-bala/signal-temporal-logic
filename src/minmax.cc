@@ -1,17 +1,17 @@
 #include "signal_tl/minmax.hpp"
+#include "signal_tl/mono_wedge.h" // for mono_wedge_update
 
-#include "signal_tl/mono_wedge.h"
+#include <algorithm>  // for max, reverse
+#include <deque>      // for _Deque_iterator, deque, operator-
+#include <functional> // for greater_equal, less_equal
+#include <iterator>   // for prev, next, begin
+#include <limits>     // for numeric_limits
+#include <memory>     // for __shared_ptr_access, make_shared
+#include <numeric>    // for accumulate
+#include <tuple>      // for make_tuple, tuple_element<>::type
+#include <utility>    // for tuple_element<>::type
 
-#include <algorithm>
-#include <cmath>
-#include <functional>
-#include <limits>
-#include <memory>
-#include <numeric>
-
-#include <deque>
-
-#include <cassert>
+#include <cassert> // for assert
 
 namespace signal_tl::minmax {
 using namespace signal;

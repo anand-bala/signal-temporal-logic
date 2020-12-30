@@ -1,6 +1,7 @@
 #include "signal_tl/ast.hpp"
 #include "signal_tl/utils.hpp"
 
+#include <cstddef>
 #include <iterator>
 
 namespace signal_tl {
@@ -31,18 +32,19 @@ Expr AndHelper(const AndPtr& lhs, const Expr& rhs) {
   std::vector<Expr> args{lhs->args};
 
   std::visit(
-      overloaded{[&args](const auto e) { args.push_back(e); },
-                 [&args](const Const e) {
-                   if (!e.value) {
-                     args = {Expr{e}};
-                   }
-                 },
-                 [&args](const AndPtr& e) {
-                   args.reserve(
-                       args.size() + static_cast<size_t>(std::distance(
-                                         e->args.begin(), e->args.end())));
-                   args.insert(args.end(), e->args.begin(), e->args.end());
-                 }},
+      overloaded{
+          [&args](const auto e) { args.push_back(e); },
+          [&args](const Const e) {
+            if (!e.value) {
+              args = {Expr{e}};
+            }
+          },
+          [&args](const AndPtr& e) {
+            args.reserve(
+                args.size() +
+                static_cast<size_t>(std::distance(e->args.begin(), e->args.end())));
+            args.insert(args.end(), e->args.begin(), e->args.end());
+          }},
       rhs);
   return std::make_shared<And>(args);
 }
@@ -51,18 +53,19 @@ Expr OrHelper(const OrPtr& lhs, const Expr& rhs) {
   std::vector<Expr> args{lhs->args};
 
   std::visit(
-      overloaded{[&args](const auto e) { args.push_back(e); },
-                 [&args](const Const e) {
-                   if (e.value) {
-                     args = {Expr{e}};
-                   }
-                 },
-                 [&args](const OrPtr& e) {
-                   args.reserve(
-                       args.size() + static_cast<size_t>(std::distance(
-                                         e->args.begin(), e->args.end())));
-                   args.insert(args.end(), e->args.begin(), e->args.end());
-                 }},
+      overloaded{
+          [&args](const auto e) { args.push_back(e); },
+          [&args](const Const e) {
+            if (e.value) {
+              args = {Expr{e}};
+            }
+          },
+          [&args](const OrPtr& e) {
+            args.reserve(
+                args.size() +
+                static_cast<size_t>(std::distance(e->args.begin(), e->args.end())));
+            args.insert(args.end(), e->args.begin(), e->args.end());
+          }},
       rhs);
   return std::make_shared<Or>(args);
 }

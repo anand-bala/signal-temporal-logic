@@ -1,14 +1,10 @@
 #include "signal_tl/signal.hpp"
-#include "signal_tl/utils.hpp"
 
-#include "signal_tl/fmt.hpp"
+#include "signal_tl/fmt.hpp" // IWYU pragma: keep
 
-#include <algorithm>
-#include <cmath>
-#include <iterator>
-#include <numeric>
-
-#include <cassert>
+#include <algorithm>    // for lower_bound, max
+#include <fmt/format.h> // for format
+#include <iterator>     // for prev, next
 
 namespace signal_tl::signal {
 

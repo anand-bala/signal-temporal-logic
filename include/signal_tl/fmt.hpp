@@ -1,4 +1,3 @@
-
 #pragma once
 
 #ifndef SIGNAL_TEMPORAL_LOGIC_FMT_HPP
