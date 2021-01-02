@@ -27,10 +27,7 @@ jobs:
             ${{ runner.os }}-build-
             ${{ runner.os }}-
       - name: CMake configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON -DENABLE_TESTING=ON -DENABLE_ALL_STATIC_ANALYZERS=ON
-        env:
-          CC: clang
-          CXX: clang++
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON -DENABLE_TESTING=ON
       - name: CMake build
         run: cmake --build build --config Debug -j --clean-first
       - name: CTest
