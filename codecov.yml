@@ -1,12 +1,5 @@
-coverage:
-  ignore:
-    - "test_*.cc"
-    - "tests/test_*.cc"
-    - "tests/**/*"
-    - "examples/**/*"
-
-codecov:
-  branch: master
-
-comment:
-  layout: "diff"
+ignore:
+  - "test_*.cc"
+  - "tests/test_*.cc"
+  - "tests/**/*"
+  - "examples/**/*"
