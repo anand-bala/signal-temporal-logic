@@ -1,0 +1,46 @@
+name: Sanitizer
+
+on: [push, pull_request]
+
+jobs:
+  sanitizer:
+    strategy:
+      fail-fast: false
+      matrix:
+        cxx: [g++, clang++]
+        sanitizer: [address, undefined]
+
+    runs-on: ubuntu-20.04
+
+    env:
+      CXX: ${{ matrix.cxx }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Install Conan
+      run: python -m pip install conan
+    - name: Cache Conan dependencies
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-conan-deps
+      with:
+        path: ~/.conan/data
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - run: cmake -E make_directory build
+
+    - working-directory: build/
+      run: cmake $GITHUB_WORKSPACE -DBUILD_EXAMPLES=OFF -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }}"
+
+    - working-directory: build/
+      run: cmake --build .
+
+    - working-directory: build/
+      run: ctest --output-on-failure

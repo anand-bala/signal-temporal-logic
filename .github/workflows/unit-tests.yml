@@ -1,20 +1,17 @@
-name: Run Unit Tests
+name: Run Unit Tests and Coverage
 
 on: [push, pull_request]
 
 jobs:
-  test:
+  code-coverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
           python-version: '3.x'
-      - run: "python -m pip install -U pip setuptools wheel"
-      - name: Install Ninja and Conan
-        run: "python -m pip install ninja conan"
-      - name: Install Lcov
-        run: sudo apt-get install lcov clang-tidy iwyu llvm
+      - name: Install Conan
+        run: python -m pip install conan
       - name: Cache Conan dependencies
         uses: actions/cache@v2
         env:
@@ -31,10 +28,10 @@ jobs:
       - name: CMake build
         run: cmake --build build --config Debug -j --clean-first
       - name: CTest
-        run: cmake --build build --config Debug --target test
-      - name: Generate gcov reports
-        run: cmake --build build --config Debug --target gcov
+        working-directory: build/
+        run: ctest --output-on-failure
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        working-directory: build/
+        run: bash <(curl -s https://codecov.io/bash)
 
 

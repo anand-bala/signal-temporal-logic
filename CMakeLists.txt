@@ -54,14 +54,12 @@ if((SIGNALTL_MASTER_PROJECT AND ENABLE_TESTING) AND BUILD_TESTING)
       CACHE INTERNAL "Easy option to build the tests")
 endif()
 
-if(ENABLE_COVERAGE)
-  include(Codecov)
-  set(LCOV_REMOVE_PATTERNS
-      "/usr/*"
-      "$ENV{HOME}/.cache/*"
-      "${CMAKE_CURRENT_LISTS_DIR}/tests/*"
-      "${CMAKE_CURRENT_LISTS_DIR}/examples/*")
-endif()
+include(Codecov)
+set(LCOV_REMOVE_PATTERNS
+  "/usr/*"
+  "$ENV{HOME}/.cache/*"
+  "${CMAKE_CURRENT_LISTS_DIR}/tests/*"
+  "${CMAKE_CURRENT_LISTS_DIR}/examples/*")
 
 set(CMAKE_CXX_STANDARD
     17
@@ -90,10 +88,7 @@ set_default_compile_options(signaltl)
 set_project_warnings(signaltl)
 enable_clang_tidy(signaltl)
 enable_include_what_you_use(signaltl)
-if(ENABLE_COVERAGE)
-  add_coverage(signaltl)
-  add_coverage_flags(signaltl)
-endif()
+add_coverage(signaltl)
 
 if(BUILD_PYTHON_BINDINGS)
   find_package(pybind11 REQUIRED)
@@ -106,7 +101,9 @@ if(BUILD_PYTHON_BINDINGS)
   pybind11_add_module(_cext MODULE ${BINDINGS_SOURCES})
   target_include_directories(_cext PRIVATE ${PROJECT_SOURCE_DIR}/signal_tl)
   target_link_libraries(_cext PUBLIC signaltl)
-  add_coverage_flags(_cext)
+  if(ENABLE_COVERAGE)
+    add_coverage_flags(_cext)
+  endif()
 endif()
 
 if(BUILD_EXAMPLES)
