@@ -1,8 +1,5 @@
 [![pypi](https://badge.fury.io/py/signal-temporal-logic.svg)](https://badge.fury.io/py/signal-temporal-logic)
-[![Build Status](https://dev.azure.com/anand-bala/signal-temporal-logic/_apis/build/status/anand-bala.signal-temporal-logic?branchName=master)](https://dev.azure.com/anand-bala/signal-temporal-logic/_build/latest?definitionId=1&branchName=master)
 [![codecov](https://codecov.io/gh/anand-bala/signal-temporal-logic/branch/master/graph/badge.svg)](https://codecov.io/gh/anand-bala/signal-temporal-logic)
-
-
 
 # Signal Temporal Logic Monitoring
 
