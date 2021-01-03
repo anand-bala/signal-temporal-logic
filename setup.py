@@ -1,10 +1,10 @@
 import os
-import pathlib
 import platform
-import re
 import shutil
 import subprocess
 import sys
+from distutils.dir_util import copy_tree
+from distutils.file_util import copy_file
 from distutils.version import LooseVersion
 
 from setuptools import Extension, setup
@@ -26,76 +26,64 @@ class CMakeBuild(build_ext):
                 "CMake must be installed to build the following extensions: "
                 + ", ".join(e.name for e in self.extensions)
             )
-
-        if platform.system() == "Windows":
-            cmake_version = LooseVersion(
-                re.search(r"version\s*([\d.]+)", out.decode()).group(1)
-            )
-            if cmake_version < "3.1.0":
-                raise RuntimeError("CMake >= 3.1.0 is required on Windows")
-
-        self._use_ninja = True
-        try:
-            out = subprocess.check_output(["ninja", "--version"])
-        except OSError:
-            self._use_ninja = False
-
         for ext in self.extensions:
             self.build_extension(ext)
+        if self.inplace:
+            self.copy_extensions_to_source()
 
     def build_extension(self, ext):
-        extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
-        # required for auto-detection of auxiliary "native" libs
-        if not extdir.endswith(os.path.sep):
-            extdir += os.path.sep
-
+        print("CMake Library Output Directory = {}".format(self.build_lib))
         cmake_args = [
-            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
             "-DBUILD_EXAMPLES=OFF",
             "-DBUILD_PYTHON_BINDINGS=ON",
             "-DENABLE_TESTING=OFF",
             "-DENABLE_COVERAGE=OFF",
             "-DENABLE_ALL_STATIC_ANALYZERS=OFF",
+            "-DINSTALL_PACKAGE=OFF",
         ]
-
-        if self._use_ninja:
-            print("using Ninja")
-            cmake_args += ["-GNinja"]
 
         cfg = "Debug" if self.debug else "Release"
         build_args = ["--config", cfg]
 
-        if platform.system() == "Windows":
-            cmake_args += [
-                "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
-            ]
-        else:
-            cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
-
-        if not self._use_ninja:
+        if self.parallel:
             if platform.system() == "Windows":
                 if sys.maxsize > 2 ** 32:
                     cmake_args += ["-A", "x64"]
-                build_args += ["--", "/m"]
+                build_args += ["--", "/MP{}".format(self.parallel)]
             else:
-                build_args += ["--", "-j4"]
+                build_args += ["--", "-j{}".format]
 
-        env = os.environ.copy()
-        env["CXXFLAGS"] = '{} -DVERSION_INFO=\\"{}\\"'.format(
-            env.get("CXXFLAGS", ""), self.distribution.get_version()
-        )
-        if not os.path.exists(self.build_temp):
-            os.makedirs(self.build_temp)
+        if not os.path.exists(self.build_lib):
+            os.makedirs(self.build_lib)
+        subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=self.build_lib)
         subprocess.check_call(
-            ["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env
+            ["cmake", "--build", "."] + build_args, cwd=self.build_lib
         )
-        subprocess.check_call(
-            ["cmake", "--build", "."] + build_args, cwd=self.build_temp, env=env
-        )
+
+    def copy_extensions_to_source(self):
+        build_py = self.get_finalized_command("build_py")
+        for ext in self.extensions:
+            fullname = self.get_ext_fullname(ext.name)
+            print("Package fullname = {}".format(fullname))
+            filename = self.get_ext_filename(fullname)
+            print("Package filename = {}".format(filename))
+            modpath = fullname.split(".")
+            package = ".".join(modpath[:-1])
+            package_dir = build_py.get_package_dir(package)
+            print("Package directory = {}".format(package_dir))
+            dest_dir = os.path.join(package_dir)
+            src_dir = os.path.join(self.build_lib, "lib")
+
+            # Always copy, even if source is older than destination, to ensure
+            # that the right extensions for the current Python/platform are
+            # used.
+            copy_tree(src_dir, dest_dir, verbose=self.verbose, dry_run=self.dry_run)
+            if ext._needs_stub:
+                self.write_stub(package_dir or os.curdir, ext, True)
 
 
 setup(
-    ext_modules=[CMakeExtension("signal_tl._cext")],
+    ext_modules=[CMakeExtension("signal_tl.c_extension")],
     cmdclass=dict(build_ext=CMakeBuild),
 )
