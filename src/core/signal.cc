@@ -2,9 +2,10 @@
 
 #include "signal_tl/fmt.hpp" // IWYU pragma: keep
 
-#include <algorithm>    // for lower_bound, max
 #include <fmt/format.h> // for format
-#include <iterator>     // for prev, next
+
+#include <algorithm> // for lower_bound, max
+#include <iterator>  // for prev, next
 
 namespace signal_tl::signal {
 

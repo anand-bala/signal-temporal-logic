@@ -1,11 +1,10 @@
-/**
- * This file will test the functionality of the Signal class
- */
-#include <catch2/catch.hpp>
+#include "signal_tl/signal.hpp" // for Sample, Signal, signal
 
-#include "signal_tl/signal.hpp"
+#include <catch2/catch.hpp> // for Approx, operator==, SourceLineInfo
 
-#include <random>
+#include <memory> // for __shared_ptr_access, shared_ptr, all...
+#include <random> // for default_random_engine, random_device
+#include <vector> // for vector
 
 using namespace signal_tl::signal;
 

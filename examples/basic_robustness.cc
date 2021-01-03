@@ -1,7 +1,11 @@
-#include "signal_tl/fmt.hpp"
-#include "signal_tl/signal_tl.hpp"
+#include "signal_tl/signal_tl.hpp" // for Predicate, Signal, compute_robust...
 
-#include <fmt/format.h>
+#include "signal_tl/fmt.hpp" // IWYU pragma: keep
+#include <fmt/format.h>      // for print
+
+#include <memory>  // for make_shared, __shared_ptr_access
+#include <variant> // for visit
+#include <vector>  // for vector
 
 namespace stl = signal_tl;
 using namespace signal_tl::signal;
@@ -26,8 +30,7 @@ int main() {
   {
     const auto [xs_, ys_] = synchronize(xs, ys);
     const auto trace1     = Trace{{"a", xs_}, {"b", ys_}};
-    const auto rob1 =
-        stl::compute_robustness(phi, trace1, true);
+    const auto rob1       = stl::compute_robustness(phi, trace1, true);
 
     fmt::print("synched robustness:\t{}\n", *rob1);
   }

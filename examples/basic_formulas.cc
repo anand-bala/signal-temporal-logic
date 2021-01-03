@@ -1,7 +1,8 @@
-#include "signal_tl/ast.hpp"
-#include "signal_tl/fmt.hpp"
+#include "signal_tl/ast.hpp" // for Predicate, signal_tl
+#include "signal_tl/fmt.hpp" // IWYU pragma: keep
 
-#include <fmt/format.h>
+#include <fmt/format.h> // for print
+#include <memory>       // for allocator
 
 namespace stl = signal_tl;
 

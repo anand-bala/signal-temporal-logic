@@ -1,8 +1,8 @@
 option(ENABLE_CLANG_TIDY "Enable static analysis with clang-tidy"
-       ${ENABLE_ALL_STATIC_ANALYZERS})
+       ${ENABLE_STATIC_ANALYSIS})
 option(ENABLE_INCLUDE_WHAT_YOU_USE
        "Enable static analysis with include-what-you-use"
-       ${ENABLE_ALL_STATIC_ANALYZERS})
+       ${ENABLE_STATIC_ANALYSIS})
 
 include(CMakeParseArguments)
 

@@ -37,7 +37,7 @@ option(BUILD_PYTHON_BINDINGS "Build the Python extension?" ${SIGNALTL_MASTER_PRO
 
 option(ENABLE_TESTING "Build signaltl test suite?" ${SIGNALTL_MASTER_PROJECT})
 option(ENABLE_COVERAGE "Generate coverage.xml for test suite?" OFF)
-option(ENABLE_ALL_STATIC_ANALYZERS "Enable clang-tidy and include-what-you-use" OFF)
+option(ENABLE_STATIC_ANALYSIS "Enable clang-tidy and include-what-you-use" OFF)
 
 option(INSTALL_PACKAGE "Configure package to be installed." ON)
 

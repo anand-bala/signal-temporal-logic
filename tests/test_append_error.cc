@@ -1,9 +1,9 @@
-#include "signal_tl/fmt.hpp"
-#include "signal_tl/signal_tl.hpp"
+#include "signal_tl/signal_tl.hpp" // for Signal, Predicate, compute_robust...
 
-#include <fmt/format.h>
+#include <catch2/catch.hpp> // for operator""_catch_sr, SourceLineInfo
 
-#include <catch2/catch.hpp>
+#include <memory> // for make_shared, shared_ptr, allocator
+#include <vector> // for vector
 
 namespace stl = signal_tl;
 using namespace signal_tl::signal;
@@ -55,9 +55,10 @@ Trace get_trace1() {
                           1.7005544900894165,  1.4978992938995361,   0.2856500744819641,
                           1.3224234580993652};
 
-  return Trace{{"theta", std::make_shared<Signal>(theta, t)},
-               {"x", std::make_shared<Signal>(x, t)},
-               {"x_dot", std::make_shared<Signal>(x_dot, t)}};
+  return Trace{
+      {"theta", std::make_shared<Signal>(theta, t)},
+      {"x", std::make_shared<Signal>(x, t)},
+      {"x_dot", std::make_shared<Signal>(x_dot, t)}};
 }
 
 Trace get_trace2() {
@@ -98,9 +99,10 @@ Trace get_trace2() {
       0.4009734094142914,   0.8590595126152039, 0.824567973613739,
       0.5973787903785706};
 
-  return Trace{{"theta", std::make_shared<Signal>(theta, t)},
-               {"x", std::make_shared<Signal>(x, t)},
-               {"x_dot", std::make_shared<Signal>(x_dot, t)}};
+  return Trace{
+      {"theta", std::make_shared<Signal>(theta, t)},
+      {"x", std::make_shared<Signal>(x, t)},
+      {"x_dot", std::make_shared<Signal>(x_dot, t)}};
 }
 
 Trace get_trace3() {
@@ -137,9 +139,10 @@ Trace get_trace3() {
       1.1206265687942505,  0.7472844123840332, 1.7585080862045288,  1.749678373336792,
       1.4623041152954102};
 
-  return Trace{{"theta", std::make_shared<Signal>(theta, t)},
-               {"x", std::make_shared<Signal>(x, t)},
-               {"x_dot", std::make_shared<Signal>(x_dot, t)}};
+  return Trace{
+      {"theta", std::make_shared<Signal>(theta, t)},
+      {"x", std::make_shared<Signal>(x, t)},
+      {"x_dot", std::make_shared<Signal>(x_dot, t)}};
 }
 
 } // namespace

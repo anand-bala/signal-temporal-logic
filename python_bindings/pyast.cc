@@ -1,6 +1,23 @@
-#include "bindings.hpp"
-#include "signal_tl/ast.hpp"
-#include "signal_tl/fmt.hpp"
+#include "bindings.hpp"      // for init_ast_module
+#include "signal_tl/ast.hpp" // for Expr, Until, Const, Always, Even...
+#include "signal_tl/fmt.hpp" // IWYU pragma: keep
+
+#include <fmt/format.h> // for format
+
+#include <pybind11/cast.h>          // for operator""_a, arg
+#include <pybind11/detail/common.h> // for constexpr_first, ignore_unused
+#include <pybind11/detail/descr.h>  // for operator+
+#include <pybind11/operators.h>     // for self, self_t, operator<, operator<=
+#include <pybind11/pybind11.h>      // for class_, init, module, module_
+#include <pybind11/pytypes.h>       // for getattr, reinterpret_steal, sequ...
+
+#include <array>    // for array
+#include <memory>   // for __shared_ptr_access
+#include <optional> // for nullopt, optional
+#include <string>   // for basic_string, string
+#include <utility>  // for pair
+#include <variant>  // for visit
+#include <vector>   // for vector
 
 using namespace signal_tl;
 namespace {

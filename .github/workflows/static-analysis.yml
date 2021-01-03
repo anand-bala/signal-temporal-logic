@@ -1,0 +1,32 @@
+name: Static Analysis
+
+on: [push, pull_request]
+
+jobs:
+  code-coverage:
+    runs-on: ubuntu-20.04
+    env:
+      CC: gcc-9
+      CXX: g++-9
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install Conan
+        run: python -m pip install conan
+      - name: Cache Conan dependencies
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-conan-deps
+        with:
+          path: ~/.conan/data
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      - name: CMake configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=OFF -DENABLE_TESTING=OFF -DENABLE_STATIC_ANALYSIS=ON
+      - name: CMake build
+        run: cmake --build build --config Debug -j --clean-first

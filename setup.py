@@ -39,7 +39,7 @@ class CMakeBuild(build_ext):
             "-DBUILD_PYTHON_BINDINGS=ON",
             "-DENABLE_TESTING=OFF",
             "-DENABLE_COVERAGE=OFF",
-            "-DENABLE_ALL_STATIC_ANALYZERS=OFF",
+            "-DENABLE_STATIC_ANALYSIS=OFF",
             "-DINSTALL_PACKAGE=OFF",
         ]
 

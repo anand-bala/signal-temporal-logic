@@ -1,10 +1,13 @@
-#include <algorithm>
-#include <vector>
+#include <algorithm> // for transform
+#include <iterator>  // for back_insert_iterator, back_inserter
+#include <memory>    // for __shared_ptr_access, make_shared
+#include <utility>   // for tuple_element<>::type
+#include <vector>    // for vector
 
-#include "signal_tl/fmt.hpp"
-#include "signal_tl/signal.hpp"
+#include <fmt/format.h> // for print, join
 
-#include <fmt/format.h>
+#include "signal_tl/fmt.hpp"    // IWYU pragma: keep
+#include "signal_tl/signal.hpp" // for Signal, Sample, synchronize, signal
 
 using namespace signal_tl::signal;
 
