@@ -11,5 +11,5 @@ set(BINDINGS_SOURCES
 
 pybind11_add_module(_cext MODULE ${BINDINGS_SOURCES})
 target_include_directories(_cext PRIVATE ${CMAKE_CURRENT_LISTS_DIR})
-target_link_libraries(_cext PUBLIC signaltl)
+target_link_libraries(_cext PUBLIC signal_tl::signal_tl)
 add_coverage_flags(_cext)

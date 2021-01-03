@@ -55,16 +55,12 @@ with section("parse"):
 
 with section("lint"):
     disabled_codes = [
-        # A custom command with one output doesn't really need a comment because
-        # the default "generating XXX" is a good message already.
         "C0113",
     ]
 
 with section("format"):
-    dangle_parens = False
+    dangle_parens = True
     line_ending = "unix"
-    line_width = 120
-    max_pargs_hwrap = 3
-    separate_ctrl_name_with_space = False
-    separate_fn_name_with_space = False
+    line_width = 88
     tab_size = 2
+    keyword_case = "upper"
