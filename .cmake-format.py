@@ -51,6 +51,27 @@ with section("parse"):
                 "DEPENDENCIES": "*",
             },
         },
+        "conan_cmake_run": {
+            "pargs": "*",
+            "flags": [
+                "BASIC_SETUP",
+                "CMAKE_TARGETS",
+                "UPDATE",
+                "KEEP_RPATHS",
+                "NO_LOAD",
+                "NO_OUTPUT_DIRS",
+                "OUTPUT_QUIET",
+                "NO_IMPORTS",
+                "SKIP_STD",
+            ],
+            "kwargs": {
+                "CONANFILE": 1,
+                "ARCH": 1,
+                "BUILD": 1,
+                "REQUIRES": "*",
+                "OPTIONS": "*",
+            },
+        },
     }
 
 with section("lint"):

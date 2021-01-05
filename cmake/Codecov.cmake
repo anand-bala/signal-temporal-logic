@@ -1,62 +1,42 @@
 # This adapted from part of https://github.com/RWTH-HPC/CMake-codecov.
 
 set(CXX_COVERAGE_COMPILE_FLAGS
-    -g
-    -O0
-    --coverage
-    -fprofile-arcs
-    -ftest-coverage
-    CACHE INTERNAL "")
+    -g -O0 --coverage -fprofile-arcs -ftest-coverage
+    CACHE INTERNAL ""
+)
 set(CXX_COVERAGE_LINK_FLAGS
     --coverage
-    CACHE INTERNAL "")
+    CACHE INTERNAL ""
+)
 
-# Helper function to get the relative path of the source file destination path.
-# This path is needed by FindGcov and FindLcov cmake files to locate the
-# captured data.
+# Helper function to get the relative path of the source file destination path. This
+# path is needed by FindGcov and FindLcov cmake files to locate the captured data.
 function(codecov_path_of_source FILE RETURN_VAR)
-  string(
-    REGEX MATCH
-          "TARGET_OBJECTS:([^ >]+)"
-          _source
-          ${FILE})
+  string(REGEX MATCH "TARGET_OBJECTS:([^ >]+)" _source ${FILE})
 
-  # If expression was found, SOURCEFILE is a generator-expression for an object library. Currently we found no way to
-  # call this function automatic for the referenced target, so it must be called in the directoryso of the object
-  # library definition.
-  if(NOT
-     "${_source}"
-     STREQUAL
-     "")
+  # If expression was found, SOURCEFILE is a generator-expression for an object library.
+  # Currently we found no way to call this function automatic for the referenced target,
+  # so it must be called in the directoryso of the object library definition.
+  if(NOT "${_source}" STREQUAL "")
     set(${RETURN_VAR}
         ""
-        PARENT_SCOPE)
+        PARENT_SCOPE
+    )
     return()
   endif()
 
-  string(
-    REPLACE "${CMAKE_CURRENT_BINARY_DIR}/"
-            ""
-            FILE
-            "${FILE}")
+  string(REPLACE "${CMAKE_CURRENT_BINARY_DIR}/" "" FILE "${FILE}")
   if(IS_ABSOLUTE ${FILE})
-    file(
-      RELATIVE_PATH
-      FILE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${FILE})
+    file(RELATIVE_PATH FILE ${CMAKE_CURRENT_SOURCE_DIR} ${FILE})
   endif()
 
   # get the right path for file
-  string(
-    REPLACE ".."
-            "__"
-            PATH
-            "${FILE}")
+  string(REPLACE ".." "__" PATH "${FILE}")
 
   set(${RETURN_VAR}
       "${PATH}"
-      PARENT_SCOPE)
+      PARENT_SCOPE
+  )
 endfunction()
 
 # Add coverage flags for the given target.
@@ -94,8 +74,8 @@ function(add_coverage_flags target)
   endif()
 endfunction()
 
-# Add coverage support for the given target and register target for coverage evaluation. If coverage is disabled or not
-# supported, this function will simply do nothing.
+# Add coverage support for the given target and register target for coverage evaluation.
+# If coverage is disabled or not supported, this function will simply do nothing.
 function(add_coverage target)
   if(ENABLE_COVERAGE)
     add_coverage_flags(${target})
@@ -104,8 +84,9 @@ function(add_coverage target)
   endif()
 endfunction()
 
-# Add global target to gather coverage information after all targets have been added. Other evaluation functions could
-# be added here, after checks for the specific module have been passed.
+# Add global target to gather coverage information after all targets have been added.
+# Other evaluation functions could be added here, after checks for the specific module
+# have been passed.
 function(coverage_evaluate)
   # add lcov evaluation
   if(LCOV_FOUND AND ENABLE_COVERAGE)
@@ -114,7 +95,8 @@ function(coverage_evaluate)
   endif()
 endfunction()
 
-# Include modules for parsing the collected data and output it in a readable format (like gcov and lcov).
+# Include modules for parsing the collected data and output it in a readable format
+# (like gcov and lcov).
 find_package(Gcov)
 find_package(Lcov)
 
