@@ -9,7 +9,7 @@
 #include "signal_tl/ast.hpp"
 #include "signal_tl/signal.hpp"
 
-#include "signal_tl/utils.hpp"
+#include "signal_tl/internal/utils.hpp"
 
 namespace signal_tl::ast {
 std::ostream& operator<<(std::ostream& os, const Expr& expr);

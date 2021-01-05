@@ -1,5 +1,5 @@
 #include "signal_tl/ast.hpp"
-#include "signal_tl/utils.hpp"
+#include "signal_tl/internal/utils.hpp"
 
 #include <cstddef>
 #include <iterator>

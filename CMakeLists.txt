@@ -73,6 +73,10 @@ set(CMAKE_CXX_STANDARD
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
+# Third party libraries and dependencies
+find_package(fmt REQUIRED)
+find_package(pegtl REQUIRED)
+
 add_subdirectory(src)
 add_library(signal_tl::core ALIAS core)
 add_library(signal_tl::parser ALIAS parser)

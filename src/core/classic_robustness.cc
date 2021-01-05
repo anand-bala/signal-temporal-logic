@@ -1,6 +1,6 @@
 #include "signal_tl/ast.hpp"
 #include "signal_tl/exception.hpp"
-#include "signal_tl/minmax.hpp"
+#include "signal_tl/internal/minmax.hpp"
 #include "signal_tl/robustness.hpp"
 #include "signal_tl/signal.hpp"
 

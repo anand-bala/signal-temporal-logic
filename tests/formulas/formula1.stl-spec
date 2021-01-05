@@ -1,0 +1,15 @@
+; vim: ft=lisp
+; Here, `phi1` is the name of the formula (which should be fetchable from some
+; hash table or something) and `x` is some signal value. Here we are defining
+; `always (x > 0)`.
+(define-formula phi1 (always (> x 0)))
+
+
+; Now we will define some regular formulas.
+(define-formula phi2 (< p 0))
+(define-formula phi3 (> q 0))
+(define-formula phi4 (and phi2 phi3))
+(define-formula phi5 (eventually phi4))
+(define-formula phi6 (always phi5))
+
+(assert monitor phi6)
