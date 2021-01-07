@@ -12,3 +12,6 @@ endfunction()
 add_example(basic_formulas ${CMAKE_CURRENT_LIST_DIR}/basic_formulas.cc)
 add_example(basic_signal ${CMAKE_CURRENT_LIST_DIR}/basic_signal.cc)
 add_example(basic_robustness ${CMAKE_CURRENT_LIST_DIR}/basic_robustness.cc)
+
+add_example(basic_parsing basic_parsing.cc)
+target_link_libraries(basic_parsing PRIVATE taocpp::pegtl)

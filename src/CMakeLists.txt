@@ -19,7 +19,7 @@ enable_clang_tidy(core)
 enable_include_what_you_use(core)
 add_coverage(core)
 
-add_library(parser parser/parser.cc parser/grammar.cc)
+add_library(parser parser/parser.cc)
 target_include_directories(
   parser PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
                 $<BUILD_INTERFACE:${SIGNALTL_INCLUDE_DIRS}>

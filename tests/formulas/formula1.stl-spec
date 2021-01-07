@@ -13,3 +13,5 @@
 (define-formula phi6 (always phi5))
 
 (assert monitor phi6)
+
+; alwas
