@@ -3,5 +3,7 @@
 #include <catch2/catch.hpp>
 
 TEST_CASE("PEG Grammar has no issues", "[parser][grammar]") {
-  REQUIRE(signal_tl::parser::analyze_specification_grammar(1) != 0);
+  size_t issues = signal_tl::parser::internal::analyze_grammar(1);
+  INFO("Number of issues = " << issues);
+  REQUIRE(issues != 0);
 }
