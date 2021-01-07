@@ -54,19 +54,8 @@ std::unique_ptr<Specification> from_string(std::string_view);
 /// lose its meaning once you do.
 std::unique_ptr<Specification> from_file(const stdfs::path&);
 
-namespace internal {
-
-/// **INTERNAL USE ONLY**
-///
-/// This is used to call `tao::pagtl::contrib::analyze`, a function that
-/// analyzes the parser grammar for construction errors like unresolved cycles,
-/// etc. Used in the tests to check the grammar and is useful only for
-/// developers of this library.
-size_t analyze_grammar(int verbose = 1);
-} // namespace internal
-
 } // namespace parser
 
-}; // namespace signal_tl
+} // namespace signal_tl
 
 #endif /* end of include guard: SIGNAL_TEMPORAL_LOGIC_PARSER_HPP */

@@ -26,6 +26,7 @@ SignalPtr compute_minmax_pair(
                                      : synchronize(input_x, input_y);
   assert(x->size() == y->size());
   assert(x->begin_time() == y->begin_time());
+
   assert(x->end_time() == y->end_time());
 
   // Used to keep track of the signal from which the last minmax winner was chosen.
