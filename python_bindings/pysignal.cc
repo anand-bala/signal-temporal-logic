@@ -4,8 +4,8 @@
 #include "signal_tl/signal.hpp" // for Sample, Trace, Signal, SignalPtr
 
 #include <array>                    // for array
-#include <bits/exception.h>         // for exception
 #include <cstddef>                  // for size_t
+#include <exception>                // for exception
 #include <fmt/format.h>             // for format
 #include <map>                      // for operator==, map, operator!=
 #include <memory>                   // for allocator, operator<<, __shared_...

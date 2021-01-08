@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include <tao/pegtl.hpp>
+#include <tao/pegtl.hpp> // IWYU pragma: keep
 #include <tao/pegtl/contrib/analyze.hpp>
 #include <tao/pegtl/contrib/trace.hpp>
 

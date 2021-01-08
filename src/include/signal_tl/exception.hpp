@@ -17,7 +17,7 @@ struct not_implemented_error : public std::exception {
   not_implemented_error(std::string what_arg) : reason{std::move(what_arg)} {}
   not_implemented_error(const char* what_arg) : reason{what_arg} {}
 
-  not_implemented_error(const not_implemented_error& other) noexcept = default;
+  not_implemented_error(const not_implemented_error& other) = default;
 
   [[nodiscard]] const char* what() const noexcept override {
     return this->reason.c_str();
