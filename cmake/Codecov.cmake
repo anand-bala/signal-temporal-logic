@@ -65,11 +65,12 @@ function(add_coverage_flags target)
       codecov_path_of_source(${file} file)
       list(APPEND clean_files "CMakeFiles/${target}.dir/${file}")
     endforeach()
-    if(CMAKE_VERSION VERSION_GREATER 3.15)
-      set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES "${clean_files}")
-    else()
-      set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}")
-    endif()
+    set_target_properties(${target}
+      PROPERTIES
+        ADDITIONAL_CLEAN_FILES "${clean_files}"
+        ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}")
+
+    message(DEBUG "Adding following files to target (${target}) for cleaning:\n\t\t ---${clean_files}")
 
   endif()
 endfunction()
@@ -79,8 +80,6 @@ endfunction()
 function(add_coverage target)
   if(ENABLE_COVERAGE)
     add_coverage_flags(${target})
-    add_gcov_target(${target})
-    add_lcov_target(${target})
   endif()
 endfunction()
 
@@ -95,9 +94,3 @@ function(coverage_evaluate)
   endif()
 endfunction()
 
-# Include modules for parsing the collected data and output it in a readable format
-# (like gcov and lcov).
-find_package(Gcov)
-find_package(Lcov)
-
-set(CTEST_COVERAGE_COMMAND ${GCOV_ENV} ${GCOV_BIN})

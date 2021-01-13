@@ -1,3 +1,4 @@
+
 #pragma once
 
 #ifndef SIGNAL_TEMPORAL_LOGIC_PARSER_HPP
@@ -56,6 +57,7 @@ std::unique_ptr<Specification> from_file(const stdfs::path&);
 
 } // namespace parser
 
+// LCOV_EXCL_START
 namespace grammar::internal {
 
 /// **INTERNAL USE ONLY**
@@ -69,6 +71,7 @@ size_t analyze(int verbose = 1);
 bool trace_from_file(const stdfs::path&);
 
 } // namespace grammar::internal
+// LCOV_EXCL_STOP
 
 } // namespace signal_tl
 
