@@ -19,7 +19,7 @@ endif()
 option(ENABLE_LTO "Enable link time optimization?" OFF)
 
 include(CheckIPOSupported)
-check_ipo_supported(RESULT result OUTPUT output)
+check_ipo_supported(RESULT RESULT OUTPUT OUTPUT)
 if(result)
   set(ENABLE_LTO
       ON
@@ -38,6 +38,10 @@ function(set_default_compile_options target)
       # using GCC
       target_compile_options(${target} PRIVATE -fdiagnostics-color=always)
     endif()
+  endif()
+
+  if(MSVC)
+    target_compile_options(${target} PRIVATE /Zc:__cplusplus)
   endif()
 
 endfunction()
