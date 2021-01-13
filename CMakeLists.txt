@@ -10,8 +10,8 @@ endif()
 
 # Set version from a common file.
 file(READ "${CMAKE_CURRENT_LIST_DIR}/signal_tl/__init__.py" init_py_data)
-string(REGEX MATCH "__version__ = \"([0-9]+)\\.([0-9]+)\\.([0-9]+)(-[a-z]+)?\"" _
-             ${init_py_data}
+string(REGEX MATCH "__version__ = \"([0-9]+)\\.([0-9]+)\\.([0-9]+)(-[a-z]+)?\""
+             _ ${init_py_data}
 )
 
 set(SIGNALTL_MAJOR "${CMAKE_MATCH_1}")
@@ -33,7 +33,9 @@ project(
 
 # Options
 option(BUILD_EXAMPLES "Build the examples?" ${SIGNALTL_MASTER_PROJECT})
-option(BUILD_PYTHON_BINDINGS "Build the Python extension?" ${SIGNALTL_MASTER_PROJECT})
+option(BUILD_PYTHON_BINDINGS "Build the Python extension?"
+       ${SIGNALTL_MASTER_PROJECT}
+)
 
 option(ENABLE_TESTING "Build signaltl test suite?" ${SIGNALTL_MASTER_PROJECT})
 option(ENABLE_COVERAGE "Generate coverage.xml for test suite?" OFF)
@@ -63,7 +65,8 @@ endif()
 include(Codecov)
 set(LCOV_REMOVE_PATTERNS
     "/usr/*" "$ENV{HOME}/.cache/*" "$ENV{HOME}/.conan/data/*"
-    "${CMAKE_CURRENT_LISTS_DIR}/tests/*" "${CMAKE_CURRENT_LISTS_DIR}/examples/*"
+    "${CMAKE_CURRENT_LISTS_DIR}/tests/*"
+    "${CMAKE_CURRENT_LISTS_DIR}/examples/*"
 )
 
 set(CMAKE_CXX_STANDARD

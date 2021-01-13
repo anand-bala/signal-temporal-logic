@@ -3,7 +3,9 @@ set(SIGNALTL_INCLUDE_DIRS
     CACHE INTERNAL ""
 )
 
-add_library(core core/ast.cc core/classic_robustness.cc core/minmax.cc core/signal.cc)
+add_library(
+  core core/ast.cc core/classic_robustness.cc core/minmax.cc core/signal.cc
+)
 target_include_directories(
   core PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
               $<BUILD_INTERFACE:${SIGNALTL_INCLUDE_DIRS}>
@@ -30,21 +32,11 @@ target_link_libraries(
   PRIVATE taocpp::pegtl
   PUBLIC core
 )
-
-include(CMakePrintHelpers)
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
-    target_link_libraries(parser PUBLIC c++fs)
-  endif()
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  # using GCC
-  target_link_libraries(parser PUBLIC stdc++fs)
-endif()
 set_target_properties(
   parser PROPERTIES POSITION_INDEPENDENT_CODE ON OUTPUT_NAME signaltlparser
 )
 set_default_compile_options(parser)
+set_std_filesystem_options(parser)
 set_project_warnings(parser)
 enable_clang_tidy(parser)
 enable_include_what_you_use(parser)

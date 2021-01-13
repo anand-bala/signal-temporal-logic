@@ -82,6 +82,6 @@ with section("lint"):
 with section("format"):
     dangle_parens = True
     line_ending = "unix"
-    line_width = 88
+    line_width = 80
     tab_size = 2
     keyword_case = "upper"

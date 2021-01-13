@@ -1,6 +1,9 @@
 # Download automatically, you can also just copy the conan.cmake file
 if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
-  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+  message(
+    STATUS
+      "Downloading conan.cmake from https://github.com/conan-io/cmake-conan"
+  )
   file(DOWNLOAD "https://github.com/conan-io/cmake-conan/raw/v0.15/conan.cmake"
        "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake"
   )
@@ -14,7 +17,7 @@ include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
 conan_cmake_run(
   CONANFILE conanfile.txt
   BUILD outdated
-  BASIC_SETUP CMAKE_TARGETS OUTPUT_QUIET
+  BASIC_SETUP CMAKE_TARGETS
 )
 
 if(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan_paths.cmake")

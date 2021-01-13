@@ -9,14 +9,16 @@ set(CXX_COVERAGE_LINK_FLAGS
     CACHE INTERNAL ""
 )
 
-# Helper function to get the relative path of the source file destination path. This
-# path is needed by FindGcov and FindLcov cmake files to locate the captured data.
+# Helper function to get the relative path of the source file destination path.
+# This path is needed by FindGcov and FindLcov cmake files to locate the
+# captured data.
 function(codecov_path_of_source FILE RETURN_VAR)
   string(REGEX MATCH "TARGET_OBJECTS:([^ >]+)" _source ${FILE})
 
-  # If expression was found, SOURCEFILE is a generator-expression for an object library.
-  # Currently we found no way to call this function automatic for the referenced target,
-  # so it must be called in the directoryso of the object library definition.
+  # If expression was found, SOURCEFILE is a generator-expression for an object
+  # library. Currently we found no way to call this function automatic for the
+  # referenced target, so it must be called in the directoryso of the object
+  # library definition.
   if(NOT "${_source}" STREQUAL "")
     set(${RETURN_VAR}
         ""
@@ -65,27 +67,32 @@ function(add_coverage_flags target)
       codecov_path_of_source(${file} file)
       list(APPEND clean_files "CMakeFiles/${target}.dir/${file}")
     endforeach()
-    set_target_properties(${target}
-      PROPERTIES
-        ADDITIONAL_CLEAN_FILES "${clean_files}"
-        ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}")
+    set_target_properties(
+      ${target} PROPERTIES ADDITIONAL_CLEAN_FILES "${clean_files}"
+                           ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}"
+    )
 
-    message(DEBUG "Adding following files to target (${target}) for cleaning:\n\t\t ---${clean_files}")
+    message(
+      DEBUG
+      "Adding following files to target (${target}) for cleaning:\n\t\t ---${clean_files}"
+    )
 
   endif()
 endfunction()
 
-# Add coverage support for the given target and register target for coverage evaluation.
-# If coverage is disabled or not supported, this function will simply do nothing.
+# Add coverage support for the given target and register target for coverage
+# evaluation. If coverage is disabled or not supported, this function will
+# simply do nothing.
 function(add_coverage target)
   if(ENABLE_COVERAGE)
+    message(STATUS "Adding coverage flags for target: ${target}")
     add_coverage_flags(${target})
   endif()
 endfunction()
 
-# Add global target to gather coverage information after all targets have been added.
-# Other evaluation functions could be added here, after checks for the specific module
-# have been passed.
+# Add global target to gather coverage information after all targets have been
+# added. Other evaluation functions could be added here, after checks for the
+# specific module have been passed.
 function(coverage_evaluate)
   # add lcov evaluation
   if(LCOV_FOUND AND ENABLE_COVERAGE)
@@ -93,4 +100,3 @@ function(coverage_evaluate)
     lcov_capture()
   endif()
 endfunction()
-

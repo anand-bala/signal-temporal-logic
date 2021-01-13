@@ -1,7 +1,8 @@
 option(ENABLE_CLANG_TIDY "Enable static analysis with clang-tidy"
        ${ENABLE_STATIC_ANALYSIS}
 )
-option(ENABLE_INCLUDE_WHAT_YOU_USE "Enable static analysis with include-what-you-use"
+option(ENABLE_INCLUDE_WHAT_YOU_USE
+       "Enable static analysis with include-what-you-use"
        ${ENABLE_STATIC_ANALYSIS}
 )
 
@@ -26,7 +27,9 @@ function(enable_clang_tidy target)
   message(STATUS "Enabling clang-tidy checks for ${target}")
 
   if(ENABLE_CLANG_TIDY)
-    set_target_properties(${target} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_CMD}")
+    set_target_properties(
+      ${target} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_CMD}"
+    )
   endif()
 endfunction()
 
@@ -41,7 +44,9 @@ if(ENABLE_INCLUDE_WHAT_YOU_USE)
     )
   else()
     message(CHECK_FAIL "not found")
-    message(SEND_ERROR "include-what-you-use requested but executable not found")
+    message(
+      SEND_ERROR "include-what-you-use requested but executable not found"
+    )
   endif()
 endif()
 
@@ -50,7 +55,8 @@ function(enable_include_what_you_use target)
 
   if(ENABLE_INCLUDE_WHAT_YOU_USE)
     set_target_properties(
-      ${target} PROPERTIES CXX_INCLUDE_WHAT_YOU_USE "${INCLUDE_WHAT_YOU_USE_CMD}"
+      ${target} PROPERTIES CXX_INCLUDE_WHAT_YOU_USE
+                           "${INCLUDE_WHAT_YOU_USE_CMD}"
     )
   endif()
 endfunction()
