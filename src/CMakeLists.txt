@@ -26,7 +26,10 @@ target_link_libraries(core PUBLIC fmt::fmt)
 set_target_properties(core PROPERTIES OUTPUT_NAME signaltlcore)
 signaltl_flags(core)
 
-add_library(parser parser/parser.cc parser/grammar.hpp parser/parser_errors.hpp)
+add_library(
+  parser parser/error_messages.hpp parser/actions.hpp parser/parser.cc
+         parser/grammar.hpp
+)
 target_link_libraries(
   parser
   PRIVATE taocpp::pegtl

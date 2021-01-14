@@ -29,7 +29,7 @@ endif()
 
 function(set_default_compile_options target)
 
-  if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
+  if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     # Force color in compiler output as it will be easier to debug...
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       # using Clang

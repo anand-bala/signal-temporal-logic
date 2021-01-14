@@ -65,7 +65,7 @@ function(add_coverage_flags target)
     set(clean_files "")
     foreach(file ${additional_files})
       codecov_path_of_source(${file} file)
-      list(APPEND clean_files "CMakeFiles/${target}.dir/${file}")
+      list(APPEND clean_files "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${target}.dir/${file}")
     endforeach()
     set_target_properties(
       ${target} PROPERTIES ADDITIONAL_CLEAN_FILES "${clean_files}"

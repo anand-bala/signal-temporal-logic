@@ -6,6 +6,7 @@ unset(CMAKE_CXX_INCLUDE_WHAT_YOU_USE)
 function(add_example TARGET)
   add_executable(${TARGET} ${ARGN})
   target_link_libraries(${TARGET} PUBLIC signaltl::signaltl)
+  set_default_compile_options(${TARGET})
   add_coverage_flags(${TARGET})
 endfunction()
 

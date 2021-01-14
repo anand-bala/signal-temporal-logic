@@ -1,26 +1,43 @@
 #include "signal_tl/parser.hpp"
-#include "grammar.hpp"
-#include "parser_errors.hpp"
+#include "actions.hpp"
+#include "error_messages.hpp" // for control
+#include "grammar.hpp"        // for SpecificationFile
 
-#include <iostream>
+#include <tao/pegtl/contrib/analyze.hpp> // for analyze
+#include <tao/pegtl/contrib/trace.hpp>   // for standard_trace
+#include <tao/pegtl/nothing.hpp>         // for nothing
+#include <tao/pegtl/parse.hpp>           // for parse
 
-#include <tao/pegtl/contrib/analyze.hpp>
-#include <tao/pegtl/contrib/trace.hpp>
+#include <stdexcept> // for logic_error
+
+namespace {
+
+namespace peg = tao::pegtl;
+using namespace signal_tl;
+
+template <typename ParseInput>
+std::unique_ptr<Specification> _parse(ParseInput&& input) {
+  bool success =
+      peg::parse<grammar::SpecificationFile, peg::nothing, parser::control>(input);
+  if (success) {
+    return {};
+  } else {
+    throw std::logic_error(
+        "Local error thrown during parsing of input. This is most likely a bug.");
+  }
+}
+} // namespace
 
 namespace signal_tl::parser {
 
 std::unique_ptr<Specification> from_string(std::string_view input) {
   tao::pegtl::string_input in(input, "from_content");
-  const auto r = tao::pegtl::parse<grammar::SpecificationFile>(in);
-  std::cout << "Parsed string and returned = " << r << std::endl;
-  return {};
+  return _parse(in);
 }
 
 std::unique_ptr<Specification> from_file(const stdfs::path& input) {
   tao::pegtl::file_input in(input);
-  const auto r = tao::pegtl::parse<grammar::SpecificationFile>(in);
-  std::cout << "Parsed file and returned = " << r << std::endl;
-  return {};
+  return _parse(in);
 }
 
 } // namespace signal_tl::parser
@@ -29,13 +46,12 @@ std::unique_ptr<Specification> from_file(const stdfs::path& input) {
 namespace signal_tl::grammar::internal {
 
 size_t analyze(int verbose) {
-  return tao::pegtl::analyze<SpecificationFile>(verbose);
+  return peg::analyze<SpecificationFile>(verbose);
 }
 
 bool trace_from_file(const stdfs::path& input_path) {
-  tao::pegtl::file_input in(input_path);
-  return tao::pegtl::
-      standard_trace<SpecificationFile, peg::nothing, signal_tl::grammar::control>(in);
+  peg::file_input in(input_path);
+  return peg::standard_trace<SpecificationFile, peg::nothing, parser::control>(in);
 }
 // LCOV_EXCL_STOP
 

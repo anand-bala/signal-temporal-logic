@@ -7,10 +7,10 @@
 #if __cplusplus >= 201703L
 
 #if __has_include(<filesystem>)
-#include <filesystem>
+#include <filesystem> // IWYU pragma: export
 namespace stdfs = std::filesystem;
 #elif __has_include(<experimental/filesystem>)
-#include <experimental/filesystem>
+#include <experimental/filesystem> // IWYU pragma: export
 namespace stdfs = std::experimental::filesystem;
 #else
 #error "Missing the <filesystem> and <experimental/filesystem> headers."

@@ -127,9 +127,7 @@ struct Expression : peg::sor<
 using TermTail = peg::until<RParen, peg::seq<Expression, Skip>>;
 struct Term : peg::sor<peg::if_must<LParen, TermTail>, Constant, peg::identifier> {};
 
-struct AssertionTail : peg::seq<Skip, peg::identifier, Skip, Term> {};
 struct Assertion : peg::if_must<KwAssert, Skip, peg::identifier, Skip, Term> {};
-struct DefineFormulaTail : peg::seq<Skip, peg::identifier, Skip, Term> {};
 struct DefineFormula
     : peg::if_must<KwDefineFormula, Skip, peg::identifier, Skip, Term> {};
 
@@ -148,14 +146,8 @@ struct DefineFormula
 ///
 ///   This is straightforward enough: we define a formula (named using
 ///   `<identifier>`) as some expression.
-template <typename Key, typename Tail>
-using IsCommand = peg::if_must<Key, Tail>;
-
-struct Command : peg::seq<
-                     peg::sor<
-                         IsCommand<KwAssert, AssertionTail>,
-                         IsCommand<KwDefineFormula, DefineFormulaTail>>,
-                     Skip> {};
+using AllowedCommands = peg::sor<Assertion, DefineFormula>;
+struct Command : peg::must<AllowedCommands, Skip> {};
 
 /// Commands are top level S-expressions with the syntax:
 ///
