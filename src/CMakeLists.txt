@@ -1,43 +1,37 @@
+# The trailing slash is important for the installing part
 set(SIGNALTL_INCLUDE_DIRS
-    ${CMAKE_CURRENT_LIST_DIR}/include
+    ${CMAKE_CURRENT_LIST_DIR}/include/
     CACHE INTERNAL ""
 )
+
+# set default flags for signaltl libraries
+function(signaltl_flags target)
+  target_include_directories(
+    ${target} PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+                     $<BUILD_INTERFACE:${SIGNALTL_INCLUDE_DIRS}>
+  )
+  target_compile_features(${target} PUBLIC cxx_std_17)
+  set_default_compile_options(${target})
+  set_project_warnings(${target})
+  enable_clang_tidy(${target})
+  enable_include_what_you_use(${target})
+  add_coverage(${target})
+  set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endfunction()
 
 add_library(
   core core/ast.cc core/classic_robustness.cc core/minmax.cc core/signal.cc
 )
-target_include_directories(
-  core PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-              $<BUILD_INTERFACE:${SIGNALTL_INCLUDE_DIRS}>
-)
-target_compile_features(core PUBLIC cxx_std_17)
 target_link_libraries(core PUBLIC fmt::fmt)
-set_target_properties(
-  core PROPERTIES POSITION_INDEPENDENT_CODE ON OUTPUT_NAME signaltlcore
-)
-set_default_compile_options(core)
-set_project_warnings(core)
-enable_clang_tidy(core)
-enable_include_what_you_use(core)
-add_coverage(core)
+set_target_properties(core PROPERTIES OUTPUT_NAME signaltlcore)
+signaltl_flags(core)
 
-add_library(parser parser/parser.cc)
-target_include_directories(
-  parser PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-                $<BUILD_INTERFACE:${SIGNALTL_INCLUDE_DIRS}>
-)
-target_compile_features(parser PUBLIC cxx_std_17)
+add_library(parser parser/parser.cc parser/grammar.hpp parser/parser_errors.hpp)
 target_link_libraries(
   parser
   PRIVATE taocpp::pegtl
   PUBLIC core
 )
-set_target_properties(
-  parser PROPERTIES POSITION_INDEPENDENT_CODE ON OUTPUT_NAME signaltlparser
-)
-set_default_compile_options(parser)
-set_std_filesystem_options(parser)
-set_project_warnings(parser)
-enable_clang_tidy(parser)
-enable_include_what_you_use(parser)
-add_coverage(parser)
+target_include_directories(parser PRIVATE parser/)
+set_target_properties(parser PROPERTIES OUTPUT_NAME signaltlparser)
+signaltl_flags(core)

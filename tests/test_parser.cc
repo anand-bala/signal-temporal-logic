@@ -4,6 +4,7 @@
 #include <catch2/catch.hpp>
 #include <iostream>
 
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -47,8 +48,15 @@ TEST_CASE("Parsing of file input specifications", "[parser][file-input]") {
 
   for (auto& p : stdfs::directory_iterator(specification_dir)) {
     if (stdfs::is_regular_file(p)) {
-      SECTION(std::string("Parsing file: ") + std::string(p.path())) {
-        REQUIRE_NOTHROW(signal_tl::parser::from_file(p));
+      SECTION(std::string("Parsing file: ") + p.path().string()) {
+        INFO(std::string("Parsing file: ") + p.path().string());
+        if (p.path().string().find("fail") != std::string::npos) {
+          // If filename contains "fail" then it should fail to parse
+          REQUIRE_THROWS(signal_tl::parser::from_file(p));
+        } else {
+          // Otherwise, it should succeed
+          REQUIRE_NOTHROW(signal_tl::parser::from_file(p));
+        }
       }
     }
   }

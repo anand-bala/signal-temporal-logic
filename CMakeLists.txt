@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.11)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -10,22 +10,22 @@ endif()
 
 # Set version from a common file.
 file(READ "${CMAKE_CURRENT_LIST_DIR}/signal_tl/__init__.py" init_py_data)
-string(REGEX MATCH "__version__ = \"([0-9]+)\\.([0-9]+)\\.([0-9]+)(-[a-z]+)?\""
+string(REGEX MATCH "__version__ = \"([0-9]+)\\.([0-9]+)\\.([0-9]+)-([a-z]+)?\""
              _ ${init_py_data}
 )
 
-set(SIGNALTL_MAJOR "${CMAKE_MATCH_1}")
-set(SIGNALTL_MINOR "${CMAKE_MATCH_2}")
-set(SIGNALTL_PATCHLEVEL "${CMAKE_MATCH_3}")
-set(SIGNALTL_PRERELASE "${CMAKE_MATCH_4}")
-set(SIGNALTL_VERSION
-    "${SIGNALTL_MAJOR}.${SIGNALTL_MINOR}.${SIGNALTL_PATCHLEVEL}${SIGNALTL_PRERELASE}"
+set(signaltl_MAJOR "${CMAKE_MATCH_1}")
+set(signaltl_MINOR "${CMAKE_MATCH_2}")
+set(signaltl_PATCHLEVEL "${CMAKE_MATCH_3}")
+set(signaltl_VERSION_TYPE "${CMAKE_MATCH_4}")
+set(signaltl_VERSION
+    "${signaltl_MAJOR}.${signaltl_MINOR}.${signaltl_PATCHLEVEL}${signaltl_PRERELASE}"
 )
-message(STATUS "signal_tl: v${SIGNALTL_VERSION}")
+message(STATUS "signaltl: v${signaltl_VERSION}")
 
 project(
-  signal_tl
-  VERSION "${SIGNALTL_MAJOR}.${SIGNALTL_MINOR}.${SIGNALTL_PATCHLEVEL}"
+  signaltl
+  VERSION "${signaltl_MAJOR}.${signaltl_MINOR}.${signaltl_PATCHLEVEL}"
   DESCRIPTION
     "A library for efficiently working with Signal Temporal Logic (STL) and its quantitative semantics"
   LANGUAGES CXX
@@ -46,7 +46,6 @@ option(INSTALL_PACKAGE "Configure package to be installed." ON)
 include(StandardProjectSettings)
 include(PreventInSourceBuilds)
 include(CompilerWarnings)
-include(Conan)
 include(StaticAnalyzers)
 
 include(CTest)
@@ -63,27 +62,30 @@ if((SIGNALTL_MASTER_PROJECT AND ENABLE_TESTING) AND BUILD_TESTING)
 endif()
 
 include(Codecov)
-set(LCOV_REMOVE_PATTERNS
-    "/usr/*" "$ENV{HOME}/.cache/*" "$ENV{HOME}/.conan/data/*"
-    "${CMAKE_CURRENT_LISTS_DIR}/tests/*"
-    "${CMAKE_CURRENT_LISTS_DIR}/examples/*"
-)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
 # Third party libraries and dependencies
+include(Conan)
 find_package(fmt REQUIRED)
 find_package(pegtl REQUIRED)
+if(ENABLE_TESTING)
+  find_package(Catch2 REQUIRED)
+  # include(${Catch2_SOURCE_DIR}/contrib/Catch.cmake)
+  include(Catch)
+endif()
+if(BUILD_PYTHON_BINDINGS)
+  find_package(pybind11 REQUIRED)
+endif()
 
 add_subdirectory(src)
-add_library(signal_tl::core ALIAS core)
-add_library(signal_tl::parser ALIAS parser)
+add_library(signaltl::core ALIAS core)
+add_library(signaltl::parser ALIAS parser)
 
-add_library(signal_tl INTERFACE)
-target_link_libraries(signal_tl INTERFACE signal_tl::core signal_tl::parser)
-add_library(signal_tl::signal_tl ALIAS signal_tl)
+add_library(signaltl INTERFACE)
+target_link_libraries(signaltl INTERFACE signaltl::core signaltl::parser)
+add_library(signaltl::signaltl ALIAS signaltl)
 add_subdirectory(python_bindings)
 
 if(BUILD_EXAMPLES)
@@ -99,14 +101,14 @@ endif()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 set(SIGNALTL_CMAKECONFIG_INSTALL_DIR
-    "${PROJECT_NAME}/${CMAKE_INSTALL_LIBDIR}"
-    CACHE STRING "install path for signal_tlConfig.cmake"
+    "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+    CACHE STRING "install path for signaltlConfig.cmake"
 )
 set(INSTALL_CONFIGDIR ${SIGNALTL_CMAKECONFIG_INSTALL_DIR})
 
 install(
-  TARGETS core parser signal_tl
-  EXPORT signal_tl-targets
+  TARGETS core parser signaltl
+  EXPORT signaltl-targets
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
@@ -114,36 +116,36 @@ install(
 install(DIRECTORY ${SIGNALTL_INCLUDE_DIRS} TYPE INCLUDE)
 
 install(
-  EXPORT signal_tl-targets
-  FILE signal_tlTargets.cmake
-  NAMESPACE signal_tl::
+  EXPORT signaltl-targets
+  FILE signaltlTargets.cmake
+  NAMESPACE signaltl::
   DESTINATION ${INSTALL_CONFIGDIR}
 )
 
 # Create a ConfigVersion.cmake file
 write_basic_package_version_file(
-  ${CMAKE_CURRENT_BINARY_DIR}/signal_tlConfigVersion.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/signaltlConfigVersion.cmake
   VERSION ${PROJECT_VERSION}
   COMPATIBILITY AnyNewerVersion
 )
 
 configure_package_config_file(
-  ${CMAKE_CURRENT_LIST_DIR}/cmake/signal_tlConfig.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/signal_tlConfig.cmake
+  ${CMAKE_CURRENT_LIST_DIR}/cmake/signaltlConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/signaltlConfig.cmake
   INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
 )
 
 # Install the config, configversion and custom find modules
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/signal_tlConfig.cmake
-              ${CMAKE_CURRENT_BINARY_DIR}/signal_tlConfigVersion.cmake
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/signaltlConfig.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/signaltlConfigVersion.cmake
         DESTINATION ${INSTALL_CONFIGDIR}
 )
 
 export(
-  EXPORT signal_tl-targets
-  FILE ${CMAKE_CURRENT_BINARY_DIR}/signal_tlTargets.cmake
-  NAMESPACE signal_tl::
+  EXPORT signaltl-targets
+  FILE ${CMAKE_CURRENT_BINARY_DIR}/signaltlTargets.cmake
+  NAMESPACE signaltl::
 )
 
 # Register package in user's package registry
-export(PACKAGE signal_tl)
+export(PACKAGE signaltl)

@@ -1,0 +1,17 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/signaltlTargets.cmake")
+
+set_and_check(
+  signaltl_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@"
+)
+set_and_check(signaltl_LIB_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@")
+set(signaltl_LIBRARIES signaltl::signalt:)
+set(signaltl_VERSION_TYPE "@signaltl_VERSION_TYPE@")
+
+if(NOT signaltl_FIND_QUIETLY)
+  message(
+    STATUS
+      "Found signaltl: ${signaltl_INCLUDE_DIR} (found version \"${signaltl_VERSION}\" ${signaltl_VERSION_TYPE})"
+  )
+endif()
