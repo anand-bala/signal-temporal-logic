@@ -34,4 +34,5 @@ target_link_libraries(
 )
 target_include_directories(parser PRIVATE parser/)
 set_target_properties(parser PROPERTIES OUTPUT_NAME signaltlparser)
-signaltl_flags(core)
+signaltl_flags(parser)
+set_std_filesystem_options(parser)

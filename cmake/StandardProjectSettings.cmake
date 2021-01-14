@@ -52,28 +52,23 @@ function(set_std_filesystem_options target)
   if(MSVC)
     set(std_fs_no_lib_needed TRUE)
   else()
-    file(
-      WRITE ${CMAKE_CURRENT_BINARY_DIR}/test_filesystem.cpp
-      "#include <filesystem>\nint main( int argc, char ** argv ) {\n  std::filesystem::path p( argv[ 0 ] );\n  return p.string().length();\n}"
-    )
     try_compile(
       std_fs_no_lib_needed ${CMAKE_CURRENT_BINARY_DIR}
-      SOURCES ${CMAKE_CURRENT_BINARY_DIR}/test_filesystem.cpp
+      SOURCES ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
       COMPILE_DEFINITIONS -std=c++17
     )
     try_compile(
       std_fs_needs_stdcxxfs ${CMAKE_CURRENT_BINARY_DIR}
-      SOURCES ${CMAKE_CURRENT_BINARY_DIR}/test_filesystem.cpp
+      SOURCES ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
       COMPILE_DEFINITIONS -std=c++17
       LINK_LIBRARIES stdc++fs
     )
     try_compile(
       std_fs_needs_cxxfs ${CMAKE_CURRENT_BINARY_DIR}
-      SOURCES ${CMAKE_CURRENT_BINARY_DIR}/test_filesystem.cpp
+      SOURCES ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
       COMPILE_DEFINITIONS -std=c++17
       LINK_LIBRARIES c++fs
     )
-    file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/test_filesystem.cpp)
   endif()
 
   if(${std_fs_needs_stdcxxfs})
