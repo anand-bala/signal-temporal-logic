@@ -4,8 +4,9 @@ include(FetchContent)
 include(CMakePrintHelpers)
 
 if(SIGNALTL_MASTER_PROJECT)
-  get_filename_component(fc_base "./.deps"
-      REALPATH BASE_DIR "${PROJECT_SOURCE_DIR}")
+  get_filename_component(
+    fc_base "./.deps" REALPATH BASE_DIR "${PROJECT_SOURCE_DIR}"
+  )
   set(FETCHCONTENT_BASE_DIR ${fc_base})
 endif()
 
@@ -54,7 +55,7 @@ if(BUILD_PARSER)
     FetchContent_Declare(
       pegtl
       GIT_REPOSITORY https://github.com/taocpp/PEGTL.git
-      GIT_TAG 3.2.0
+      GIT_TAG f34a1170afba0207a3c29ec08959591e3e7068c5
       GIT_PROGRESS ON
     )
 
@@ -62,11 +63,6 @@ if(BUILD_PARSER)
     if(NOT pegtl_POPULATED)
       FetchContent_Populate(pegtl)
       add_subdirectory(${pegtl_SOURCE_DIR} ${pegtl_BINARY_DIR})
-      export(
-        EXPORT pegtl-targets
-        FILE ${pegtl_BINARY_DIR}/pegtl-targets.cmake
-        NAMESPACE taocpp::
-      )
     endif()
   else()
     message(CHECK_PASS "system library found.")
@@ -92,9 +88,9 @@ if(BUILD_PYTHON_BINDINGS)
     FetchContent_GetProperties(pybind11)
     if(NOT pybind11_POPULATED)
       FetchContent_Populate(pybind11)
-      set(pybind11_INSTALL
+      set(PYBIND11_INSTALL
           ON
-          CACHE BOOL "Generate the install target for pybind11lib." FORCE
+          CACHE BOOL "Install pybind11 header files" FORCE
       )
       add_subdirectory(${pybind11_SOURCE_DIR} ${pybind11_BINARY_DIR})
     endif()
