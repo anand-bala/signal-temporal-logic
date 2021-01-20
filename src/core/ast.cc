@@ -99,45 +99,48 @@ Expr operator~(const Expr& expr) {
 
 } // namespace ast
 
-using ast::Expr;
-
 ast::Const Const(bool value) {
   return ast::Const{value};
 }
 
-ast::Predicate Predicate(const std::string& name) {
-  return ast::Predicate{name};
+ast::Predicate Predicate(std::string name) {
+  return ast::Predicate{std::move(name)};
 }
 
-Expr Not(const Expr& arg) {
-  return std::make_shared<ast::Not>(arg);
+Expr Not(Expr arg) {
+  return std::make_shared<ast::Not>(std::move(arg));
 }
 
-Expr And(const std::vector<Expr>& args) {
-  return std::make_shared<ast::And>(args);
+Expr And(std::vector<Expr> args) {
+  return std::make_shared<ast::And>(std::move(args));
 }
 
-Expr Or(const std::vector<Expr>& args) {
-  return std::make_shared<ast::Or>(args);
+Expr Or(std::vector<Expr> args) {
+  return std::make_shared<ast::Or>(std::move(args));
 }
 
-Expr Implies(const Expr& arg1, const Expr& arg2) {
-  return ~(arg1) | arg2;
+Expr Implies(Expr arg1, Expr arg2) {
+  return Or({Not(std::move(arg1)), std::move(arg2)});
 }
 
-Expr Always(const Expr& arg, const std::optional<ast::Interval> interval) {
-  return std::make_shared<ast::Always>(arg, interval);
+Expr Xor(const Expr& x, const Expr& y) {
+  return And({Or({x, y}), Or({Not(x), Not(y)})});
 }
 
-Expr Eventually(const Expr& arg, const std::optional<ast::Interval> interval) {
-  return std::make_shared<ast::Eventually>(arg, interval);
+Expr Iff(const Expr& x, const Expr& y) {
+  return Or({And({x, y}), And({Not(x), Not(y)})});
 }
 
-ast::Expr Until(
-    const ast::Expr& arg1,
-    const ast::Expr& arg2,
-    const std::optional<ast::Interval> interval) {
-  return std::make_shared<ast::Until>(arg1, arg2, interval);
+Expr Always(Expr arg, std::optional<ast::Interval> interval) {
+  return std::make_shared<ast::Always>(std::move(arg), interval);
+}
+
+Expr Eventually(Expr arg, std::optional<ast::Interval> interval) {
+  return std::make_shared<ast::Eventually>(std::move(arg), interval);
+}
+
+Expr Until(Expr arg1, Expr arg2, std::optional<ast::Interval> interval) {
+  return std::make_shared<ast::Until>(std::move(arg1), std::move(arg2), interval);
 }
 
 } // namespace signal_tl

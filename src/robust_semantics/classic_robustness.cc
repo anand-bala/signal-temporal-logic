@@ -1,8 +1,9 @@
 #include "signal_tl/ast.hpp"
 #include "signal_tl/exception.hpp"
-#include "signal_tl/internal/minmax.hpp"
 #include "signal_tl/robustness.hpp"
 #include "signal_tl/signal.hpp"
+
+#include "minmax.hpp"
 
 #include <algorithm>  // for max, min, transform, for_each
 #include <cassert>    // for assert
@@ -119,11 +120,11 @@ SignalPtr RobustnessOp::operator()(const ast::Predicate& e) const {
     switch (e.op) {
       case ast::ComparisonOp::GE:
       case ast::ComparisonOp::GT:
-        y->push_back(t, v - e.lhs);
+        y->push_back(t, v - e.rhs);
         break;
       case ast::ComparisonOp::LE:
       case ast::ComparisonOp::LT:
-        y->push_back(t, e.lhs - v);
+        y->push_back(t, e.rhs - v);
         break;
     }
   }

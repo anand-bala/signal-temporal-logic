@@ -1,4 +1,5 @@
 ; vim: ft=lisp
+
 ; Here, `phi1` is the name of the formula (which should be fetchable from some
 ; hash table or something) and `x` is some signal value. Here we are defining
 ; `always (x > 0)`.

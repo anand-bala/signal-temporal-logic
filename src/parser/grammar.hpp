@@ -29,7 +29,7 @@ struct GeSymbol : peg::seq<TAO_PEGTL_STRING(">="), Skip> {};
 
 /// Keywords are one the following.
 template <typename Key>
-struct Keyword : tao::pegtl::seq<Key, EndOfWord> {};
+struct Keyword : peg::seq<Key, EndOfWord> {};
 
 struct KwTrue : Keyword<TAO_PEGTL_STRING("true")> {};
 struct KwFalse : Keyword<TAO_PEGTL_STRING("false")> {};
@@ -52,10 +52,7 @@ struct decimal_seq : peg::plus<peg::digit> {};
 
 template <typename E>
 struct exponent
-    : tao::pegtl::if_must<
-          E,
-          peg::seq<peg::opt<tao::pegtl::one<'+', '-'>>, peg::plus<tao::pegtl::digit>>> {
-};
+    : peg::if_must<E, peg::seq<peg::opt<peg::one<'+', '-'>>, peg::plus<peg::digit>>> {};
 
 struct DoubleLiteral : peg::seq<
                            peg::sor<
@@ -90,15 +87,16 @@ struct Term;
 ///
 /// TODO(anand): No support for arithmetic expressions of signals. Must be
 /// implemented in userland.
-struct PredicateForm : peg::sor<
-                           peg::seq<peg::identifier, Skip, Numeral>,
-                           peg::seq<Numeral, Skip, peg::identifier>> {};
+struct ComparisonSymbol : peg::sor<LtSymbol, GtSymbol, LeSymbol, GeSymbol> {};
+struct PredicateForm1 : peg::seq<peg::identifier, Skip, Numeral> {};
+struct PredicateForm2 : peg::seq<Numeral, Skip, peg::identifier> {};
+struct PredicateForm : peg::sor<PredicateForm1, PredicateForm2> {};
 struct PredicateTerm
     : peg::if_must<peg::sor<LtSymbol, GtSymbol, LeSymbol, GeSymbol>, PredicateForm> {};
 
 struct NotTerm : peg::if_must<KwNot, Skip, Term> {};
-struct AndTerm : peg::if_must<KwAnd, Skip, peg::list<Term, Sep>> {};
-struct OrTerm : peg::if_must<KwOr, Skip, peg::list<Term, Sep>> {};
+struct AndTerm : peg::if_must<KwAnd, Skip, peg::rep_min<2, peg::seq<Term, Skip>>> {};
+struct OrTerm : peg::if_must<KwOr, Skip, peg::rep_min<2, peg::seq<Term, Skip>>> {};
 struct ImpliesTerm : peg::if_must<KwImplies, Skip, Term, Skip, Term> {};
 struct IffTerm : peg::if_must<KwIff, Skip, Term, Skip, Term> {};
 struct XorTerm : peg::if_must<KwXor, Skip, Term, Skip, Term> {};
@@ -125,7 +123,8 @@ struct Expression : peg::sor<
                         Term> {};
 
 using TermTail = peg::until<RParen, peg::seq<Expression, Skip>>;
-struct Term : peg::sor<peg::if_must<LParen, TermTail>, Constant, peg::identifier> {};
+struct Term
+    : peg::sor<peg::if_must<LParen, TermTail>, BooleanLiteral, peg::identifier> {};
 
 struct Assertion : peg::if_must<KwAssert, Skip, peg::identifier, Skip, Term> {};
 struct DefineFormula

@@ -1,3 +1,4 @@
+.deps/
 coverage.info
 wheelhouse/
 .ccls-cache/

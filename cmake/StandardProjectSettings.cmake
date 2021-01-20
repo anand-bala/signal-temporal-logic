@@ -16,10 +16,18 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   )
 endif()
 
+if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS
+      ON
+      CACHE BOOL "Enable/Disable output of compile commands during generation."
+            FORCE
+  )
+endif()
+
 option(ENABLE_LTO "Enable link time optimization?" OFF)
 
 include(CheckIPOSupported)
-check_ipo_supported(RESULT RESULT OUTPUT OUTPUT)
+check_ipo_supported(RESULT RESULT)
 if(result)
   set(ENABLE_LTO
       ON
@@ -27,6 +35,7 @@ if(result)
   )
 endif()
 
+# Set some default options for target
 function(set_default_compile_options target)
 
   if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -40,12 +49,19 @@ function(set_default_compile_options target)
     endif()
   endif()
 
+  if(ENABLE_LTO)
+    set_target_properties(
+      ${target} PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE
+    )
+  endif()
+
   if(MSVC)
     target_compile_options(${target} PRIVATE /Zc:__cplusplus)
   endif()
 
 endfunction()
 
+# Set compile and link flags for std::filesystem
 function(set_std_filesystem_options target)
   message(CHECK_START "Checking compiler flags for std::filesystem")
   # Check if we need to add -lstdc++fs or -lc++fs or nothing

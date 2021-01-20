@@ -18,7 +18,7 @@ using namespace signal_tl;
 template <typename ParseInput>
 std::unique_ptr<Specification> _parse(ParseInput&& input) {
   bool success =
-      peg::parse<grammar::SpecificationFile, peg::nothing, parser::control>(input);
+      peg::parse<grammar::SpecificationFile, parser::action, parser::control>(input);
   if (success) {
     return {};
   } else {
@@ -51,7 +51,7 @@ size_t analyze(int verbose) {
 
 bool trace_from_file(const stdfs::path& input_path) {
   peg::file_input in(input_path);
-  return peg::standard_trace<SpecificationFile, peg::nothing, parser::control>(in);
+  return peg::standard_trace<SpecificationFile, parser::action, parser::control>(in);
 }
 // LCOV_EXCL_STOP
 

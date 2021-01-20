@@ -56,17 +56,17 @@ enum class ComparisonOp { GT, GE, LT, LE };
 struct Predicate {
   std::string name;
   ComparisonOp op = ComparisonOp::GE;
-  double lhs      = 0.0;
+  double rhs      = 0.0;
 
   // Predicate() = delete;
   Predicate(
       std::string ap_name,
       ComparisonOp operation = ComparisonOp::GE,
       double constant_val    = 0.0) :
-      name{std::move(ap_name)}, op{operation}, lhs{constant_val} {};
+      name{std::move(ap_name)}, op{operation}, rhs{constant_val} {};
 
   inline bool operator==(const Predicate& other) const {
-    return (name == other.name) && (op == other.op) && (lhs == other.lhs);
+    return (name == other.name) && (op == other.op) && (rhs == other.rhs);
   };
 
   inline bool operator!=(const Predicate& other) const {
@@ -189,21 +189,16 @@ Expr operator>>(const Expr& lhs, const Expr& rhs);
 using ast::Expr;
 
 ast::Const Const(bool value);
-ast::Predicate Predicate(const std::string& name);
-ast::Expr Not(const ast::Expr& arg);
-ast::Expr And(const std::vector<ast::Expr>& args);
-ast::Expr Or(const std::vector<ast::Expr>& args);
-ast::Expr Implies(const ast::Expr& arg1, const ast::Expr& arg2);
-ast::Expr Always(
-    const ast::Expr& arg,
-    const std::optional<ast::Interval> interval = std::nullopt);
-ast::Expr Eventually(
-    const ast::Expr& arg,
-    const std::optional<ast::Interval> interval = std::nullopt);
-ast::Expr Until(
-    const ast::Expr& arg1,
-    const ast::Expr& arg2,
-    const std::optional<ast::Interval> interval = std::nullopt);
+ast::Predicate Predicate(std::string name);
+Expr Not(Expr arg);
+Expr And(std::vector<Expr> args);
+Expr Or(std::vector<Expr> args);
+Expr Implies(Expr arg1, Expr arg2);
+Expr Xor(const Expr& arg1, const Expr& arg2);
+Expr Iff(const Expr& arg1, const Expr& arg2);
+Expr Always(Expr arg, std::optional<ast::Interval> interval = std::nullopt);
+Expr Eventually(Expr arg, std::optional<ast::Interval> interval = std::nullopt);
+Expr Until(Expr arg1, Expr arg2, std::optional<ast::Interval> interval = std::nullopt);
 
 } // namespace signal_tl
 

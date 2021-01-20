@@ -52,7 +52,7 @@ struct fmt::formatter<signal_tl::ast::Predicate>
         op = "<";
         break;
     }
-    return format_to(ctx.out(), "({} {} {})", e.name, op, e.lhs);
+    return format_to(ctx.out(), "({} {} {})", e.name, op, e.rhs);
   }
 };
 

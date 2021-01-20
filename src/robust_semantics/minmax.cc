@@ -1,5 +1,5 @@
-#include "signal_tl/internal/minmax.hpp"
-#include "signal_tl/internal/mono_wedge.h" // for mono_wedge_update
+#include "minmax.hpp"
+#include "mono_wedge.h" // for mono_wedge_update
 
 #include <algorithm>  // for max, reverse
 #include <deque>      // for _Deque_iterator, deque, operator-

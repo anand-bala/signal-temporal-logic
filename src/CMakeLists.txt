@@ -1,41 +1,56 @@
+if(NOT BUILD_CORE_ONLY)
+  if(NOT NO_BUILD_ROBUSTNESS)
+    set(_BUILD_PARSER ON)
+  endif()
+  if(NOT NO_BUILD_ROBUSTNESS)
+    set(_BUILD_ROBUSTNESS ON)
+  endif()
+endif()
+
 # The trailing slash is important for the installing part
 set(SIGNALTL_INCLUDE_DIRS
     ${CMAKE_CURRENT_LIST_DIR}/include/
-    CACHE INTERNAL ""
+    CACHE PATH "Path to the signaltl include directory"
 )
 
-# set default flags for signaltl libraries
-function(signaltl_flags target)
-  target_include_directories(
-    ${target} PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-                     $<BUILD_INTERFACE:${SIGNALTL_INCLUDE_DIRS}>
+set(SIGNALTL_SRCS core/signal.cc core/ast.cc)
+
+if(_BUILD_PARSER)
+  list(APPEND SIGNALTL_SRCS parser/error_messages.hpp parser/actions.hpp
+       parser/parser.cc parser/grammar.hpp
   )
-  target_compile_features(${target} PUBLIC cxx_std_17)
-  set_default_compile_options(${target})
-  set_project_warnings(${target})
-  enable_clang_tidy(${target})
-  enable_include_what_you_use(${target})
-  add_coverage(${target})
-  set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-endfunction()
+else()
+  message(STATUS "Not building parser")
+endif()
 
-add_library(
-  core core/ast.cc core/classic_robustness.cc core/minmax.cc core/signal.cc
-)
-target_link_libraries(core PUBLIC fmt::fmt)
-set_target_properties(core PROPERTIES OUTPUT_NAME signaltlcore)
-signaltl_flags(core)
+if(_BUILD_ROBUSTNESS)
+  list(APPEND SIGNALTL_SRCS robust_semantics/classic_robustness.cc
+       robust_semantics/minmax.cc robust_semantics/minmax.hpp
+  )
+else()
+  message(STATUS "Not building robust semantics")
+endif()
 
-add_library(
-  parser parser/error_messages.hpp parser/actions.hpp parser/parser.cc
-         parser/grammar.hpp
+add_library(signaltl ${SIGNALTL_SRCS})
+
+target_link_libraries(signaltl PUBLIC fmt::fmt)
+target_include_directories(
+  signaltl PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+                  $<BUILD_INTERFACE:${SIGNALTL_INCLUDE_DIRS}>
 )
-target_link_libraries(
-  parser
-  PRIVATE taocpp::pegtl
-  PUBLIC core
-)
-target_include_directories(parser PRIVATE parser/)
-set_target_properties(parser PROPERTIES OUTPUT_NAME signaltlparser)
-signaltl_flags(parser)
-set_std_filesystem_options(parser)
+target_compile_features(signaltl PUBLIC cxx_std_17)
+set_default_compile_options(signaltl)
+set_project_warnings(signaltl)
+enable_clang_tidy(signaltl)
+enable_include_what_you_use(signaltl)
+add_coverage(signaltl)
+set_target_properties(signaltl PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+if(_BUILD_PARSER)
+  target_link_libraries(signaltl PRIVATE taocpp::pegtl)
+  target_include_directories(signaltl PRIVATE parser/)
+  set_std_filesystem_options(signaltl)
+endif()
+if(_BUILD_ROBUSTNESS)
+  target_include_directories(signaltl PRIVATE robust_semantics)
+endif()
