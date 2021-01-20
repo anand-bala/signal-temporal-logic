@@ -17,15 +17,24 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-    - name: Install Conan
-      run: python -m pip install conan
-    - name: Cache Conan dependencies
+    - name: Cache dependencies
       uses: actions/cache@v2
       env:
-        cache-name: cache-conan-deps
+        cache-name: cache-deps
       with:
-        path: ~/.conan/data
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.txt') }}
+        path: .deps
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/ThirdPartyDeps.cmake') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+    - name: Cache build
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-build
+      with:
+        path: ~/.ccache/
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-xcode-${{ matrix.xcode }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-

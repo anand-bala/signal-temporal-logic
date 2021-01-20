@@ -58,6 +58,21 @@ if((SIGNALTL_MASTER_PROJECT AND ENABLE_TESTING) AND BUILD_TESTING)
   )
 endif()
 
+if(NOT BUILD_CORE_ONLY)
+  if(NOT NO_BUILD_PARSER)
+    set(BUILD_PARSER
+        ON
+        CACHE BOOL "Build the parser"
+    )
+  endif()
+  if(NOT NO_BUILD_ROBUSTNESS)
+    set(BUILD_ROBUSTNESS
+        ON
+        CACHE BOOL "Build the robustness"
+    )
+  endif()
+endif()
+
 # ##############################################################################
 # Include CMake Modules  #
 # ##############################################################################
@@ -78,6 +93,7 @@ include(Codecov)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # ##############################################################################
 # Third Party dependencies  #
@@ -85,18 +101,16 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 include(ThirdPartyDeps)
 
-# include(Conan) find_package(fmt REQUIRED) find_package(pegtl REQUIRED)
-# if(ENABLE_TESTING) find_package(Catch2 REQUIRED) #
-# include(${Catch2_SOURCE_DIR}/contrib/Catch.cmake) include(Catch) endif()
-# if(BUILD_PYTHON_BINDINGS) find_package(pybind11 REQUIRED) endif()
+# ##############################################################################
+# Sources  #
+# ##############################################################################
 
 add_subdirectory(src)
 add_library(signaltl::signaltl ALIAS signaltl)
-
 add_subdirectory(python_bindings)
 
 if(BUILD_EXAMPLES)
-  add_subdirectory(examples)
+  add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
 
 if(_SIGNALTL_BUILD_THE_TESTS)
@@ -104,7 +118,10 @@ if(_SIGNALTL_BUILD_THE_TESTS)
   coverage_evaluate()
 endif()
 
-# Installing
+# ##############################################################################
+# Installation  #
+# ##############################################################################
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 set(SIGNALTL_CMAKECONFIG_INSTALL_DIR

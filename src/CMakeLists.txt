@@ -1,11 +1,3 @@
-if(NOT BUILD_CORE_ONLY)
-  if(NOT NO_BUILD_ROBUSTNESS)
-    set(_BUILD_PARSER ON)
-  endif()
-  if(NOT NO_BUILD_ROBUSTNESS)
-    set(_BUILD_ROBUSTNESS ON)
-  endif()
-endif()
 
 # The trailing slash is important for the installing part
 set(SIGNALTL_INCLUDE_DIRS
@@ -15,7 +7,7 @@ set(SIGNALTL_INCLUDE_DIRS
 
 set(SIGNALTL_SRCS core/signal.cc core/ast.cc)
 
-if(_BUILD_PARSER)
+if(BUILD_PARSER)
   list(APPEND SIGNALTL_SRCS parser/error_messages.hpp parser/actions.hpp
        parser/parser.cc parser/grammar.hpp
   )
@@ -23,7 +15,7 @@ else()
   message(STATUS "Not building parser")
 endif()
 
-if(_BUILD_ROBUSTNESS)
+if(BUILD_ROBUSTNESS)
   list(APPEND SIGNALTL_SRCS robust_semantics/classic_robustness.cc
        robust_semantics/minmax.cc robust_semantics/minmax.hpp
   )
@@ -46,11 +38,11 @@ enable_include_what_you_use(signaltl)
 add_coverage(signaltl)
 set_target_properties(signaltl PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-if(_BUILD_PARSER)
+if(BUILD_PARSER)
   target_link_libraries(signaltl PRIVATE taocpp::pegtl)
   target_include_directories(signaltl PRIVATE parser/)
   set_std_filesystem_options(signaltl)
 endif()
-if(_BUILD_ROBUSTNESS)
+if(BUILD_ROBUSTNESS)
   target_include_directories(signaltl PRIVATE robust_semantics)
 endif()

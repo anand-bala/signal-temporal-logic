@@ -46,7 +46,7 @@ else()
   message(CHECK_PASS "system library found.")
 endif()
 
-if(_BUILD_PARSER)
+if(BUILD_PARSER)
   message(CHECK_START "Looking for taocpp/pegtl")
   find_package(pegtl QUIET)
   if(NOT pegtl_FOUND)
