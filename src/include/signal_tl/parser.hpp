@@ -21,12 +21,14 @@ namespace signal_tl {
 /// to build monitors for signals. See the documentation for the specification
 /// file for more details.
 struct Specification {
- private:
-  std::map<std::string, ast::Expr> _formulas;
-  std::map<std::string, ast::Expr> _assertions;
+  std::map<std::string, ast::Expr> formulas;
+  std::map<std::string, ast::Expr> assertions;
 
- public:
   Specification() = default;
+  Specification(
+      std::map<std::string, ast::Expr> _formulas,
+      std::map<std::string, ast::Expr> _assertions) :
+      formulas{std::move(_formulas)}, assertions{std::move(_assertions)} {}
 
   void add_formula(const std::string&, ast::Expr);
   void add_assertion(const std::string&, ast::Expr);

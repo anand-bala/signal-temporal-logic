@@ -1,6 +1,3 @@
-if(NOT BUILD_EXAMPLES)
-  return()
-endif()
 message(STATUS "Building Examples in ${CMAKE_CURRENT_LIST_DIR}")
 
 unset(CMAKE_CXX_CLANG_TIDY)

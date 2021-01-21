@@ -11,7 +11,7 @@ int main() {
 
   fmt::print("----------------\n");
 
-  fmt::print("phi := {}\n", stl::Predicate("a"));
+  fmt::print("phi := {}\n", stl::Predicate("a") & stl::Predicate("b"));
 
   return 0;
 }

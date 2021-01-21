@@ -95,8 +95,8 @@ struct PredicateTerm
     : peg::if_must<peg::sor<LtSymbol, GtSymbol, LeSymbol, GeSymbol>, PredicateForm> {};
 
 struct NotTerm : peg::if_must<KwNot, Skip, Term> {};
-struct AndTerm : peg::if_must<KwAnd, Skip, peg::rep_min<2, peg::seq<Term, Skip>>> {};
-struct OrTerm : peg::if_must<KwOr, Skip, peg::rep_min<2, peg::seq<Term, Skip>>> {};
+struct AndTerm : peg::if_must<KwAnd, Skip, peg::list<Term, Sep>> {};
+struct OrTerm : peg::if_must<KwOr, Skip, peg::list<Term, Sep>> {};
 struct ImpliesTerm : peg::if_must<KwImplies, Skip, Term, Skip, Term> {};
 struct IffTerm : peg::if_must<KwIff, Skip, Term, Skip, Term> {};
 struct XorTerm : peg::if_must<KwXor, Skip, Term, Skip, Term> {};

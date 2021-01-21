@@ -1,4 +1,3 @@
-
 # The trailing slash is important for the installing part
 set(SIGNALTL_INCLUDE_DIRS
     ${CMAKE_CURRENT_LIST_DIR}/include/

@@ -1,0 +1,6 @@
+; vim: ft=lisp
+
+; It should fail here
+;                                ↓
+(define-formula phi1 (and (< x 0)))
+

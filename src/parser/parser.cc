@@ -17,10 +17,17 @@ using namespace signal_tl;
 
 template <typename ParseInput>
 std::unique_ptr<Specification> _parse(ParseInput&& input) {
+  // bool success =
+  //     peg::parse<grammar::SpecificationFile, peg::nothing, parser::control>(input);
+  auto resultant_specification = parser::actions::ParserState{};
   bool success =
-      peg::parse<grammar::SpecificationFile, parser::action, parser::control>(input);
+      peg::parse<grammar::SpecificationFile, parser::action, parser::control>(
+          input, resultant_specification);
   if (success) {
-    return {};
+    auto spec = std::make_unique<Specification>(
+        std::move(resultant_specification.formulas),
+        std::move(resultant_specification.assertions));
+    return spec;
   } else {
     throw std::logic_error(
         "Local error thrown during parsing of input. This is most likely a bug.");
@@ -51,7 +58,9 @@ size_t analyze(int verbose) {
 
 bool trace_from_file(const stdfs::path& input_path) {
   peg::file_input in(input_path);
-  return peg::standard_trace<SpecificationFile, parser::action, parser::control>(in);
+  auto resultant_specification = parser::actions::ParserState{};
+  return peg::standard_trace<SpecificationFile, parser::action, parser::control>(
+      in, resultant_specification);
 }
 // LCOV_EXCL_STOP
 

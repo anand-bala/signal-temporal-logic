@@ -38,6 +38,10 @@ template <>
 inline constexpr auto error_message<peg::list<Term, Sep>> = "expected a list of Terms";
 
 template <>
+inline constexpr auto error_message<peg::rep_min<2, peg::seq<Term, Skip>>> =
+    "expected a list of at least 2 Terms";
+
+template <>
 inline constexpr auto error_message<TermTail> =
     "expected an expression followed by a closing parenthesis ')'";
 

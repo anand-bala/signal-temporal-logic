@@ -1,11 +1,13 @@
-#include "signal_tl/signal.hpp"
+#include "signal_tl/signal.hpp" // for Sample, Signal, SignalPtr, synchronize
+#include "signal_tl/fmt.hpp"    // IWYU pragma: keep
 
-#include "signal_tl/fmt.hpp" // IWYU pragma: keep
-
+#include <algorithm>    // for lower_bound, max
 #include <fmt/format.h> // for format
-
-#include <algorithm> // for lower_bound, max
-#include <iterator>  // for prev, next
+#include <iterator>     // for prev, next
+#include <memory>       // for shared_ptr, __shared_ptr_access, mak...
+#include <stdexcept>    // for invalid_argument
+#include <tuple>        // for make_tuple, tuple
+#include <vector>       // for vector
 
 namespace signal_tl::signal {
 

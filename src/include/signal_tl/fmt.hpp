@@ -11,8 +11,9 @@
 
 #include "signal_tl/internal/utils.hpp"
 
+std::ostream& operator<<(std::ostream& os, const signal_tl::ast::Expr& expr);
+
 namespace signal_tl::ast {
-std::ostream& operator<<(std::ostream& os, const Expr& expr);
 
 template <typename Node>
 struct formatter {
@@ -89,7 +90,7 @@ struct fmt::formatter<signal_tl::ast::Always>
   template <typename FormatContext>
   auto format(const signal_tl::ast::Always& e, FormatContext& ctx) {
     if (e.interval.has_value()) {
-      const auto [a, b] = e.interval.value();
+      const auto [a, b] = e.interval.as_double();
       if (std::isinf(b)) {
         return format_to(ctx.out(), "G[{}, int) {}", a, e.arg);
       }
@@ -105,7 +106,7 @@ struct fmt::formatter<signal_tl::ast::Eventually>
   template <typename FormatContext>
   auto format(const signal_tl::ast::Eventually& e, FormatContext& ctx) {
     if (e.interval.has_value()) {
-      const auto [a, b] = e.interval.value();
+      const auto [a, b] = e.interval.as_double();
       if (std::isinf(b)) {
         return format_to(ctx.out(), "F[{}, inf] {}", a, e.arg);
       }
@@ -122,7 +123,7 @@ struct fmt::formatter<signal_tl::ast::Until>
   auto format(const signal_tl::ast::Until& e, FormatContext& ctx) {
     const auto [e1, e2] = e.args;
     if (e.interval.has_value()) {
-      const auto [a, b] = e.interval.value();
+      const auto [a, b] = e.interval.as_double();
       if (std::isinf(b)) {
         return format_to(ctx.out(), "{} U[{}, inf) {}", e1, a, e2);
       }

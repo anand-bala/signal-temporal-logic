@@ -13,7 +13,6 @@
 #include <limits>     // for numeric_limits
 #include <map>        // for operator!=
 #include <memory>     // for __shared_ptr_access, make_shared
-#include <optional>   // for optional
 #include <stdexcept>  // for logic_error
 #include <string>     // for string
 #include <tuple>      // for make_tuple, tuple_element<>::type
@@ -167,7 +166,7 @@ SignalPtr RobustnessOp::operator()(const ast::EventuallyPtr& e) const {
     return compute_max_seq(y);
   }
 
-  const auto [a, b] = *(e->interval);
+  const auto [a, b] = e->interval.as_double();
   if (b - a < 0) {
     throw std::logic_error("Eventually operator: b < a in interval [a,b]");
   } else if (b - a == 0) {
@@ -185,7 +184,7 @@ SignalPtr RobustnessOp::operator()(const ast::AlwaysPtr& e) const {
     return compute_min_seq(y);
   }
 
-  const auto [a, b] = *(e->interval);
+  const auto [a, b] = e->interval.as_double();
   if (b - a < 0) {
     throw std::logic_error("Always operator: b < a in interval [a,b]");
   } else if (b - a == 0) {
@@ -204,7 +203,7 @@ SignalPtr RobustnessOp::operator()(const ast::UntilPtr& e) const {
     return compute_until(y1, y2);
   }
 
-  const auto [a, b] = *(e->interval);
+  const auto [a, b] = e->interval.as_double();
   if (std::isinf(b) && a == 0) {
     return compute_until(y1, y2);
   } else {

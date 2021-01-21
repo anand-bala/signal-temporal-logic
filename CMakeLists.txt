@@ -31,12 +31,18 @@ project(
   LANGUAGES CXX
 )
 
+include(CMakeDependentOption)
+
 # Options
 option(BUILD_CORE_ONLY "Build only the core AST and Signal" OFF)
-option(NO_BUILD_PARSER "Don't build the parser" ${BUILD_CORE_ONLY})
-option(NO_BUILD_ROBUSTNESS "Don't build the robust semantics for STL"
-       ${BUILD_CORE_ONLY}
+cmake_dependent_option(
+  BUILD_PARSER "Don't build the parser" ON "NOT BUILD_CORE_ONLY" OFF
 )
+cmake_dependent_option(
+  BUILD_ROBUSTNESS "Don't build the robust semantics for STL" ON
+  "NOT BUILD_CORE_ONLY" OFF
+)
+
 option(BUILD_EXAMPLES "Build the examples?" ${SIGNALTL_MASTER_PROJECT})
 option(BUILD_PYTHON_BINDINGS "Build the Python extension?"
        ${SIGNALTL_MASTER_PROJECT}
@@ -44,7 +50,12 @@ option(BUILD_PYTHON_BINDINGS "Build the Python extension?"
 
 option(ENABLE_CACHE "Enable cache if available" ${SIGNALTL_MASTER_PROJECT})
 option(ENABLE_TESTING "Build signaltl test suite?" ${SIGNALTL_MASTER_PROJECT})
-option(ENABLE_COVERAGE "Generate coverage.xml for test suite?" OFF)
+# Coverage needs to be explicitly turned on, but available only if Testing is
+# enabled.
+cmake_dependent_option(
+  ENABLE_COVERAGE "Generate coverage.xml for test suite?" OFF "ENABLE_TESTING"
+  OFF
+)
 option(ENABLE_STATIC_ANALYSIS "Enable clang-tidy and include-what-you-use" OFF)
 
 set(_SIGNALTL_BUILD_THE_TESTS
@@ -95,6 +106,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+
 # ##############################################################################
 # Third Party dependencies  #
 # ##############################################################################
@@ -110,10 +125,10 @@ add_library(signaltl::signaltl ALIAS signaltl)
 add_subdirectory(python_bindings)
 
 if(BUILD_EXAMPLES)
-  add_subdirectory(examples EXCLUDE_FROM_ALL)
+  add_subdirectory(examples)
 endif()
 
-if(_SIGNALTL_BUILD_THE_TESTS)
+if(ENABLE_TESTING)
   add_subdirectory(tests)
   coverage_evaluate()
 endif()

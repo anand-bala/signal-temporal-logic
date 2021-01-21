@@ -1,0 +1,3 @@
+; vim: set ft=lisp
+
+(define-formula phi1 true)

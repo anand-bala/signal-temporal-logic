@@ -23,6 +23,9 @@ if(NOT BUILD_CORE_ONLY)
   endif()
 endif()
 
+unset(CMAKE_CXX_CLANG_TIDY)
+unset(CMAKE_CXX_INCLUDE_WHAT_YOU_USE)
+
 message(CHECK_START "Looking for fmtlib/fmt")
 find_package(fmt QUIET)
 if(NOT fmt_FOUND)

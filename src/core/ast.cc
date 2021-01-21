@@ -131,15 +131,27 @@ Expr Iff(const Expr& x, const Expr& y) {
   return Or({And({x, y}), And({Not(x), Not(y)})});
 }
 
-Expr Always(Expr arg, std::optional<ast::Interval> interval) {
+Expr Always(Expr arg) {
+  return std::make_shared<ast::Always>(std::move(arg));
+}
+
+Expr Always(Expr arg, ast::Interval interval) {
   return std::make_shared<ast::Always>(std::move(arg), interval);
 }
 
-Expr Eventually(Expr arg, std::optional<ast::Interval> interval) {
+Expr Eventually(Expr arg) {
+  return std::make_shared<ast::Eventually>(std::move(arg));
+}
+
+Expr Eventually(Expr arg, ast::Interval interval) {
   return std::make_shared<ast::Eventually>(std::move(arg), interval);
 }
 
-Expr Until(Expr arg1, Expr arg2, std::optional<ast::Interval> interval) {
+Expr Until(Expr arg1, Expr arg2) {
+  return std::make_shared<ast::Until>(std::move(arg1), std::move(arg2));
+}
+
+Expr Until(Expr arg1, Expr arg2, ast::Interval interval) {
   return std::make_shared<ast::Until>(std::move(arg1), std::move(arg2), interval);
 }
 
