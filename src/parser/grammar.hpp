@@ -22,12 +22,14 @@ struct EndOfWord : peg::seq<peg::not_at<peg::identifier_other>, Skip> {};
 struct Identifier : peg::seq<peg::identifier, EndOfWord> {};
 
 /// Some symbols
-struct LParen : peg::seq<peg::one<'('>, Skip> {};
-struct RParen : peg::seq<peg::one<')'>, Skip> {};
-struct LtSymbol : peg::seq<peg::one<'<'>, peg::not_at<peg::one<'<', '='>>, Skip> {};
-struct LeSymbol : peg::seq<TAO_PEGTL_STRING("<="), Skip> {};
-struct GtSymbol : peg::seq<peg::one<'>'>, peg::not_at<peg::one<'>', '='>>, Skip> {};
-struct GeSymbol : peg::seq<TAO_PEGTL_STRING(">="), Skip> {};
+template <typename... S>
+struct Symbol : peg::seq<S..., Skip> {};
+struct LParen : Symbol<peg::one<'('>> {};
+struct RParen : Symbol<peg::one<')'>> {};
+struct LtSymbol : Symbol<peg::one<'<'>, peg::not_at<peg::one<'<', '='>>> {};
+struct LeSymbol : Symbol<TAO_PEGTL_STRING("<=")> {};
+struct GtSymbol : Symbol<peg::one<'>'>, peg::not_at<peg::one<'>', '='>>> {};
+struct GeSymbol : Symbol<TAO_PEGTL_STRING(">=")> {};
 
 /// Keywords are one the following.
 template <typename Key>
@@ -98,7 +100,34 @@ struct PredicateTerm
 
 struct NotTerm : peg::if_must<KwNot, Term> {};
 
-struct NaryTail : peg::rep_min<2, Term> {};
+/// Tail for N-ary operations like AND and OR.
+///
+/// NOTE
+/// ----
+///
+/// 2021-01-21 (anand):
+///
+/// - Currently, this is weirdly bugged. When the rule fails to match the third
+///   Term, it throws a global error.
+///
+/// 2021-01-22 (anand):
+///
+/// - I guess I should have reworded the above note by saying that when the
+///   internal peg::star combinator reaches the last Term and fails to find the
+///   next Term, then what should be a success (because that is how peg::star
+///   operates) it becomes a global error.
+/// - Another interesting issue is that when the error happens, it is not an
+///   issue with the peg::must condition in AndTerm/OrTerm, but rather within
+///   the peg::sor condition in Term. This implies that the peg::sor is
+///   becoming a global error.
+/// - HACK: I edited the match function for Term to return true if there is at
+///   least 1 Term in the old stack. Then, the parent rule (And/Or) can check
+///   if there are enough Terms.
+/// - Above hack doesn't work. Because I am an idiot. See [PEGTL errors] for
+///   the detailt about when a rule contains a custom error message, local
+///   erros are automatically converted to global errors even if there is no
+///   peg::must rule. This is something simple that I overlooked!
+struct NaryTail : peg::plus<Term> {};
 struct BinaryTail : peg::seq<Term, Term> {};
 
 struct AndTerm : peg::if_must<KwAnd, NaryTail> {};

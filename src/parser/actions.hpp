@@ -29,21 +29,52 @@ using PrimitiveState = std::variant<bool, long int, double>;
 
 enum struct PredicateType { ONE, TWO };
 
+/// This encodes local state of the push-down parser.
+///
+/// Essentially, this is a stack element, and a new one is pushed down
+/// whenerver we encounter a Term, as that is the only recursive rule in our
+/// grammar. This keeps track of whatever is required to make a Term, without
+/// polluting the context of parent rules in the AST.
 struct ParserState {
+  /// Purely here for debugging purposes.
   unsigned long long int level;
 
+  /// Whenever an Expression is completed, this field gets populared. Later,
+  /// within the action for the Term rule, we move the result onto the vector
+  /// `terms` to allow for the parent expression to easily combine it with
+  /// their list of `terms`.
   std::optional<ast::Expr> result;
 
+  /// When parsing a primitive (boolean or numeral), we add the result here so
+  /// that the parent rule can immediately use it to construct either a
+  /// BooleanLiteral or a Numeral (integer or double).
   std::optional<PrimitiveState> primitive_result;
 
+  /// A list of identifiers as parsed by the rule.
+  ///
+  /// In most cases, this is immediately used by the parent rule (either in
+  /// Term or in some Command) to either create new formulas/assertions or to
+  /// map existing formulas/assertions to a valid `ast::Expr`.
   std::vector<std::string> identifiers;
 
+  /// Informs the immediate parent rule (only useful for PredicateTerm) whether
+  /// the Predicate is of the form `id ~ c` or `c ~ id`, essentially to change
+  /// it to the canonical form `id ~ c`.
   std::optional<PredicateType> predicate_type;
+  /// Informs the parent PredicateTerm what comparison operation is used in the
+  /// predicate. It is used in conjunction with the `predicate_type` field to
+  /// construct a valid `ast::Predicate`.
   std::optional<ast::ComparisonOp> comparison_type;
 
+  /// A list of Terms parsed in the local context. For example, for an N-ary
+  /// operation like And and Or, we expect the list to have at least 2 valid
+  /// `ast::Expr`. This is populated when a local context is popped off the
+  /// stack of a Term within the current rule.
   std::vector<ast::Expr> terms;
 };
 
+/// This maintains the global list of formulas and assertions that have been
+/// parsed within the specification.
 struct GlobalParserState {
   std::map<std::string, ast::Expr> formulas;
   std::map<std::string, ast::Expr> assertions;

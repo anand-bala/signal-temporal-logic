@@ -22,8 +22,8 @@ inline constexpr const char* error_message = nullptr;
 template <>
 inline constexpr auto error_message<Skip> = "expected whitespace or comment";
 
-template <>
-inline constexpr auto error_message<peg::identifier> = "expected identifier";
+// template <>
+// inline constexpr auto error_message<peg::identifier> = "expected identifier";
 
 template <>
 inline constexpr auto error_message<Identifier> = "expected an identifier";
@@ -36,16 +36,6 @@ inline constexpr auto error_message<
 template <>
 inline constexpr auto error_message<PredicateForm> =
     "expected an identifier followed by a numeral or vice-versa";
-
-template <>
-inline constexpr auto error_message<peg::list<Term, Sep>> = "expected a list of Terms";
-
-template <>
-inline constexpr auto error_message<peg::plus<Term>> = "expected a list of Terms";
-
-template <>
-inline constexpr auto error_message<peg::rep_min<2, peg::seq<Term, Skip>>> =
-    "expected a list of at least 2 Terms";
 
 template <>
 inline constexpr auto error_message<NaryTail> = "expected a list of at least 2 Terms";
@@ -76,6 +66,11 @@ inline constexpr auto error_message<StatementList> = "invalid top-level item";
 struct error {
   template <typename Rule>
   static constexpr auto message = error_messages::error_message<Rule>;
+
+  /// This is used to prevent local failues in the Term rule from becoming
+  /// global failures.
+  template <typename Rule>
+  static constexpr bool raise_on_failure = false;
 };
 
 template <typename Rule>

@@ -23,12 +23,12 @@ int main(int argc, char* argv[]) {
   pegtl::file_input in(argv[1]);
   auto input_path = stdfs::path(argv[1]);
   try {
-    signal_tl::grammar::internal::trace_from_file(input_path);
-    // auto spec = signal_tl::parser::from_file(input_path);
-    // std::cout << "Parsed formulas are:" << std::endl;
-    // for (const auto& [expr_id, expr] : spec->formulas) {
-    //   fmt::print(std::cout, "\t{} := {}\n", expr_id, expr);
-    // }
+    // signal_tl::grammar::internal::trace_from_file(input_path);
+    auto spec = signal_tl::parser::from_file(input_path);
+    std::cout << "Parsed formulas are:" << std::endl;
+    for (const auto& [expr_id, expr] : spec->formulas) {
+      fmt::print(std::cout, "\t{} := {}\n", expr_id, expr);
+    }
   } catch (const pegtl::parse_error& e) {
     const auto p = e.positions().front();
     std::cerr << e.what() << '\n'
