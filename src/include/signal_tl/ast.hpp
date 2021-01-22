@@ -185,7 +185,8 @@ struct Interval {
   /// Check if the interval is [0, inf).
   [[nodiscard]] bool is_zero_to_inf() const {
     bool start_zero = std::visit([](auto&& start) { return start == 0; }, this->low);
-    bool end_inf = std::visit([](auto&& end) { return std::isinf(end); }, this->high);
+    bool end_inf    = std::visit(
+        [](auto&& end) { return std::isinf(static_cast<double>(end)); }, this->high);
     return start_zero && end_inf;
   }
 

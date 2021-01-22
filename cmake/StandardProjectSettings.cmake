@@ -25,7 +25,7 @@ endif()
 option(ENABLE_LTO "Enable link time optimization?" OFF)
 
 include(CheckIPOSupported)
-check_ipo_supported(RESULT RESULT)
+check_ipo_supported(RESULT result)
 if(result)
   set(ENABLE_LTO
       ON
