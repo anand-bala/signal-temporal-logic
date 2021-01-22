@@ -80,7 +80,7 @@ struct fmt::formatter<signal_tl::ast::Or>
     : signal_tl::ast::formatter<signal_tl::ast::Or> {
   template <typename FormatContext>
   auto format(const signal_tl::ast::Or& e, FormatContext& ctx) {
-    return format_to(ctx.out(), "({})", fmt::join(e.args, " & "));
+    return format_to(ctx.out(), "({})", fmt::join(e.args, " | "));
   }
 };
 

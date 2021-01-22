@@ -9,6 +9,7 @@
 
 #include <fmt/core.h>
 
+// #define NDEBUG
 #include <cassert>
 #include <map>
 #include <memory>
@@ -29,6 +30,8 @@ using PrimitiveState = std::variant<bool, long int, double>;
 enum struct PredicateType { ONE, TWO };
 
 struct ParserState {
+  unsigned long long int level;
+
   std::optional<ast::Expr> result;
 
   std::optional<PrimitiveState> primitive_result;
@@ -39,7 +42,9 @@ struct ParserState {
   std::optional<ast::ComparisonOp> comparison_type;
 
   std::vector<ast::Expr> terms;
+};
 
+struct GlobalParserState {
   std::map<std::string, ast::Expr> formulas;
   std::map<std::string, ast::Expr> assertions;
 };
@@ -54,7 +59,7 @@ struct action : peg::nothing<Rule> {};
 template <>
 struct action<peg::identifier> {
   template <typename ActionInput>
-  static void apply(const ActionInput& in, ParserState& state) {
+  static void apply(const ActionInput& in, GlobalParserState&, ParserState& state) {
     auto id = std::string(in.string());
     state.identifiers.push_back(id);
   }
@@ -62,21 +67,21 @@ struct action<peg::identifier> {
 
 template <>
 struct action<KwTrue> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     state.primitive_result = PrimitiveState(true);
   }
 };
 
 template <>
 struct action<KwFalse> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     state.primitive_result = PrimitiveState(false);
   }
 };
 
 template <>
 struct action<BooleanLiteral> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     // This function is called only if the BooleanLiteral rule passes,
     // otherwise it is a parsing failure.
     if (state.primitive_result.has_value()) {
@@ -90,7 +95,7 @@ struct action<BooleanLiteral> {
 template <>
 struct action<IntegerLiteral> {
   template <typename ActionInput>
-  static void apply(const ActionInput& in, ParserState& state) {
+  static void apply(const ActionInput& in, GlobalParserState&, ParserState& state) {
     long int val           = std::stol(in.string());
     state.primitive_result = PrimitiveState(val);
   }
@@ -99,7 +104,7 @@ struct action<IntegerLiteral> {
 template <>
 struct action<DoubleLiteral> {
   template <typename ActionInput>
-  static void apply(const ActionInput& in, ParserState& state) {
+  static void apply(const ActionInput& in, GlobalParserState&, ParserState& state) {
     double val             = std::stod(in.string());
     state.primitive_result = PrimitiveState(val);
   }
@@ -107,49 +112,49 @@ struct action<DoubleLiteral> {
 
 template <>
 struct action<LtSymbol> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     state.comparison_type = ast::ComparisonOp::LT;
   }
 };
 
 template <>
 struct action<LeSymbol> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     state.comparison_type = ast::ComparisonOp::LE;
   }
 };
 
 template <>
 struct action<GtSymbol> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     state.comparison_type = ast::ComparisonOp::GT;
   }
 };
 
 template <>
 struct action<GeSymbol> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     state.comparison_type = ast::ComparisonOp::GE;
   }
 };
 
 template <>
 struct action<PredicateForm1> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     state.predicate_type = PredicateType::ONE;
   }
 };
 
 template <>
 struct action<PredicateForm2> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     state.predicate_type = PredicateType::TWO;
   }
 };
 
 template <>
 struct action<PredicateTerm> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     // Here, we assume that the parser succeeded in parsing 1 identifier and 1
     // numeral in the subtree, and now we can get their results from state.
     // Moreover, we assume that the sub-expressions set the predicate type and
@@ -196,8 +201,8 @@ struct action<PredicateTerm> {
 
 template <>
 struct action<NotTerm> {
-  static void apply0(ParserState& state) {
-    assert(state.terms.size() > 1);
+  static void apply0(GlobalParserState&, ParserState& state) {
+    assert(!state.terms.empty());
     // Here we assume that the NotTerm rule matched a single Term as a
     // subexpression. This implies that there should be exactly 1 Expr in
     // states.terms
@@ -211,9 +216,9 @@ struct action<NotTerm> {
 };
 
 template <>
-struct action<AndTerm> {
+struct action<AndTerm> : peg::require_apply {
   template <typename ActionInput>
-  static void apply(const ActionInput& in, ParserState& state) {
+  static void apply(const ActionInput& in, GlobalParserState&, ParserState& state) {
     if (state.terms.size() < 2) {
       throw peg::parse_error(
           std::string("expected at least 2 terms, got ") +
@@ -230,9 +235,9 @@ struct action<AndTerm> {
 };
 
 template <>
-struct action<OrTerm> {
+struct action<OrTerm> : peg::require_apply {
   template <typename ActionInput>
-  static void apply(const ActionInput& in, ParserState& state) {
+  static void apply(const ActionInput& in, GlobalParserState&, ParserState& state) {
     if (state.terms.size() < 2) {
       throw peg::parse_error(
           std::string("expected at least 2 terms, got ") +
@@ -250,7 +255,7 @@ struct action<OrTerm> {
 
 template <>
 struct action<ImpliesTerm> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     // We expect the state to contain exactly 2 terms
     assert(state.terms.size() == 2);
     // TODO(anand): Verify the order of the Terms.
@@ -266,7 +271,7 @@ struct action<ImpliesTerm> {
 
 template <>
 struct action<IffTerm> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     // We expect the state to contain exactly 2 terms
     assert(state.terms.size() == 2);
     auto rhs = state.terms.back();
@@ -281,7 +286,7 @@ struct action<IffTerm> {
 
 template <>
 struct action<XorTerm> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     // We expect the state to contain exactly 2 terms
     assert(state.terms.size() == 2);
     auto rhs = state.terms.back();
@@ -296,7 +301,7 @@ struct action<XorTerm> {
 
 template <>
 struct action<AlwaysTerm> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     assert(state.terms.size() == 1);
     // Here we assume that the AlwaysTerm rule matched a single Term as a
     // subexpression. This implies that there should be exactly 1 Expr in
@@ -313,7 +318,7 @@ struct action<AlwaysTerm> {
 
 template <>
 struct action<EventuallyTerm> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     assert(state.terms.size() == 1);
     // Here we assume that the EventuallyTerm rule matched a single Term as a
     // subexpression. This implies that there should be exactly 1 Expr in
@@ -330,7 +335,7 @@ struct action<EventuallyTerm> {
 
 template <>
 struct action<UntilTerm> {
-  static void apply0(ParserState& state) {
+  static void apply0(GlobalParserState&, ParserState& state) {
     // We expect the state to contain exactly 2 terms
     assert(state.terms.size() == 2);
     auto rhs = state.terms.back();
@@ -345,7 +350,41 @@ struct action<UntilTerm> {
 
 template <>
 struct action<Term> {
-  static void apply0(ParserState& state) {
+  template <
+      typename Rule,
+      peg::apply_mode A,
+      peg::rewind_mode M,
+      template <typename...>
+      class Action,
+      template <typename...>
+      class Control,
+      typename ParseInput>
+  static bool
+  match(ParseInput& in, GlobalParserState& global_state, ParserState& state) {
+    // Here, we implement a push-down parser. Essentially, the new_state was
+    // pushed onto the stack before the parser entered the rule for Term, and
+    // now we have to pop the top of the stack (new_state) and merge the top
+    // smartly with the old_state.
+
+    // Create a new layer on the stack
+    ParserState new_local_state{};
+    new_local_state.level = state.level + 1;
+
+    // Parse the input with the new state.
+    bool ret = tao::pegtl::match<Rule, A, M, Action, Control>(
+        in, global_state, new_local_state);
+    // Once we are done parsing, we need to reset the states.
+    // After the apply0 for Term was completed, new_state should have 1 Term in
+    // the vector. This term needs to be moved onto the Terms vector in the
+    // old_state.
+    state.terms.insert(
+        std::end(state.terms),
+        std::begin(new_local_state.terms),
+        std::end(new_local_state.terms));
+    return ret;
+  }
+
+  static void apply0(GlobalParserState& global_state, ParserState& state) {
     // Here, we have two possibilities:
     //
     // 1. The Term was a valid expression; or
@@ -365,7 +404,7 @@ struct action<Term> {
       state.result = std::nullopt;
     } else if (!state.identifiers.empty()) { // And if we have an id
       // Copy the pointer to the formula with the corresponding id
-      state.terms.push_back(state.formulas.at(state.identifiers.back()));
+      state.terms.push_back(global_state.formulas.at(state.identifiers.back()));
       state.identifiers.pop_back();
     } else {
       // Otherwise, it doesn't make sense that there are no results, as this
@@ -379,7 +418,8 @@ struct action<Term> {
 template <>
 struct action<Assertion> {
   template <typename ActionInput>
-  static void apply(const ActionInput& in, ParserState& state) {
+  static void
+  apply(const ActionInput& in, GlobalParserState& global_state, ParserState& state) {
     // For an assertion statement, we essentially will have 1 identifier, and 1
     // term. Thus, the identifier will be in the  result, and the number of
     // terms must be 1.
@@ -391,7 +431,7 @@ struct action<Assertion> {
     auto expr = state.terms.back(); // Must be there
     state.terms.pop_back();
 
-    const auto [it, check] = state.assertions.insert({id, expr});
+    const auto [it, check] = global_state.assertions.insert({id, expr});
     if (!check) { // Unsuccessful insert. Probably due to id already being there
       throw peg::parse_error(
           fmt::format("possible redefinition of Assertion with id: \"{}\"", it->first),
@@ -405,7 +445,8 @@ struct action<Assertion> {
 template <>
 struct action<DefineFormula> {
   template <typename ActionInput>
-  static void apply(const ActionInput& in, ParserState& state) {
+  static void
+  apply(const ActionInput& in, GlobalParserState& global_state, ParserState& state) {
     // For an define-formula command, we essentially will have 1 identifier,
     // and 1 term. Thus, the identifier will be in the  result, and the number
     // of terms must be 1.
@@ -417,7 +458,7 @@ struct action<DefineFormula> {
     auto expr = state.terms.back(); // Must be there
     state.terms.pop_back();
 
-    const auto [it, check] = state.formulas.insert({id, expr});
+    const auto [it, check] = global_state.formulas.insert({id, expr});
     if (!check) { // Unsuccessful insert. Probably due to id already being there
       throw peg::parse_error(
           fmt::format("possible redefinition of Formula with id: \"{}\"", it->first),

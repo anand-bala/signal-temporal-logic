@@ -108,6 +108,9 @@ ast::Predicate Predicate(std::string name) {
 }
 
 Expr Not(Expr arg) {
+  if (const auto e = std::get_if<ast::Const>(&arg)) {
+    return ast::Const{!(*e).value};
+  }
   return std::make_shared<ast::Not>(std::move(arg));
 }
 

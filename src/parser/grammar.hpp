@@ -16,8 +16,10 @@ struct LineComment : peg::disable<peg::one<';'>, peg::until<peg::eolf>> {};
 /// Any horizontal white space or line comment
 /// NOTE(anand): I am also going to include EOL as a a skippable comment.
 struct Sep : peg::disable<peg::sor<peg::ascii::space, LineComment>> {};
-struct Skip : peg::star<Sep> {};
+struct Skip : peg::disable<peg::star<Sep>> {};
 struct EndOfWord : peg::seq<peg::not_at<peg::identifier_other>, Skip> {};
+
+struct Identifier : peg::seq<peg::identifier, EndOfWord> {};
 
 /// Some symbols
 struct LParen : peg::seq<peg::one<'('>, Skip> {};
@@ -88,47 +90,49 @@ struct Term;
 /// TODO(anand): No support for arithmetic expressions of signals. Must be
 /// implemented in userland.
 struct ComparisonSymbol : peg::sor<LtSymbol, GtSymbol, LeSymbol, GeSymbol> {};
-struct PredicateForm1 : peg::seq<peg::identifier, Skip, Numeral> {};
-struct PredicateForm2 : peg::seq<Numeral, Skip, peg::identifier> {};
+struct PredicateForm1 : peg::seq<Identifier, Numeral> {};
+struct PredicateForm2 : peg::seq<Numeral, Identifier> {};
 struct PredicateForm : peg::sor<PredicateForm1, PredicateForm2> {};
 struct PredicateTerm
     : peg::if_must<peg::sor<LtSymbol, GtSymbol, LeSymbol, GeSymbol>, PredicateForm> {};
 
-struct NotTerm : peg::if_must<KwNot, Skip, Term> {};
-struct AndTerm : peg::if_must<KwAnd, Skip, peg::list<Term, Sep>> {};
-struct OrTerm : peg::if_must<KwOr, Skip, peg::list<Term, Sep>> {};
-struct ImpliesTerm : peg::if_must<KwImplies, Skip, Term, Skip, Term> {};
-struct IffTerm : peg::if_must<KwIff, Skip, Term, Skip, Term> {};
-struct XorTerm : peg::if_must<KwXor, Skip, Term, Skip, Term> {};
+struct NotTerm : peg::if_must<KwNot, Term> {};
+
+struct NaryTail : peg::rep_min<2, Term> {};
+struct BinaryTail : peg::seq<Term, Term> {};
+
+struct AndTerm : peg::if_must<KwAnd, NaryTail> {};
+struct OrTerm : peg::if_must<KwOr, NaryTail> {};
+struct ImpliesTerm : peg::if_must<KwImplies, BinaryTail> {};
+struct IffTerm : peg::if_must<KwIff, BinaryTail> {};
+struct XorTerm : peg::if_must<KwXor, BinaryTail> {};
 
 // TODO(anand): Temporal operations must allow an optional Interval argument.
-struct AlwaysTerm : peg::if_must<KwAlways, Skip, Term> {};
-struct EventuallyTerm : peg::if_must<KwEventually, Skip, Term> {};
-struct UntilTerm : peg::if_must<KwUntil, Skip, Term, Skip, Term> {};
+struct AlwaysTerm : peg::if_must<KwAlways, Term> {};
+struct EventuallyTerm : peg::if_must<KwEventually, Term> {};
+struct UntilTerm : peg::if_must<KwUntil, Term, Term> {};
 
 /// An Expression must be a valid STL formula (without specific functions for
 /// the predicates). So, we will hard code the syntax and we don't have to
 /// worry about precedence as S-expressions FTW!
-struct Expression : peg::sor<
-                        PredicateTerm,
-                        NotTerm,
-                        AndTerm,
-                        OrTerm,
-                        ImpliesTerm,
-                        IffTerm,
-                        XorTerm,
-                        AlwaysTerm,
-                        EventuallyTerm,
-                        UntilTerm,
-                        Term> {};
+using Expression = peg::sor<
+    PredicateTerm,
+    NotTerm,
+    AndTerm,
+    OrTerm,
+    ImpliesTerm,
+    IffTerm,
+    XorTerm,
+    AlwaysTerm,
+    EventuallyTerm,
+    UntilTerm,
+    Term>;
 
-using TermTail = peg::until<RParen, peg::seq<Expression, Skip>>;
-struct Term
-    : peg::sor<peg::if_must<LParen, TermTail>, BooleanLiteral, peg::identifier> {};
+using TermTail = peg::until<RParen, Expression>;
+struct Term : peg::sor<peg::if_must<LParen, TermTail>, BooleanLiteral, Identifier> {};
 
-struct Assertion : peg::if_must<KwAssert, Skip, peg::identifier, Skip, Term> {};
-struct DefineFormula
-    : peg::if_must<KwDefineFormula, Skip, peg::identifier, Skip, Term> {};
+struct Assertion : peg::if_must<KwAssert, Identifier, Term> {};
+struct DefineFormula : peg::if_must<KwDefineFormula, Identifier, Term> {};
 
 /// The list of commands includes
 ///
@@ -146,7 +150,7 @@ struct DefineFormula
 ///   This is straightforward enough: we define a formula (named using
 ///   `<identifier>`) as some expression.
 using AllowedCommands = peg::sor<Assertion, DefineFormula>;
-struct Command : peg::must<AllowedCommands, Skip> {};
+struct Command : peg::must<AllowedCommands> {};
 
 /// Commands are top level S-expressions with the syntax:
 ///

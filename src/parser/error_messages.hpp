@@ -26,6 +26,9 @@ template <>
 inline constexpr auto error_message<peg::identifier> = "expected identifier";
 
 template <>
+inline constexpr auto error_message<Identifier> = "expected an identifier";
+
+template <>
 inline constexpr auto error_message<
     peg::seq<peg::opt<tao::pegtl::one<'+', '-'>>, peg::plus<tao::pegtl::digit>>> =
     "expected some (signed) number after exponent";
@@ -38,8 +41,18 @@ template <>
 inline constexpr auto error_message<peg::list<Term, Sep>> = "expected a list of Terms";
 
 template <>
+inline constexpr auto error_message<peg::plus<Term>> = "expected a list of Terms";
+
+template <>
 inline constexpr auto error_message<peg::rep_min<2, peg::seq<Term, Skip>>> =
     "expected a list of at least 2 Terms";
+
+template <>
+inline constexpr auto error_message<NaryTail> = "expected a list of at least 2 Terms";
+
+template <>
+inline constexpr auto error_message<BinaryTail> =
+    "expected a list of at exactly 2 Terms";
 
 template <>
 inline constexpr auto error_message<TermTail> =

@@ -1,3 +1,5 @@
 ; vim: set ft=lisp
 
 (define-formula phi1 true)
+(define-formula phi2 (not phi1))
+(define-formula phi3 (and phi1 phi2 ))

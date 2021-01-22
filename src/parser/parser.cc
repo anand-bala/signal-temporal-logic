@@ -10,6 +10,9 @@
 
 #include <stdexcept> // for logic_error
 
+// #define NDEBUG
+#include <cassert>
+
 namespace {
 
 namespace peg = tao::pegtl;
@@ -19,14 +22,16 @@ template <typename ParseInput>
 std::unique_ptr<Specification> _parse(ParseInput&& input) {
   // bool success =
   //     peg::parse<grammar::SpecificationFile, peg::nothing, parser::control>(input);
-  auto resultant_specification = parser::actions::ParserState{};
+  auto global_state     = parser::actions::GlobalParserState{};
+  auto top_local_state  = parser::actions::ParserState{};
+  top_local_state.level = 0;
   bool success =
       peg::parse<grammar::SpecificationFile, parser::action, parser::control>(
-          input, resultant_specification);
+          input, global_state, top_local_state);
   if (success) {
+    assert(top_local_state.level == 0);
     auto spec = std::make_unique<Specification>(
-        std::move(resultant_specification.formulas),
-        std::move(resultant_specification.assertions));
+        std::move(global_state.formulas), std::move(global_state.assertions));
     return spec;
   } else {
     throw std::logic_error(
@@ -58,9 +63,11 @@ size_t analyze(int verbose) {
 
 bool trace_from_file(const stdfs::path& input_path) {
   peg::file_input in(input_path);
-  auto resultant_specification = parser::actions::ParserState{};
+  auto global_state     = parser::actions::GlobalParserState{};
+  auto top_local_state  = parser::actions::ParserState{};
+  top_local_state.level = 0;
   return peg::standard_trace<SpecificationFile, parser::action, parser::control>(
-      in, resultant_specification);
+      in, global_state, top_local_state);
 }
 // LCOV_EXCL_STOP
 

@@ -1,3 +1,4 @@
 ; vim: set ft=lisp
 
-(define-formula phi1 (and (< p 0) (or (> q 0) (< r 0))))
+(define-formula phi0 (implies (< p 0) (> s 10)))
+; (define-formula phi1 (or (< p 0) (and (> q 0) (< r 0))))
