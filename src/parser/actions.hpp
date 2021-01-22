@@ -440,8 +440,10 @@ struct action<Term> {
     } else {
       // Otherwise, it doesn't make sense that there are no results, as this
       // means that the parser failed. This should be unreachable.
+      // LCOV_EXCL_START
       throw std::logic_error(
           "Should be unreachable, but looks like a Term has no sub expression or identifier.");
+      // LCOV_EXCL_STOP
     }
   }
 };

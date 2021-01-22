@@ -122,16 +122,16 @@ Expr Or(std::vector<Expr> args) {
   return std::make_shared<ast::Or>(std::move(args));
 }
 
-Expr Implies(Expr arg1, Expr arg2) {
-  return Or({Not(std::move(arg1)), std::move(arg2)});
+Expr Implies(const Expr& x, const Expr& y) {
+  return (~x) | (y);
 }
 
 Expr Xor(const Expr& x, const Expr& y) {
-  return And({Or({x, y}), Or({Not(x), Not(y)})});
+  return (x | y) & (~x | ~y);
 }
 
 Expr Iff(const Expr& x, const Expr& y) {
-  return Or({And({x, y}), And({Not(x), Not(y)})});
+  return (x & y) | (~x & ~y);
 }
 
 Expr Always(Expr arg) {

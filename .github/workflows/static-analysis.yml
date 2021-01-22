@@ -3,7 +3,7 @@ name: Static Analysis
 on: [push, pull_request]
 
 jobs:
-  code-coverage:
+  static-analysis:
     runs-on: ubuntu-20.04
     env:
       CC: clang-10

@@ -12,6 +12,7 @@
 #include <memory>      // for unique_ptr
 #include <string>      // for string
 #include <string_view> // for string_view
+#include <utility>     // for move
 
 namespace signal_tl {
 

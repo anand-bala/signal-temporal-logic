@@ -251,7 +251,7 @@ ast::Predicate Predicate(std::string name);
 Expr Not(Expr arg);
 Expr And(std::vector<Expr> args);
 Expr Or(std::vector<Expr> args);
-Expr Implies(Expr arg1, Expr arg2);
+Expr Implies(const Expr& arg1, const Expr& arg2);
 Expr Xor(const Expr& arg1, const Expr& arg2);
 Expr Iff(const Expr& arg1, const Expr& arg2);
 Expr Always(Expr arg);

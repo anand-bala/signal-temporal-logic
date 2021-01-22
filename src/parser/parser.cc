@@ -34,8 +34,10 @@ std::unique_ptr<Specification> _parse(ParseInput&& input) {
         std::move(global_state.formulas), std::move(global_state.assertions));
     return spec;
   } else {
+    // LCOV_EXCL_START
     throw std::logic_error(
         "Local error thrown during parsing of input. This is most likely a bug.");
+    // LCOV_EXCL_STOP
   }
 }
 } // namespace

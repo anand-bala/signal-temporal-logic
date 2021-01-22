@@ -45,11 +45,8 @@ jobs:
         working-directory: build/
         run: ctest --output-on-failure
       - name: Generate Coverage Report
-        run: |
-          lcov --capture --directory . --output-file .coverage.info
-          lcov --remove .coverage.info '/usr/*' "$HOME/.cache/*" "$HOME/.conan/data/*" "$PWD/tests/*" --output-file .coverage.info
-          lcov --list .coverage.info
+        run: bash ./scripts/run_coverage.sh
       - name: Upload coverage to Codecov
-        run: bash <(curl -s https://codecov.io/bash) -f .coverage.info || echo "Codecov did not collect coverage reports"
+        run: bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
 
 

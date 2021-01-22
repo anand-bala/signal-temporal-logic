@@ -29,7 +29,7 @@ unset(CMAKE_CXX_INCLUDE_WHAT_YOU_USE)
 message(CHECK_START "Looking for fmtlib/fmt")
 find_package(fmt QUIET)
 if(NOT fmt_FOUND)
-  message(CHECK_FAIL "system library not found. Downloading.")
+  message(CHECK_FAIL "system library not found (using fetched version).")
   FetchContent_Declare(
     fmt
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
@@ -54,7 +54,7 @@ if(BUILD_PARSER)
   message(CHECK_START "Looking for taocpp/pegtl")
   find_package(pegtl QUIET)
   if(NOT pegtl_FOUND)
-    message(CHECK_FAIL "system library not found. Downloading.")
+    message(CHECK_FAIL "system library not found (using fetched version).")
     FetchContent_Declare(
       pegtl
       GIT_REPOSITORY https://github.com/taocpp/PEGTL.git
@@ -80,7 +80,7 @@ if(BUILD_PYTHON_BINDINGS)
   message(CHECK_START "Looking for pybind11/pybind11")
   find_package(pybind11 QUIET)
   if(NOT pybind11_FOUND)
-    message(CHECK_FAIL "system library not found. Downloading.")
+    message(CHECK_FAIL "system library not found (using fetched version).")
     FetchContent_Declare(
       pybind11
       GIT_REPOSITORY https://github.com/pybind/pybind11.git
@@ -110,7 +110,7 @@ if(ENABLE_TESTING)
   message(CHECK_START "Looking for catchorg/Catch2")
   find_package(Catch2 QUIET)
   if(NOT Catch2_FOUND)
-    message(CHECK_FAIL "system library not found. Downloading.")
+    message(CHECK_FAIL "system library not found (using fetched version).")
     FetchContent_Declare(
       catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git

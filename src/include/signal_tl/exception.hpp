@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 
+// LCOV_EXCL_START
 namespace signal_tl {
 
 struct not_implemented_error : public std::exception {
@@ -25,5 +26,6 @@ struct not_implemented_error : public std::exception {
 };
 
 } // namespace signal_tl
+// LCOV_EXCL_STOP
 
 #endif /* end of include guard: __SIGNAL_TEMPORAL_LOGIC_EXCEPTION_HH__ */
