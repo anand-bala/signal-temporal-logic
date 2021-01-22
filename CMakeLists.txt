@@ -44,8 +44,10 @@ cmake_dependent_option(
 )
 
 option(BUILD_EXAMPLES "Build the examples?" ${SIGNALTL_MASTER_PROJECT})
+
+# TODO: Turn this on once the library is stable.
 option(BUILD_PYTHON_BINDINGS "Build the Python extension?"
-       ${SIGNALTL_MASTER_PROJECT}
+  OFF
 )
 
 option(ENABLE_CACHE "Enable cache if available" ${SIGNALTL_MASTER_PROJECT})
