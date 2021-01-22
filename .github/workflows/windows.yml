@@ -2,6 +2,9 @@ name: Windows
 
 on: [push, pull_request]
 
+env:
+  SCCACHE_DIR: ${{ github.workspace }}/.cache/sccache
+
 jobs:
   vs2019:
     strategy:
@@ -10,6 +13,9 @@ jobs:
         build_type: [Debug, Release]
 
     runs-on: windows-latest
+
+    env:
+      CXX: ${{ matrix.compiler }}
 
     steps:
     - uses: actions/checkout@v2
@@ -21,7 +27,7 @@ jobs:
       env:
         cache-name: cache-deps
       with:
-        path: .deps
+        path: .cache/deps
         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/ThirdPartyDeps.cmake') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
@@ -32,12 +38,10 @@ jobs:
       env:
         cache-name: cache-build
       with:
-        path: ~/.ccache/
+        path: .cache/sccache
         key: ${{ runner.os }}-build-${{ env.cache-name }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+    - name: Install sccache
+      run: choco install sccache
     - run: cmake -E make_directory build
 
     - shell: bash
@@ -68,17 +72,26 @@ jobs:
       env:
         cache-name: cache-deps
       with:
-        path: .deps
+        path: .cache/deps
         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/ThirdPartyDeps.cmake') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
           ${{ runner.os }}-
+    - name: Cache build
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-build
+      with:
+        path: .cache/sccache
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+    - name: Install sccache
+      run: choco install sccache
     - run: cmake -E make_directory build
 
     - shell: bash
       working-directory: build/
-      run: cmake $GITHUB_WORKSPACE -G "Visual Studio 16 2019" -T ClangCL -DENABLE_CACHE=OFF
+      run: cmake $GITHUB_WORKSPACE -G "Visual Studio 16 2019" -T ClangCL
 
     - working-directory: build/
       run: cmake --build . --config ${{ matrix.build_type }}
@@ -107,12 +120,21 @@ jobs:
       env:
         cache-name: cache-deps
       with:
-        path: .deps
+        path: .cache/deps
         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/ThirdPartyDeps.cmake') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
           ${{ runner.os }}-
+    - name: Cache build
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-build
+      with:
+        path: .cache/sccache
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+    - name: Install sccache
+      run: choco install sccache
     - run: cmake -E make_directory build
 
     - shell: bash

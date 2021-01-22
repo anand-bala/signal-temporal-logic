@@ -5,7 +5,7 @@ include(CMakePrintHelpers)
 
 if(SIGNALTL_MASTER_PROJECT)
   get_filename_component(
-    fc_base "./.deps" REALPATH BASE_DIR "${PROJECT_SOURCE_DIR}"
+    fc_base "./.cache/deps" REALPATH BASE_DIR "${PROJECT_SOURCE_DIR}"
   )
   set(FETCHCONTENT_BASE_DIR ${fc_base})
 endif()

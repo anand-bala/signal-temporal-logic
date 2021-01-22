@@ -2,6 +2,9 @@ name: macOS
 
 on: [push, pull_request]
 
+env:
+  SCCACHE_DIR: ${{ github.workspace }}/.cache/sccache
+
 jobs:
   xcode:
     strategy:
@@ -22,7 +25,7 @@ jobs:
       env:
         cache-name: cache-deps
       with:
-        path: .deps
+        path: .cache/deps
         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/ThirdPartyDeps.cmake') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
@@ -33,16 +36,14 @@ jobs:
       env:
         cache-name: cache-build
       with:
-        path: ~/.ccache/
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-xcode-${{ matrix.xcode }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+        path: .cache/sccache
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
     - uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: ${{ matrix.xcode }}
-    - name: CMake configure (Ubuntu)
+    - name: Install sccache
+      run: brew install sccache
+    - name: CMake configure
       run: cmake -B build
 
     - working-directory: build/

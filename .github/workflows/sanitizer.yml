@@ -2,6 +2,9 @@ name: Sanitizer
 
 on: [push, pull_request]
 
+env:
+  SCCACHE_DIR: ${{ github.workspace }}/.cache/sccache
+
 jobs:
   sanitizer:
     strategy:
@@ -25,7 +28,7 @@ jobs:
       env:
         cache-name: cache-deps
       with:
-        path: .deps
+        path: .cache/deps
         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/ThirdPartyDeps.cmake') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
@@ -36,12 +39,12 @@ jobs:
       env:
         cache-name: cache-build
       with:
-        path: ~/.ccache/
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.compiler }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+        path: .cache/sccache
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+    - name: Install sccache
+      run: |
+        curl -SL https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz | tar xvz --strip-components=1 --wildcards "*/sccache"
+        chmod +x sccache
     - run: cmake -E make_directory build
 
     - working-directory: build/
