@@ -9,8 +9,11 @@ function(set_project_warnings project_name)
       /W4 # Baseline reasonable warnings
       /w14640 # Enable warning on thread un-safe static member initialization
       /permissive- # standards conformance mode for MSVC compiler.
-      /ignore:4099 # Ignore the "missing PDB" warnings that are issued by fmtlib
   )
+
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    list(APPEND MSVC_WARNINGS /Z7)
+  endif()
 
   set(CLANG_WARNINGS
       -Wall
