@@ -85,3 +85,6 @@ with section("format"):
     line_width = 80
     tab_size = 2
     keyword_case = "upper"
+
+with section("markup"):
+    bullet_char = "-"

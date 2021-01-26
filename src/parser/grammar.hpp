@@ -183,8 +183,9 @@ struct Command : peg::must<AllowedCommands> {};
 
 /// Commands are top level S-expressions with the syntax:
 ///
+/// ```
 ///   <Command>   ::= '(' <keyword> <arguments>* ')'
-///
+/// ```
 /// We will hard code the top level commands, like `define-formula` and
 /// `assert` as that will allow us to directly reason about them. A command is
 /// essentially intrinsic to the specification language.

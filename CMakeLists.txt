@@ -8,24 +8,12 @@ if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(SIGNALTL_MASTER_PROJECT ON)
 endif()
 
-# Set version from a common file.
-file(READ "${CMAKE_CURRENT_LIST_DIR}/signal_tl/__init__.py" init_py_data)
-string(REGEX MATCH "__version__ = \"([0-9]+)\\.([0-9]+)\\.([0-9]+)-([a-z]+)?\""
-             _ ${init_py_data}
-)
-
-set(SIGNALTL_MAJOR "${CMAKE_MATCH_1}")
-set(SIGNALTL_MINOR "${CMAKE_MATCH_2}")
-set(SIGNALTL_PATCHLEVEL "${CMAKE_MATCH_3}")
-set(SIGNALTL_VERSION_TYPE "${CMAKE_MATCH_4}")
-set(SIGNALTL_VERSION
-    "${SIGNALTL_MAJOR}.${SIGNALTL_MINOR}.${SIGNALTL_PATCHLEVEL}${SIGNALTL_PRERELASE}"
-)
-message(STATUS "signaltl: v${SIGNALTL_VERSION}")
+include(cmake/Version.cmake)
+message(STATUS "signaltl: v${SIGNALTL_FULL_VERSION}")
 
 project(
   signaltl
-  VERSION "${SIGNALTL_MAJOR}.${SIGNALTL_MINOR}.${SIGNALTL_PATCHLEVEL}"
+  VERSION "${SIGNALTL_VERSION}"
   DESCRIPTION
     "A library for efficiently working with Signal Temporal Logic (STL) and its quantitative semantics"
   LANGUAGES CXX
@@ -43,6 +31,7 @@ cmake_dependent_option(
   "NOT BUILD_CORE_ONLY" OFF
 )
 
+option(BUILD_DOCS "Build the documentation?" OFF)
 option(BUILD_EXAMPLES "Build the examples?" ${SIGNALTL_MASTER_PROJECT})
 
 # TODO: Turn this on once the library is stable.
@@ -133,6 +122,10 @@ endif()
 if(ENABLE_TESTING)
   add_subdirectory(tests)
   coverage_evaluate()
+endif()
+
+if(BUILD_DOCS)
+  add_subdirectory(docs)
 endif()
 
 # ##############################################################################
