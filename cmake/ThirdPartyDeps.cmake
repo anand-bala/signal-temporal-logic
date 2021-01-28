@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 include(FetchContent)
 include(CMakePrintHelpers)
 
-if(SIGNALTL_MASTER_PROJECT)
+if(SIGNALTL_MASTER_PROJECT OR NOT FETCHCONTENT_BASE_DIR)
   get_filename_component(
     fc_base "./.cache/deps" REALPATH BASE_DIR "${PROJECT_SOURCE_DIR}"
   )
@@ -129,3 +129,23 @@ if(ENABLE_TESTING)
     message(CHECK_PASS "system library found.")
   endif()
 endif()
+
+# ##############################################################################
+# Documentation dependencies
+# ##############################################################################
+
+function(get_mcss_repo mcss_dir)
+  message(STATUS "Fetching mosra/m.css for documentation")
+    FetchContent_Declare(
+      mcss
+      GIT_REPOSITORY https://github.com/mosra/m.css.git
+      GIT_TAG 42d4a9a48f31f5df6e246c948403b54b50574a2a
+      GIT_PROGRESS ON
+    )
+
+    FetchContent_GetProperties(mcss)
+    if(NOT mcss_POPULATED)
+      FetchContent_Populate(mcss)
+    endif()
+    set(${mcss_dir} ${mcss_SOURCE_DIR} PARENT_SCOPE)
+endfunction()

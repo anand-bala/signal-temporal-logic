@@ -1,4 +1,6 @@
-
+/// @file parser.hpp
+///
+/// Here, we define the interface to the specification language parser.
 #pragma once
 
 #ifndef SIGNAL_TEMPORAL_LOGIC_PARSER_HPP
@@ -16,13 +18,17 @@
 
 namespace signal_tl {
 
-/// Holds the concrete `Specification` that is read from a file.
+/// @brief Holds the concrete specification that is read from a file.
 ///
 /// A specification file is a list of commands/declarations which will be used
 /// to build monitors for signals. See the documentation for the specification
 /// file for more details.
 struct Specification {
+  /// The list of formulas parsed in the specification file, keyed by the corresponding
+  /// identifiers.
   std::map<std::string, ast::Expr> formulas;
+  /// The list of assertions parsed in the specification file, keyed by the
+  /// corresponding identifiers.
   std::map<std::string, ast::Expr> assertions;
 
   Specification() = default;
@@ -31,13 +37,27 @@ struct Specification {
       std::map<std::string, ast::Expr> _assertions) :
       formulas{std::move(_formulas)}, assertions{std::move(_assertions)} {}
 
+  /// \brief Add a formula to the @ref Specification
+  ///
+  /// \note
+  /// This is mostly used by the parser.
   void add_formula(const std::string&, ast::Expr);
+
+  /// \brief Add an assertion to the @ref Specification
+  ///
+  /// \note
+  /// This is mostly used by the parser.
   void add_assertion(const std::string&, ast::Expr);
 
+  /// \brief Get the formula (@ref ast::Expr) with the given identifier.
   ast::Expr get_formula(std::string_view);
+
+  /// \brief Get the assertion with the given identifier.
   ast::Expr get_assertion(std::string_view);
 };
 
+/// @namespace signal_tl::parser
+/// @brief The interface to the specification language parser.
 namespace parser {
 
 /// Given a `string_view` of the actual specification (typically read from the

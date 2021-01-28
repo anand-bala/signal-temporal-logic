@@ -5,9 +5,12 @@
 
 #include <tao/pegtl.hpp> // IWYU pragma: keep
 
-namespace signal_tl::grammar {
+/// @namsepace signal_tl::grammar
+/// @brief grammar definition for the signal_tl specification language.
+///
 /// Here, we define the grammar for a Lisp-y specification format using
 /// S-expressions. This is inspired, in part, by the SMT-LIB.
+namespace signal_tl::grammar {
 namespace peg = tao::pegtl;
 
 /// Line comments that starts using the character ';'
@@ -16,12 +19,13 @@ struct LineComment : peg::disable<peg::one<';'>, peg::until<peg::eolf>> {};
 /// Any horizontal white space or line comment
 /// NOTE(anand): I am also going to include EOL as a a skippable comment.
 struct Sep : peg::disable<peg::sor<peg::ascii::space, LineComment>> {};
+/// We use this as a placeholder for `Sep*`
 struct Skip : peg::disable<peg::star<Sep>> {};
+/// We use this to mark the end of a word/identifier (which is skippable whitespace)
 struct EndOfWord : peg::seq<peg::not_at<peg::identifier_other>, Skip> {};
 
 struct Identifier : peg::seq<peg::identifier, EndOfWord> {};
 
-/// Some symbols
 template <typename... S>
 struct Symbol : peg::seq<S..., Skip> {};
 struct LParen : Symbol<peg::one<'('>> {};
@@ -157,7 +161,7 @@ using Expression = peg::sor<
     UntilTerm,
     Term>;
 
-using TermTail = peg::until<RParen, Expression>;
+using TermTail = peg::until<RParen, peg::must<Expression>>;
 struct Term : peg::sor<peg::if_must<LParen, TermTail>, BooleanLiteral, Identifier> {};
 
 struct Assertion : peg::if_must<KwAssert, Identifier, Term> {};

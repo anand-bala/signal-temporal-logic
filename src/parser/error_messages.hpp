@@ -45,6 +45,9 @@ inline constexpr auto error_message<BinaryTail> =
     "expected a list of at exactly 2 Terms";
 
 template <>
+inline constexpr auto error_message<Expression> = "expected a valid STL expression";
+
+template <>
 inline constexpr auto error_message<TermTail> =
     "expected an expression followed by a closing parenthesis ')'";
 

@@ -1,6 +1,6 @@
 # The trailing slash is important for the installing part
 set(SIGNALTL_INCLUDE_DIRS
-    ${CMAKE_CURRENT_LIST_DIR}/include/
+    ${CMAKE_CURRENT_LIST_DIR}/include
     CACHE PATH "Path to the signaltl include directory"
 )
 
@@ -45,3 +45,14 @@ endif()
 if(BUILD_ROBUSTNESS)
   target_include_directories(signaltl PRIVATE robust_semantics)
 endif()
+
+include(GNUInstallDirs)
+install(
+  TARGETS signaltl
+  EXPORT signaltl-targets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(DIRECTORY ${SIGNALTL_INCLUDE_DIRS}/signal_tl TYPE INCLUDE)
+

@@ -24,6 +24,26 @@ Predicate operator<=(const Predicate& lhs, const double bound) {
   return Predicate{lhs.name, ComparisonOp::LE, bound};
 }
 
+Predicate operator>(const double lhs, const Predicate& rhs) {
+  // L <-> G
+  return Predicate{rhs.name, ComparisonOp::LT, lhs};
+}
+
+Predicate operator>=(const double lhs, const Predicate& rhs) {
+  // L <-> G
+  return Predicate{rhs.name, ComparisonOp::LE, lhs};
+}
+
+Predicate operator<(const double lhs, const Predicate& rhs) {
+  // L <-> G
+  return Predicate{rhs.name, ComparisonOp::GT, lhs};
+}
+
+Predicate operator<=(const double lhs, const Predicate& rhs) {
+  // L <-> G
+  return Predicate{rhs.name, ComparisonOp::GE, lhs};
+}
+
 using utils::overloaded;
 
 namespace {

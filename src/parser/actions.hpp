@@ -415,7 +415,9 @@ struct action<Term> {
     return ret;
   }
 
-  static void apply0(GlobalParserState& global_state, ParserState& state) {
+  template <typename ActionInput>
+  static void
+  apply(const ActionInput& in, GlobalParserState& global_state, ParserState& state) {
     // Here, we have two possibilities:
     //
     // 1. The Term was a valid expression; or
@@ -440,6 +442,14 @@ struct action<Term> {
     } else {
       // Otherwise, it doesn't make sense that there are no results, as this
       // means that the parser failed. This should be unreachable.
+      //
+      // UPDATE 2021-01-26:
+      //
+      // Turns out, this is reachable if there is an empty "()" in the list of
+      // expressions. This means that we need to throw a parsing error, where we matched
+      // an empty list where it never makes sense to have one.
+      throw peg::parse_error(
+          "Looks like a pair '(' ')' was matched with nothing in between", in);
       // LCOV_EXCL_START
       throw std::logic_error(
           "Should be unreachable, but looks like a Term has no sub expression or identifier.");

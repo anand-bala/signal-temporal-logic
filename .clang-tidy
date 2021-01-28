@@ -19,8 +19,33 @@ modernize-*,
 -modernize-use-trailing-return-type,
 performance-*,
 -performance-noexcept-move-constructor,
+readability-avoid-const-params-in-decls
+readability-braces-around-statements
+readability-const-return-type
+readability-container-size-empty
+readability-deleted-default
+readability-else-after-return
+readability-function-cognitive-complexity
+readability-function-size
+readability-identifier-naming
+readability-isolate-declaration
+readability-make-member-function-const
+readability-non-const-parameter
+readability-qualified-auto
+readability-redundant-access-specifiers
+readability-redundant-control-flow
+readability-redundant-declaration
+readability-redundant-smartptr-get
+readability-redundant-string-cstr
+readability-redundant-string-init
+readability-simplify-boolean-expr
+readability-simplify-subscript-expr
+readability-string-compare
+readability-uniqueptr-delete-release
   '
 WarningsAsErrors: '*'
 HeaderFilterRegex: ''
 FormatStyle: 'file'
+PrivateMemberPrefix: 'm_'
+PrivateMemberCase: 'lower_case'
 ...

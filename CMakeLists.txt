@@ -35,9 +35,7 @@ option(BUILD_DOCS "Build the documentation?" OFF)
 option(BUILD_EXAMPLES "Build the examples?" ${SIGNALTL_MASTER_PROJECT})
 
 # TODO: Turn this on once the library is stable.
-option(BUILD_PYTHON_BINDINGS "Build the Python extension?"
-  OFF
-)
+option(BUILD_PYTHON_BINDINGS "Build the Python extension?" OFF)
 
 option(ENABLE_CACHE "Enable cache if available" ${SIGNALTL_MASTER_PROJECT})
 option(ENABLE_TESTING "Build signaltl test suite?" ${SIGNALTL_MASTER_PROJECT})
@@ -141,15 +139,6 @@ set(SIGNALTL_CMAKECONFIG_INSTALL_DIR
 set(INSTALL_CONFIGDIR ${SIGNALTL_CMAKECONFIG_INSTALL_DIR})
 
 install(
-  TARGETS signaltl
-  EXPORT signaltl-targets
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-
-install(DIRECTORY ${SIGNALTL_INCLUDE_DIRS} TYPE INCLUDE)
-
-install(
   EXPORT signaltl-targets
   FILE signaltlTargets.cmake
   NAMESPACE signaltl::
@@ -175,6 +164,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/signaltlConfig.cmake
         DESTINATION ${INSTALL_CONFIGDIR}
 )
 
+install(FILES LICENSE LICENSE-3rdParty DESTINATION ${CMAKE_INSTALL_DOCDIR})
 export(
   EXPORT signaltl-targets
   FILE ${CMAKE_CURRENT_BINARY_DIR}/signaltlTargets.cmake
