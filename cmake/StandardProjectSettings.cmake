@@ -22,20 +22,24 @@ if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   )
 endif()
 
-option(ENABLE_LTO "Enable link time optimization?" OFF)
-
+# Optional IPO. Do not use IPO if it's not supported by compiler.
+set(ENABLE_LTO
+    OFF
+    CACHE BOOL "Enable Interprocedural Optimization"
+)
 include(CheckIPOSupported)
-check_ipo_supported(RESULT result)
-if(result)
+check_ipo_supported(RESULT ipo_available)
+if(ipo_available)
   set(ENABLE_LTO
       ON
-      CACHE BOOL "Enable link time optimization?" FORCE
+      CACHE BOOL "Enable Interprocedural Optimization" FORCE
   )
+else()
+  message(WARNING "IPO is not supported: ${output}")
 endif()
 
 # Set some default options for target
 function(set_default_compile_options target)
-
   if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     # Force color in compiler output as it will be easier to debug...
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -59,7 +63,7 @@ function(set_default_compile_options target)
 
 endfunction()
 
-# Set compile and link flags for std::filesystem
+# Compile and link flags for std::filesystem
 function(set_std_filesystem_options target)
   message(CHECK_START "Checking compiler flags for std::filesystem")
   # Check if we need to add -lstdc++fs or -lc++fs or nothing
@@ -67,19 +71,19 @@ function(set_std_filesystem_options target)
     set(std_fs_no_lib_needed TRUE)
   else()
     try_compile(
-      std_fs_no_lib_needed ${CMAKE_CURRENT_BINARY_DIR}
-      SOURCES ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
+      std_fs_no_lib_needed ${CMAKE_CURRENT_BINARY_DIR} SOURCES
+      ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
       COMPILE_DEFINITIONS -std=c++17
     )
     try_compile(
-      std_fs_needs_stdcxxfs ${CMAKE_CURRENT_BINARY_DIR}
-      SOURCES ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
+      std_fs_needs_stdcxxfs ${CMAKE_CURRENT_BINARY_DIR} SOURCES
+      ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
       COMPILE_DEFINITIONS -std=c++17
       LINK_LIBRARIES stdc++fs
     )
     try_compile(
-      std_fs_needs_cxxfs ${CMAKE_CURRENT_BINARY_DIR}
-      SOURCES ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
+      std_fs_needs_cxxfs ${CMAKE_CURRENT_BINARY_DIR} SOURCES
+      ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
       COMPILE_DEFINITIONS -std=c++17
       LINK_LIBRARIES c++fs
     )

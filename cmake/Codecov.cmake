@@ -91,14 +91,3 @@ function(add_coverage target)
     add_coverage_flags(${target})
   endif()
 endfunction()
-
-# Add global target to gather coverage information after all targets have been
-# added. Other evaluation functions could be added here, after checks for the
-# specific module have been passed.
-function(coverage_evaluate)
-  # add lcov evaluation
-  if(LCOV_FOUND AND ENABLE_COVERAGE)
-    lcov_capture_initial()
-    lcov_capture()
-  endif()
-endfunction()

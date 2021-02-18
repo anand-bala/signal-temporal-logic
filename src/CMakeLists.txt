@@ -1,58 +1,47 @@
-# The trailing slash is important for the installing part
-set(SIGNALTL_INCLUDE_DIRS
-    ${CMAKE_CURRENT_LIST_DIR}/include
-    CACHE PATH "Path to the signaltl include directory"
+# AST stuff
+add_argus_component(argusast ast/ast.cc)
+
+# Parser stuff
+add_argus_component(
+  argusparser parser/error_messages.hpp parser/actions.hpp parser/parser.cc
+  parser/grammar.hpp
 )
+target_link_libraries(argusparser PUBLIC taocpp::pegtl)
+set_std_filesystem_options(argusparser)
 
-set(SIGNALTL_SRCS core/signal.cc core/ast.cc)
+# Signals
+add_argus_component(argussignals signals/signal.cc)
 
-if(BUILD_PARSER)
-  list(APPEND SIGNALTL_SRCS parser/error_messages.hpp parser/actions.hpp
-       parser/parser.cc parser/grammar.hpp
-  )
-else()
-  message(STATUS "Not building parser")
-endif()
+# Automata
+add_subdirectory(automata)
 
-if(BUILD_ROBUSTNESS)
-  list(APPEND SIGNALTL_SRCS robust_semantics/classic_robustness.cc
-       robust_semantics/minmax.cc robust_semantics/minmax.hpp
-  )
-else()
-  message(STATUS "Not building robust semantics")
-endif()
+# Algorithms
+add_subdirectory(algorithms)
 
-add_library(signaltl ${SIGNALTL_SRCS})
-
-target_link_libraries(signaltl PUBLIC fmt::fmt)
+# argus library
+add_library(argus libargus.cc)
+add_library(argus::argus ALIAS argus)
 target_include_directories(
-  signaltl PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-                  $<BUILD_INTERFACE:${SIGNALTL_INCLUDE_DIRS}>
+  argus PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+               $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_compile_features(signaltl PUBLIC cxx_std_17)
-set_default_compile_options(signaltl)
-set_project_warnings(signaltl)
-enable_clang_tidy(signaltl)
-enable_include_what_you_use(signaltl)
-add_coverage(signaltl)
-set_target_properties(signaltl PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(argus PUBLIC taocpp::pegtl argusparser argusast)
+target_compile_features(argus PUBLIC cxx_std_17)
+set_default_compile_options(argus)
+set_project_warnings(argus)
+enable_clang_tidy(argus)
+enable_include_what_you_use(argus)
+add_coverage(argus)
 
-if(BUILD_PARSER)
-  target_link_libraries(signaltl PRIVATE taocpp::pegtl)
-  target_include_directories(signaltl PRIVATE parser/)
-  set_std_filesystem_options(signaltl)
-endif()
-if(BUILD_ROBUSTNESS)
-  target_include_directories(signaltl PRIVATE robust_semantics)
-endif()
+set_target_properties(argus PROPERTIES VERSION ${ARGUS_VERSION})
+set_target_properties(argus PROPERTIES SOVERSION ${ARGUS_VERSION_MAJOR})
 
 include(GNUInstallDirs)
+
 install(
-  TARGETS signaltl
-  EXPORT signaltl-targets
+  TARGETS argus
+  EXPORT argusTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
-
-install(DIRECTORY ${SIGNALTL_INCLUDE_DIRS}/signal_tl TYPE INCLUDE)
-

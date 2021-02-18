@@ -1,3 +1,0 @@
-breathe~=4.26.1
-myst-parser~=0.13.3
-sphinx-book-theme

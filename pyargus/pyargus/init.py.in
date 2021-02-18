@@ -1,4 +1,4 @@
-__version__ = "0.1.4-dev55+9d981d4"
+__version__ = "@ARGUS_FULL_VERSION@"
 
 # isort: split
 

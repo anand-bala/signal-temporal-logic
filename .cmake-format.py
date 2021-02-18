@@ -13,64 +13,8 @@ with section("parse"):
                 "OPT_SIZE": 1,
             },
         },
-        "setup_target_for_coverage_lcov": {
-            "pargs": 0,
-            "flags": ["NO_DEMANGLE"],
-            "kwargs": {
-                "NAME": 1,
-                "BASE_DIRECTORY": 1,
-                "EXCLUDE": "*",
-                "EXECUTABLE": "*",
-                "EXECUTABLE_ARGS": "*",
-                "DEPENDENCIES": "*",
-                "LCOV_ARGS": "*",
-                "GENHTML_ARGS": "*",
-            },
-        },
-        "setup_target_for_coverage_gcovr_xml": {
-            "pargs": 0,
-            "flags": [],
-            "kwargs": {
-                "NAME": 1,
-                "BASE_DIRECTORY": 1,
-                "EXCLUDE": "*",
-                "EXECUTABLE": "*",
-                "EXECUTABLE_ARGS": "*",
-                "DEPENDENCIES": "*",
-            },
-        },
-        "setup_target_for_coverage_gcovr_html": {
-            "pargs": 0,
-            "flags": [],
-            "kwargs": {
-                "NAME": 1,
-                "BASE_DIRECTORY": 1,
-                "EXCLUDE": "*",
-                "EXECUTABLE": "*",
-                "EXECUTABLE_ARGS": "*",
-                "DEPENDENCIES": "*",
-            },
-        },
-        "conan_cmake_run": {
-            "pargs": "*",
-            "flags": [
-                "BASIC_SETUP",
-                "CMAKE_TARGETS",
-                "UPDATE",
-                "KEEP_RPATHS",
-                "NO_LOAD",
-                "NO_OUTPUT_DIRS",
-                "OUTPUT_QUIET",
-                "NO_IMPORTS",
-                "SKIP_STD",
-            ],
-            "kwargs": {
-                "CONANFILE": 1,
-                "ARCH": 1,
-                "BUILD": 1,
-                "REQUIRES": "*",
-                "OPTIONS": "*",
-            },
+        "add_argus_component": {
+            "pargs": "1+",
         },
     }
 
