@@ -1,22 +1,23 @@
-/*
- * Copyright Björn Fahller 2018,2019
- *
- *  Use, modification and distribution is subject to the
- *  Boost Software License, Version 1.0. (See accompanying
- *  file LICENSE_1_0.txt or copy at
- *  http://www.boost.org/LICENSE_1_0.txt)
- *
- * Project home: https://github.com/rollbear/visit
- */
+/// @file   utils/visit.hpp
+/// @brief  Custom variant visitor optimized for inlining
+///
+/// Derived from [rollbear/visit](https://github.com/rollbear/visit)
+///
+/// Copyright Björn Fahller 2018,2019
+/// 
+///  Use, modification and distribution is subject to the
+///  Boost Software License, Version 1.0. (See accompanying
+///  file LICENSE_1_0.txt or copy at
+///  http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef ROLLBEAR_VISIT_HPP
-#define ROLLBEAR_VISIT_HPP
+#ifndef UTILS_VISIT_HPP
+#define UTILS_VISIT_HPP
 
 #include <tuple>
 #include <utility>
 #include <variant>
 
-namespace rollbear {
+namespace utils {
 namespace detail {
 
 template <typename... Ts>
@@ -167,6 +168,6 @@ inline auto visit(F&& f, Vs&&... vs) {
   }
 }
 
-} // namespace rollbear
+} // namespace utils
 
-#endif // ROLLBEAR_VISIT_HPP
+#endif // UTILS_VISIT_HPP

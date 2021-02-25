@@ -21,28 +21,42 @@
 #include <string>
 #include <vector>
 
-// Forward-declare Expr
-namespace argus {
-struct Expr;
-} // namespace argus
+#include "argus/ast/ast_fwd.hpp"
+#include "argus/ast/attributes.hpp"
 
-namespace argus::ast::details {
+namespace ARGUS_AST_NS {
 
 /// @brief Functions on `Constant`s, `Variable`s, and other `Function`s.
 ///
-/// This can refer to mathematical functions (excluding logical operations) or to STQL
-/// specific functions like Euclidean distance, Class reference, Probability reference,
-/// etc.
+/// This mainly refers to mathematical functions (excluding logical operations).
 struct Function {
   enum struct Type { Add, Sub, Mul, Div, Custom };
 
   Type fn;
   std::optional<std::string> custom_fn;
-  std::vector<std::shared_ptr<Expr>> args;
+  std::vector<ExprPtr> args;
 
-  std::set<std::string> attributes;
+  std::set<Attribute, Attribute::KeyCompare> attrs;
+
+  Function(Type op, std::vector<ExprPtr> operands) :
+      fn{op}, args{std::move(operands)}, attrs{} {}
+
+  Function(
+      Type op,
+      std::vector<ExprPtr> operands,
+      std::set<Attribute, Attribute::KeyCompare> attributes) :
+      fn{op}, args{std::move(operands)}, attrs{std::move(attributes)} {}
+
+  Function(
+      std::string op,
+      std::vector<ExprPtr> operands,
+      std::set<Attribute, Attribute::KeyCompare> attributes) :
+      fn{Type::Custom},
+      custom_fn{std::move(op)},
+      args{std::move(operands)},
+      attrs{std::move(attributes)} {}
 };
 
-} // namespace argus::ast::details
+} // namespace ARGUS_AST_NS
 
 #endif /* end of include guard: ARGUS_AST_DETAILS_FUNCTIONS */

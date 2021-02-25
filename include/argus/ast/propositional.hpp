@@ -10,18 +10,12 @@
 #ifndef ARGUS_AST_DETAILS_PROPOSITIONAL
 #define ARGUS_AST_DETAILS_PROPOSITIONAL
 
-#include <map>
 #include <memory>
-#include <set>
-#include <string>
 #include <vector>
 
-// Forward-declare Expr
-namespace argus {
-struct Expr;
-} // namespace argus
+#include "argus/ast/ast_fwd.hpp"
 
-namespace argus::ast::details {
+namespace ARGUS_AST_NS {
 
 /// @brief AST node for relational operations/predicates
 ///
@@ -32,7 +26,10 @@ struct PredicateOp {
   enum struct Type { LE, LT, GE, GT, EQ, NE };
 
   Type op;
-  std::shared_ptr<Expr> lhs, rhs;
+  ExprPtr lhs, rhs;
+
+  PredicateOp(Type cmp, ExprPtr arg1, ExprPtr arg2) : op{cmp}, lhs{std::move(arg1)}, rhs{std::move(arg2)} {}
+
 };
 
 /// @brief Generic AST node for all propositional operations.
@@ -40,16 +37,9 @@ struct LogicalOp {
   enum struct Type { Not, And, Or };
 
   Type op;
-  std::vector<std::shared_ptr<Expr>> args;
-};
+  std::vector<ExprPtr> args;
 
-/// @brief Quantifier expressions
-struct QuantifierOp {
-  enum struct Type { Exists, Forall };
-
-  Type op;
-  std::vector<std::shared_ptr<Expr>> vars;
-  std::shared_ptr<Expr> arg;
+  LogicalOp(Type operation, std::vector<ExprPtr> operands) : op{operation}, args{std::move(operands)} {}
 };
 
 } // namespace argus::ast::details

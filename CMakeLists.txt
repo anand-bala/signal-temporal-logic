@@ -46,6 +46,8 @@ include(StaticAnalyzers)
 include(CTest)
 include(Codecov)
 
+include(GNUInstallDirs)
+
 # ##############################################################################
 # Some Global Configuration  #
 # ##############################################################################
@@ -63,16 +65,57 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 # Helper targets/functions  #
 # ##############################################################################
 
+set(argus_headers
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/argus.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/ast_fwd.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/atoms.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/expression.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/functions.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/manipulate.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/propositional.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/temporal.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/automata/automaton.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/core.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/internal/filesystem.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/parser.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/signals.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/signals/base_signal.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/signals/pwc.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/signals/pwl.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algorithms.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/algebraic_semantics.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/cumulative_semantics.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/filtering_semantics.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/monitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/robust_semantics.hpp
+)
+
+# Interface library for the header files. Useful for generating
+# compile_commands.json
+add_library(argus-headers-only INTERFACE)
+target_sources(argus-headers-only INTERFACE "$<BUILD_INTERFACE:${argus_headers}>")
+target_include_directories(
+  argus-headers-only
+  INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+install(
+  TARGETS argus-headers-only
+  EXPORT argusTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
 # Add an OBJECT library for a component of libargus. A thin wrapper around
 # `add_library(OBJECT)`. Thus, it takes as the first argument a `target` name,
 # and the rest is assumed to be the sources making up the Object Library.
 function(add_argus_component target)
   add_library(${target} OBJECT ${ARGN})
+  target_link_libraries(${target} PUBLIC argus-headers-only)
   target_include_directories(
-    ${target}
-    PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+    ${target} PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
   )
   target_compile_features(${target} PUBLIC cxx_std_17)
   set_default_compile_options(${target})
@@ -159,12 +202,16 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/argusConfig.cmake
         DESTINATION ${INSTALL_CONFIGDIR}
 )
 
-install(FILES LICENSE LICENSE-3rdParty DESTINATION ${CMAKE_INSTALL_DOCDIR})
-export(
-  EXPORT argusTargets
-  FILE ${CMAKE_CURRENT_BINARY_DIR}/argusTargets.cmake
-  NAMESPACE argus::
-)
+install(EXPORT argusTargets DESTINATION ${INSTALL_CONFIGDIR})
 
-# Register package in user's package registry
-export(PACKAGE argus)
+install(FILES LICENSE LICENSE-3rdParty DESTINATION ${CMAKE_INSTALL_DOCDIR})
+
+
+# export(
+#   EXPORT argusTargets
+#   FILE ${CMAKE_CURRENT_BINARY_DIR}/argusTargets.cmake
+#   NAMESPACE argus::
+# )
+#
+# # Register package in user's package registry
+# export(PACKAGE argus)

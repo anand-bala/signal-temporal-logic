@@ -1,17 +1,15 @@
 @PACKAGE_INIT@
 
-include("${CMAKE_CURRENT_LIST_DIR}/signaltlTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/argusTargets.cmake")
 
 set_and_check(
-  signaltl_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@"
+  argus_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@"
 )
-set_and_check(signaltl_LIB_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@")
-set(signaltl_LIBRARIES signaltl::signalt:)
-set(signaltl_VERSION_TYPE "@signaltl_VERSION_TYPE@")
+set_and_check(argus_LIB_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@")
 
-if(NOT signaltl_FIND_QUIETLY)
+if(NOT argus_FIND_QUIETLY)
   message(
     STATUS
-      "Found signaltl: ${signaltl_INCLUDE_DIR} (found version \"${signaltl_VERSION}\" ${signaltl_VERSION_TYPE})"
+      "Found argus: ${argus_INCLUDE_DIR} (found version \"${argus_VERSION}\" ${argus_VERSION_TYPE})"
   )
 endif()

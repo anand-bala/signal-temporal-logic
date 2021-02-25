@@ -1,17 +1,12 @@
 ---
 # NOTE there must be no spaces before the '-', so put the comma last.
-Checks: '-*,
+Checks: '
 bugprone-*,
 cppcoreguidelines-*,
 -cppcoreguidelines-owning-memory,
--cppcoreguidelines-pro-bounds-array-to-pointer-decay,
--cppcoreguidelines-pro-bounds-constant-array-index,
--cppcoreguidelines-pro-bounds-pointer-arithmetic,
 -cppcoreguidelines-pro-type-cstyle-cast,
 -cppcoreguidelines-pro-type-reinterpret-cast,
 -cppcoreguidelines-pro-type-static-cast-downcast,
--cppcoreguidelines-pro-type-union-access,
--cppcoreguidelines-pro-type-vararg,
 -cppcoreguidelines-special-member-functions,
 hicpp-exception-baseclass,
 hicpp-avoid-goto,
@@ -43,9 +38,17 @@ readability-simplify-subscript-expr
 readability-string-compare
 readability-uniqueptr-delete-release
   '
-WarningsAsErrors: '*'
-HeaderFilterRegex: ''
+CheckOptions:
+  - { key: readability-identifier-naming.NamespaceCase,       value: lower_case }
+  - { key: readability-identifier-naming.ClassCase,           value: CamelCase  }
+  - { key: readability-identifier-naming.PrivateMemberPrefix, value: m_         }
+  - { key: readability-identifier-naming.StructCase,          value: CamelCase  }
+  - { key: readability-identifier-naming.FunctionCase,        value: lower_case }
+  - { key: readability-identifier-naming.VariableCase,        value: lower_case }
+  - { key: readability-identifier-naming.GlobalConstantCase,  value: UPPER_CASE }
+  - { key: bugprone-argument-comment.CommentBoolLiterals,     value: true       }
+  - { key: bugprone-argument-comment.CommentIntegerLiterals,  value: true       }
+  - { key: bugprone-argument-comment.CommentFloatLiterals,    value: true       }
+  - { key: bugprone-argument-comment.CommentNullPtrs,         value: true       }
 FormatStyle: 'file'
-PrivateMemberPrefix: 'm_'
-PrivateMemberCase: 'lower_case'
 ...

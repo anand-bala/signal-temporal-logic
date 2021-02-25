@@ -15,19 +15,14 @@
 #include <string>
 #include <string_view>
 
-#include "Argus/internal/filesystem.hpp"
+#include "argus/ast/ast_fwd.hpp"
+#include "argus/internal/filesystem.hpp"
 
 namespace argus {
-
-// Forward Declaration for Expr (holds valid expressions).
-struct Expr;
-
-using ExprPtr = std::shared_ptr<Expr>;
 
 // Forward Declaration for MonitorConfig (holds necessary information to build monitors
 // for different formulas).
 struct MonitorConfig;
-
 using MonitorConfigPtr = std::shared_ptr<MonitorConfig>;
 
 /// The type of syntax that can be used in the specification.

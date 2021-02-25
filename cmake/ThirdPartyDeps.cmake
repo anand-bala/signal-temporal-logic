@@ -31,10 +31,6 @@ if(NOT fmt_FOUND)
   FetchContent_GetProperties(fmt)
   if(NOT fmt_POPULATED)
     FetchContent_Populate(fmt)
-    set(FMT_INSTALL
-        ON
-        CACHE BOOL "Generate the install target for fmtlib." FORCE
-    )
     add_subdirectory(${fmt_SOURCE_DIR} ${fmt_BINARY_DIR})
   endif()
 else()
@@ -55,7 +51,9 @@ if(NOT pegtl_FOUND)
   FetchContent_GetProperties(pegtl)
   if(NOT pegtl_POPULATED)
     FetchContent_Populate(pegtl)
-    add_subdirectory(${pegtl_SOURCE_DIR} ${pegtl_BINARY_DIR})
+    # EXCLUDE_FROM_ALL is needed to prevent installation of the private
+    # dependency
+    add_subdirectory(${pegtl_SOURCE_DIR} ${pegtl_BINARY_DIR} EXCLUDE_FROM_ALL)
   endif()
 else()
   message(CHECK_PASS "system library found.")

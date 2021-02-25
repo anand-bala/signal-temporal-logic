@@ -1,24 +1,37 @@
+/// @file     parser/grammar.hpp
+/// @brief    Definition of specification language grammar.
+
+/// Conventions
+/// ===========
+///
+/// - Use `using` to declare a rule that is a helper to build an actual rule in the
+///   grammar.
+/// - Use `struct` to define rules that affect the AST.
+
 #pragma once
 
-#ifndef SIGNALTL_GRAMMAR_HPP
-#define SIGNALTL_GRAMMAR_HPP
+#ifndef ARGUS_GRAMMAR_HPP
+#define ARGUS_GRAMMAR_HPP
 
 #include <tao/pegtl.hpp> // IWYU pragma: keep
 
-/// @namsepace signal_tl::grammar
-/// @brief grammar definition for the signal_tl specification language.
+/// @namsepace argus::grammar
+/// @brief grammar definition for the argus specification language.
 ///
 /// Here, we define the grammar for a Lisp-y specification format using
 /// S-expressions. This is inspired, in part, by the SMT-LIB.
-namespace signal_tl::grammar {
+namespace argus::grammar {
 namespace peg = tao::pegtl;
 
 /// Line comments that starts using the character ';'
 struct LineComment : peg::disable<peg::one<';'>, peg::until<peg::eolf>> {};
 
+/// Any horizontal whitespace
+struct Whitespace : peg::disable<peg::space> {};
+
 /// Any horizontal white space or line comment
 /// NOTE(anand): I am also going to include EOL as a a skippable comment.
-struct Sep : peg::disable<peg::sor<peg::ascii::space, LineComment>> {};
+struct Sep : peg::disable<peg::sor<Whitespace, LineComment, peg::eol>> {};
 /// We use this as a placeholder for `Sep*`
 struct Skip : peg::disable<peg::star<Sep>> {};
 /// We use this to mark the end of a word/identifier (which is skippable whitespace)
@@ -26,183 +39,404 @@ struct EndOfWord : peg::seq<peg::not_at<peg::identifier_other>, Skip> {};
 
 struct Identifier : peg::seq<peg::identifier, EndOfWord> {};
 
-template <typename... S>
-struct Symbol : peg::seq<S..., Skip> {};
-struct LParen : Symbol<peg::one<'('>> {};
-struct RParen : Symbol<peg::one<')'>> {};
-struct LtSymbol : Symbol<peg::one<'<'>, peg::not_at<peg::one<'<', '='>>> {};
-struct LeSymbol : Symbol<TAO_PEGTL_STRING("<=")> {};
-struct GtSymbol : Symbol<peg::one<'>'>, peg::not_at<peg::one<'>', '='>>> {};
-struct GeSymbol : Symbol<TAO_PEGTL_STRING(">=")> {};
+namespace sym {
+using lparen    = peg::one<'('>;
+using rparen    = peg::one<')'>;
+using colon     = peg::one<':'>;
+using semicolon = peg::one<';'>;
+
+using double_quote = peg::one<'"'>;
+using single_quote = peg::one<'\''>;
+using vert_bar     = peg::one<'|'>;
+using backslash    = peg::one<'\\'>;
+
+using dot = peg::one<'.'>;
+
+using plus          = peg::one<'+'>;
+using minus         = peg::one<'-'>;
+using plus_or_minus = peg::one<'+', '-'>;
+
+using underscore = peg::one<'_'>;
+using atsign     = peg::one<'@'>;
+} // namespace sym
+
+template <typename... R>
+using rpad = peg::seq<R..., peg::at<Skip>>;
+
+template <typename... R>
+using paren_surround = peg::if_must<sym::lparen, Skip, R..., Skip, sym::rparen, Skip>;
 
 /// Keywords are one the following.
 template <typename Key>
-struct Keyword : peg::seq<Key, EndOfWord> {};
+using builtin = peg::seq<Key, EndOfWord>;
 
-struct KwTrue : Keyword<TAO_PEGTL_STRING("true")> {};
-struct KwFalse : Keyword<TAO_PEGTL_STRING("false")> {};
+struct KwTrue : builtin<TAO_PEGTL_STRING("true")> {};
+struct KwFalse : builtin<TAO_PEGTL_STRING("false")> {};
 
-struct KwNot : Keyword<TAO_PEGTL_STRING("not")> {};
-struct KwAnd : Keyword<TAO_PEGTL_STRING("and")> {};
-struct KwOr : Keyword<TAO_PEGTL_STRING("or")> {};
-struct KwImplies : Keyword<TAO_PEGTL_STRING("implies")> {};
-struct KwIff : Keyword<TAO_PEGTL_STRING("iff")> {};
-struct KwXor : Keyword<TAO_PEGTL_STRING("xor")> {};
-struct KwAlways : Keyword<TAO_PEGTL_STRING("always")> {};
-struct KwEventually : Keyword<TAO_PEGTL_STRING("eventually")> {};
-struct KwUntil : Keyword<TAO_PEGTL_STRING("until")> {};
+using bool_primitives = peg::sor<KwTrue, KwFalse>;
 
-struct KwDefineFormula : Keyword<TAO_PEGTL_STRING("define-formula")> {};
-struct KwAssert : Keyword<TAO_PEGTL_STRING("assert")> {};
+struct KwSetOption : builtin<TAO_PEGTL_STRING("set-option")> {};
+struct KwDefineFormula : builtin<TAO_PEGTL_STRING("define-formula")> {};
+struct KwDeclareSignal : builtin<TAO_PEGTL_STRING("declare-signal")> {};
+struct KwDeclareParameter : builtin<TAO_PEGTL_STRING("declare-parameter")> {};
+struct KwMonitor : builtin<TAO_PEGTL_STRING("monitor")> {};
 
-// First we define some helpers
-struct decimal_seq : peg::plus<peg::digit> {};
+struct IntervalOp : builtin<sym::underscore> {};
 
+using builtin_cmd = peg::
+    sor<KwSetOption, KwDefineFormula, KwDeclareSignal, KwDeclareParameter, KwMonitor>;
+
+using reserved = peg::sor<builtin_cmd, bool_primitives>;
+
+// Built-in types
+struct TypeBool : builtin<TAO_PEGTL_STRING("Bool")> {};
+struct TypeInt : builtin<TAO_PEGTL_STRING("Int")> {};
+struct TypeUInt : builtin<TAO_PEGTL_STRING("UInt")> {};
+struct TypeReal : builtin<TAO_PEGTL_STRING("Real")> {};
+
+using builtin_type = peg::sor<TypeBool, TypeInt, TypeUInt, TypeReal>;
+
+/// Numeric Tokens and helpers
+namespace num {
+using bin_pre = TAO_PEGTL_STRING("#b");
+using oct_pre = TAO_PEGTL_STRING("#o");
+using hex_pre = TAO_PEGTL_STRING("#x");
+
+using binary_digit  = peg::one<'0', '1'>;
+using octal_digit   = peg::range<'0', '7'>;
+using decimal_digit = peg::range<'0', '9'>;
+using hex_digit     = peg::ranges<'0', '9', 'a', 'f', 'A', 'F'>;
+
+using decimal_seq = peg::plus<decimal_digit>;
 template <typename E>
-struct exponent
-    : peg::if_must<E, peg::seq<peg::opt<peg::one<'+', '-'>>, peg::plus<peg::digit>>> {};
+using exponent =
+    peg::if_must<E, peg::seq<peg::opt<sym::plus_or_minus>, peg::plus<peg::digit>>>;
+} // namespace num
 
-struct DoubleLiteral : peg::seq<
-                           peg::sor<
-                               peg::seq<
-                                   decimal_seq,
-                                   peg::one<'.'>,
-                                   decimal_seq,
-                                   peg::opt<exponent<peg::one<'e', 'E'>>>>,
-                               peg::seq<
-                                   decimal_seq,
-                                   peg::opt<peg::one<'.'>>,
-                                   exponent<peg::one<'e', 'E'>>>>,
-                           Skip> {};
-struct IntegerLiteral : peg::seq<decimal_seq, Skip> {};
+struct BinInt : peg::if_must<num::bin_pre, peg::plus<num::binary_digit>> {};
+struct OctInt : peg::if_must<num::oct_pre, peg::plus<num::octal_digit>> {};
+struct HexInt : peg::if_must<num::hex_pre, peg::plus<num::hex_digit>> {};
+struct DecInt : peg::plus<peg::digit> {};
+
+struct IntegerLiteral : peg::seq<peg::sor<BinInt, OctInt, HexInt, DecInt>> {};
+
+struct DoubleLiteral : peg::seq<peg::sor<
+                           peg::seq<
+                               num::decimal_seq,
+                               sym::dot,
+                               num::decimal_seq,
+                               peg::opt<num::exponent<peg::one<'e', 'E'>>>>,
+                           peg::seq<
+                               num::decimal_seq,
+                               peg::opt<sym::dot>,
+                               num::exponent<peg::one<'e', 'E'>>>>> {};
+
 struct BooleanLiteral : peg::sor<KwTrue, KwFalse> {};
 
-/// Primitive types are one of `double`, `int`, or `bool`.
+/// Character tokens and helpers
 ///
-/// NOTE:
-///
-/// The rule for Double must come before Integer as the latter partially
-/// matches the former.
-struct Numeral : peg::sor<DoubleLiteral, IntegerLiteral> {};
-struct Constant : peg::sor<Numeral, BooleanLiteral> {};
+/// Since we are deriving this grammar from SMT-LIBv2, we don't really care about
+/// escaping characters within strings, etc. Rather, we only escape the sequence "" to
+/// be the character "
+namespace chars {
 
-/// Forward Declaration of Term fore recursion in Expression.
+/// All printable characters
+using printable_char = peg::utf8::ranges<U'\u0020', U'\u007e', U'\u0080', U'\uffff'>;
+
+/// List of escape sequences include `\b \t \n \f \r \" \\`.
+using escaped =
+    peg::if_must<sym::backslash, peg::one<'b', 't', 'n', 'f', 'r', '"', '\\'>>;
+/// All printable characters excluding double quotes, and the escape
+/// sequences `\b \t \n \f \r \" \\`.
+using raw_string_char = peg::sor<escaped, printable_char>;
+
+using symbol_special_chars = peg::one<
+    '~',
+    '!',
+    '@',
+    '$',
+    '%',
+    '^',
+    '&',
+    '*',
+    '_',
+    '-',
+    '+',
+    '=',
+    '<',
+    '>',
+    '.',
+    '?',
+    '/'>;
+/// A simple symbol can start with any ASCII letter and the characters `~ ! @ $ % ^
+/// & * _ - + = < > . ? /`.
+using simple_symbol_start = peg::sor<peg::alpha, symbol_special_chars>;
+/// The tail of a simple symbol can contain any ASCII letter, digits, and the characters
+/// `~ ! @ $ % ^ & * _ - + = < > . ? /`.
+using simple_symbol_tail = peg::sor<peg::digit, peg::alpha, symbol_special_chars>;
+
+/// All printable characters excluding backslash \ and vert |
+using quoted_symbol_char = peg::sor<
+    Whitespace,
+    peg::utf8::ranges<
+        U'\u0020',
+        U'\u005b',
+        U'\u005d',
+        U'\u007b',
+        U'\u007d',
+        U'\u007e',
+        U'\u0080',
+        U'\uffff'>>;
+
+} // namespace chars
+
+/// A string literal is any sequence of characters between two double quotes, with the
+/// literal escape sequence `\b \t \n \f \r \" \\`.
+///
+/// @note
+/// This eschews from the definition of a raw string literal in SMT-LIB (even though
+/// this specification language is inspired by it) because of the different use cases.
+/// In SMT-LIB, they assume that strings can be inputs to the solver, thus, the
+/// significance of the backslash and other "traditionally" escaped characters in C-like
+/// languages is important, as these can change the input to the program.
+///
+/// \par
+/// In PerceMon, strings have no significance other than to document various things. In
+/// reality, this is here only for familiarity and may never be used by the script user.
+struct StringLiteral : peg::if_must<
+                           sym::double_quote,
+                           peg::until<sym::double_quote, chars::raw_string_char>> {};
+
+/// A constant in the specification language can be a floating point constant, an
+/// integer, a boolean literal, or a string.
+struct Constant
+    : peg::sor<DoubleLiteral, IntegerLiteral, BooleanLiteral, StringLiteral> {};
+
+/// A simple symbol is a case sensitive sequence of characters that are either ASCII
+/// letters, ASCII digits, or the characters `~ ! @ $ % ^ & * _ - + = < > . ? /`
+struct SimpleSymbol : peg::seq<
+                          peg::not_at<reserved>,
+                          chars::simple_symbol_start,
+                          peg::star<chars::simple_symbol_tail>> {};
+/// A quoted symbol is any sequence of whitespace characters and printable characters
+/// that starts and ends with `|` and does not contain `|`or `\`.
+struct QuotedSymbol
+    : peg::seq<peg::if_must<
+          sym::vert_bar,
+          peg::until<sym::vert_bar, peg::plus<chars::quoted_symbol_char>>>> {};
+
+/// A valid symbol (mainly used as identifiers) is either a @ref QuotedSymbol or a @ref
+/// SimpleSymbol.
+struct Symbol : peg::sor<SimpleSymbol, QuotedSymbol> {};
+
+/// A keyword is a token of the form `:<simple_symbol>`. They are used as attributes or
+/// options for commands in PerceMon.
+struct Keyword : peg::if_must<sym::colon, SimpleSymbol> {};
+
+struct Attribute;
+
+/// Option attributes.
+///
+/// Used to set options for operations and commands that accept them.
+///
+/// Action
+/// ======
+///
+/// 1. Check if there is a keyword.
+/// 2. Create an `attribute` with boolean `true` value.
+struct OptionAttribute : Keyword {};
+
+/// Attribute Values
+///
+/// A recursive rule that allows Key-value attributes the have nested attributes.
+struct AttributeValue : peg::seq<paren_surround<Attribute>, Constant, Symbol> {};
+
+/// Key-value attributes.
+///
+/// @todo
+/// Currently, KeyValueAttributes can only have a single value. It may be useful to have
+/// a list of mappings (but this can get weird for parsing).
+struct KeyValueAttribute : peg::seq<Keyword, Skip, Constant> {};
+
+/// An attribute is simply either an option attribute or a keyval attribute.
+struct Attribute : peg::sor<KeyValueAttribute, OptionAttribute> {};
+
 struct Term;
 
-/// A predicate term is an expression of the form `(~ x c)` or `(~ c x) where,
-/// `x` is a signal identifier, `~` is a relational operation, and `c` is a
-/// numeric constant (double or integer).
+/// A operation is just a symbol. This can include one of the following
+/// pre-defined operations/operators:
 ///
-/// TODO(anand): No support for arithmetic expressions of signals. Must be
-/// implemented in userland.
-struct ComparisonSymbol : peg::sor<LtSymbol, GtSymbol, LeSymbol, GeSymbol> {};
-struct PredicateForm1 : peg::seq<Identifier, Numeral> {};
-struct PredicateForm2 : peg::seq<Numeral, Identifier> {};
-struct PredicateForm : peg::sor<PredicateForm1, PredicateForm2> {};
-struct PredicateTerm
-    : peg::if_must<peg::sor<LtSymbol, GtSymbol, LeSymbol, GeSymbol>, PredicateForm> {};
+/// - `not`
+/// - `and`
+/// - `or`
+/// - `implies`
+/// - `iff`
+/// - `xor`
+/// - `always`
+/// - `eventually`
+/// - `until`
+struct Operation : Symbol {};
+/// A qualified identifier is used to reference some pre-defined symbol or variable.
+struct QualifiedIdentifier : Symbol {};
 
-struct NotTerm : peg::if_must<KwNot, Term> {};
+/// Helper rule for Variable names
+///
+/// Action
+/// ======
+///
+/// 1. Check if there is a `symbol`.
+/// 2. Move `symbol` to `var_name`.
+struct VarName : Symbol {};
+/// Rule to infer variable type.
+///
+/// Action
+/// ======
+///
+/// 1. Check if there is a `symbol`.
+/// 2. Move the `{symbol}` to `type`.
+struct VarType : Symbol {};
+/// Typed or Untyped declarations for Variables.
+///
+/// Actions
+/// =======
+///
+/// 1. Check if there is a var_name. (Must)
+/// 2. Check if there is a type. (Optional)
+/// 3. Create a `Variable` with given name and type.
+/// 4. Move the `Variable` to `variables`
+struct VarDecl : peg::sor<paren_surround<VarName, Skip, peg::opt<VarType>>, VarName> {};
+/// A list of untyped/implicitely typed variables.
+///
+/// Action
+/// ======
+///
+/// @todo Nothing, I think.
+struct VarList : paren_surround<peg::list<VarDecl, Skip>> {};
 
-/// Tail for N-ary operations like AND and OR.
+/// Rule for pinning the frame and time variables.
 ///
-/// NOTE
-/// ----
+/// Action
+/// =====
 ///
-/// 2021-01-21 (anand):
-///
-/// - Currently, this is weirdly bugged. When the rule fails to match the third
-///   Term, it throws a global error.
-///
-/// 2021-01-22 (anand):
-///
-/// - I guess I should have reworded the above note by saying that when the
-///   internal peg::star combinator reaches the last Term and fails to find the
-///   next Term, then what should be a success (because that is how peg::star
-///   operates) it becomes a global error.
-/// - Another interesting issue is that when the error happens, it is not an
-///   issue with the peg::must condition in AndTerm/OrTerm, but rather within
-///   the peg::sor condition in Term. This implies that the peg::sor is
-///   becoming a global error.
-/// - HACK: I edited the match function for Term to return true if there is at
-///   least 1 Term in the old stack. Then, the parent rule (And/Or) can check
-///   if there are enough Terms.
-/// - Above hack doesn't work. Because I am an idiot. See [PEGTL errors] for
-///   the detailt about when a rule contains a custom error message, local
-///   erros are automatically converted to global errors even if there is no
-///   peg::must rule. This is something simple that I overlooked!
-struct NaryTail : peg::plus<Term> {};
-struct BinaryTail : peg::seq<Term, Term> {};
+/// 1. Assert the operation is "@" (redundant).
+/// 2. Check if there is either 1 or 2 Variables in the `variables` list.
+/// 3. Create a `result`.
+struct PinningExpression : peg::seq<KwPin, Skip, VarList> {};
 
-struct AndTerm : peg::if_must<KwAnd, NaryTail> {};
-struct OrTerm : peg::if_must<KwOr, NaryTail> {};
-struct ImpliesTerm : peg::if_must<KwImplies, BinaryTail> {};
-struct IffTerm : peg::if_must<KwIff, BinaryTail> {};
-struct XorTerm : peg::if_must<KwXor, BinaryTail> {};
-
-// TODO(anand): Temporal operations must allow an optional Interval argument.
-struct AlwaysTerm : peg::if_must<KwAlways, Term> {};
-struct EventuallyTerm : peg::if_must<KwEventually, Term> {};
-struct UntilTerm : peg::if_must<KwUntil, Term, Term> {};
-
-/// An Expression must be a valid STL formula (without specific functions for
-/// the predicates). So, we will hard code the syntax and we don't have to
-/// worry about precedence as S-expressions FTW!
-using Expression = peg::sor<
-    PredicateTerm,
-    NotTerm,
-    AndTerm,
-    OrTerm,
-    ImpliesTerm,
-    IffTerm,
-    XorTerm,
-    AlwaysTerm,
-    EventuallyTerm,
-    UntilTerm,
-    Term>;
-
-using TermTail = peg::until<RParen, peg::must<Expression>>;
-struct Term : peg::sor<peg::if_must<LParen, TermTail>, BooleanLiteral, Identifier> {};
-
-struct Assertion : peg::if_must<KwAssert, Identifier, Term> {};
-struct DefineFormula : peg::if_must<KwDefineFormula, Identifier, Term> {};
-
-/// The list of commands includes
+using quantifier_ops = peg::sor<KwExists, KwForall>;
+/// Rule to encode quantifier expressions.
 ///
-/// - Assertion: `(assert <identifier> <expression>)`
+/// Action
+/// ======
 ///
-///   Here, we will use the `<identifier>` to refer to the assertion rule
-///   (essentially the semantics) from the program. This is different from most
-///   other languages that have an `assert` statement, where it is a runtime
-///   thing.
-///
-///   NOTE: We should eventually have this file run as a script.
-///
-/// - Define Formula `(define-formula <identifier> <expression>)`
-///
-///   This is straightforward enough: we define a formula (named using
-///   `<identifier>`) as some expression.
-using AllowedCommands = peg::sor<Assertion, DefineFormula>;
-struct Command : peg::must<AllowedCommands> {};
+/// 1. Check if there is 1 `operation`.
+/// 2. Check if there is at least 1 variable in the `variables` list.
+/// 3. Check if there is 1 Term in the `terms` list.
+/// 4. Create a `result` for the quantifier.
+struct QuantifierExpression : peg::seq<quantifier_ops, Skip, VarList, Skip, Term> {};
 
-/// Commands are top level S-expressions with the syntax:
+/// Rule to encode Interval operations
 ///
-/// ```
-///   <Command>   ::= '(' <keyword> <arguments>* ')'
-/// ```
-/// We will hard code the top level commands, like `define-formula` and
-/// `assert` as that will allow us to directly reason about them. A command is
-/// essentially intrinsic to the specification language.
-using AnyCommandTail = peg::until<RParen, Command>;
-struct AnyCommand : peg::if_must<LParen, AnyCommandTail> {};
+/// Action
+/// ======
+///
+/// 1. Check if the operation is '_'
+/// 2. Check if there is exactly 1 Term in the `terms` list.
+/// 3. Create an Interval.
+struct IntervalExpression : peg::seq<KwInterval, Skip, Term> {};
 
-struct StatementList : peg::seq<Skip, peg::until<peg::eof, AnyCommand, Skip>> {};
+/// Rule to encode arbitrary operations.
+///
+/// Used to match all operations, including Predicates, Arithmetic, Temporal, Spatial,
+/// and Spatio-Temporal.
+///
+/// Action
+/// ======
+///
+/// 1. Check if the `operation` exists. Get type of operation (Predicate, Arithmetic,
+///    etc.)
+/// 2. Get list of `terms` (make sure there is at least 1).
+/// 3. Get list of `attributes`.
+/// 4. Create `result`.
+struct OperationExpression
+    : peg::seq<Operation, Skip, peg::list<Term, Skip>, Skip, peg::star<Attribute>> {};
 
+/// Helper rule for expressions that are within `( ... )`
+///
+/// Actions
+/// =======
+///
+/// Nothing. Let sub-rules handle it.
+struct Expression : peg::sor<
+                        PinningExpression,
+                        QuantifierExpression,
+                        IntervalExpression,
+                        OperationExpression> {};
+
+/// A recursive Term expression.
+///
+/// Actions
+/// =======
+///
+/// 1. Push in a new local context.
+/// 2. Call default match.
+/// 3. Check if there is a `result` at the top of the local context stack.
+/// 4. Pop top of stack and move the result into the `terms` list in the new top.
+struct Term : peg::sor<paren_surround<Expression>, Constant, QualifiedIdentifier> {};
+
+/// Set global options for the script.
+///
+/// Actions
+/// =======
+///
+/// For now, nothing.
+struct CmdSetOption : peg::seq<KwSetOption, Skip, peg::plus<Attribute, Skip>> {};
+
+/// Define a formula.
+///
+/// @note
+/// The formula must be strongly typed/well-sorted, i.e., all signals referred to in a
+/// formula must be of the same type or types that are coercable to each other (e.g.
+/// `Int` can be coerced to `Real`).
+///
+/// Actions
+/// =======
+///
+/// 1. Check if there is exactly 1 Identifier, and 1 Term.
+/// 2. Add entry `{identifier, term}` to `formulas` map.
+struct CmdDefineFormula
+    : peg::seq<KwDefineFormula, Skip, QualifiedIdentifier, Skip, Term> {};
+
+/// Define a monitor for a formula.
+///
+/// The monitor takes in a list of attributes that will set the semantics of the
+/// monitor. The "name" of the identifier can be used to check the output of PerceMon.
+///
+/// Actions
+/// =======
+///
+/// 1. In the parsed context, we will check if there is exactly 1 Identifier, 1 Term in
+/// the
+///    list of terms, and some arbitrary number of attributes.
+/// 2. We then (for now) just add to the `monitors` map in the context the entry
+///    `{identifier, term}`
+struct CmdMonitor : peg::seq<
+                        KwMonitor,
+                        Skip,
+                        QualifiedIdentifier,
+                        Skip,
+                        Term,
+                        Skip,
+                        peg::star<Attribute, Skip>> {};
+
+using valid_commands = peg::sor<CmdSetOption, CmdDefineFormula, CmdMonitor>;
+
+struct StatementList
+    : peg::until<peg::eof, peg::pad<paren_surround<valid_commands>, Sep>> {};
 /// A specification essentially consists for a list of top level commands,
 /// andwe are just gonna ignore all horizontal spaces
-/* struct TopLevel : peg::pad<AnyCommand, Sep> {}; */
-struct SpecificationFile : peg::must<StatementList> {};
+struct Specification : peg::must<StatementList> {};
 
-} // namespace signal_tl::grammar
+} // namespace argus::grammar
 
-#endif /* end of include guard: SIGNALTL_GRAMMAR_HPP */
+#endif /* end of include guard: ARGUS_GRAMMAR_HPP */
