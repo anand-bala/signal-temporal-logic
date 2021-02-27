@@ -1,6 +1,19 @@
 # AST stuff
-add_argus_component(argusast ast/fmt_expr.cc ast/make_expr.cc)
-target_link_libraries(argusast PRIVATE "$<BUILD_INTERFACE:fmt::fmt>")
+add_argus_component(
+  argusast
+  ast/temporal.cc
+  ast/functions.cc
+  ast/attributes.cc
+  ast/atoms.cc
+  ast/propositional.cc
+  ast/expression.cc
+)
+target_link_libraries(
+  argusast
+  PRIVATE "$<BUILD_INTERFACE:fmt::fmt>"
+          "$<BUILD_INTERFACE:magic_enum::magic_enum>"
+          "$<BUILD_INTERFACE:range-v3::range-v3>"
+)
 
 # Parser stuff
 add_argus_component(
@@ -8,8 +21,9 @@ add_argus_component(
   parser/grammar.hpp
 )
 target_link_libraries(
-  argusparser PUBLIC "$<BUILD_INTERFACE:fmt::fmt>"
-                     "$<BUILD_INTERFACE:taocpp::pegtl>"
+  argusparser
+  PUBLIC "$<BUILD_INTERFACE:fmt::fmt>" "$<BUILD_INTERFACE:taocpp::pegtl>"
+         "$<BUILD_INTERFACE:magic_enum::magic_enum>"
 )
 set_std_filesystem_options(argusparser)
 

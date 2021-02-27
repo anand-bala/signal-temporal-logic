@@ -1,10 +1,11 @@
 /// @file   utils/visit.hpp
 /// @brief  Custom variant visitor optimized for inlining
 ///
-/// Derived from [rollbear/visit](https://github.com/rollbear/visit)
+/// Derived from [rollbear/visit](https://github.com/rollbear/visit), with some custom
+/// functions that help using variants.
 ///
 /// Copyright Björn Fahller 2018,2019
-/// 
+///
 ///  Use, modification and distribution is subject to the
 ///  Boost Software License, Version 1.0. (See accompanying
 ///  file LICENSE_1_0.txt or copy at
@@ -167,6 +168,13 @@ inline auto visit(F&& f, Vs&&... vs) {
         std::forward<Vs>(vs)...);
   }
 }
+
+template <class... Ts>
+struct overloaded : Ts... {
+  using Ts::operator()...;
+};
+template <class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
 
 } // namespace utils
 

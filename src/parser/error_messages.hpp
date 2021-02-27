@@ -8,11 +8,11 @@
 namespace signal_tl::parser {
 namespace peg = tao::pegtl;
 
+/// Here we define the exceptions/error messages that must be thrown/shown when some
+/// rule encounters a parsing error.
 namespace error_messages {
 
-/// In this file we define the exceptions/error messages that must be
-/// thrown/shown when some rule encounters a parsing error.
-using namespace signal_tl::grammar;
+using namespace argus::grammar;
 
 /// The default error message should be nothing. Then, we will override the
 /// messages for specific rules.
@@ -22,48 +22,60 @@ inline constexpr const char* error_message = nullptr;
 template <>
 inline constexpr auto error_message<Skip> = "expected whitespace or comment";
 
-// template <>
-// inline constexpr auto error_message<peg::identifier> = "expected identifier";
+template <>
+inline constexpr auto error_message<sym::rparen> = "expected a closing ')'";
 
 template <>
-inline constexpr auto error_message<Identifier> = "expected an identifier";
+inline constexpr auto
+    error_message<peg::seq<peg::opt<peg::one<'+', '-'>>, peg::plus<peg::digit>>> =
+        "expected some (signed) number after exponent";
+
+template <>
+inline constexpr auto error_message<peg::plus<num::binary_digit>> =
+    "expected a list of binary digits";
+
+template <>
+inline constexpr auto error_message<peg::plus<num::octal_digit>> =
+    "expected a list of octal digits";
+
+template <>
+inline constexpr auto error_message<peg::plus<num::hex_digit>> =
+    "expected a list of hex digits";
+
+template <>
+inline constexpr auto error_message<peg::one<'b', 't', 'n', 'f', 'r', '"', '\\'>> =
+    "unknown escape sequence";
 
 template <>
 inline constexpr auto error_message<
-    peg::seq<peg::opt<tao::pegtl::one<'+', '-'>>, peg::plus<tao::pegtl::digit>>> =
-    "expected some (signed) number after exponent";
+    peg::until<sym::double_quote, chars::raw_string_char>> =
+    "invalid string literal (either used an invalid character or unclosed quotations)";
 
 template <>
-inline constexpr auto error_message<PredicateForm> =
-    "expected an identifier followed by a numeral or vice-versa";
+inline constexpr auto
+    error_message<peg::until<sym::vert_bar, peg::plus<chars::quoted_symbol_char>>> =
+        "invalid quoted symbol (either used an invalid character or unclosed `|`)";
 
 template <>
-inline constexpr auto error_message<NaryTail> = "expected a list of at least 2 Terms";
+inline constexpr auto error_message<SimpleSymbol> =
+    "expected a simple (unquoted) symbol";
 
 template <>
-inline constexpr auto error_message<BinaryTail> =
-    "expected a list of at exactly 2 Terms";
+inline constexpr auto error_message<VarName> = "expected a variable name declaration";
 
 template <>
-inline constexpr auto error_message<Expression> = "expected a valid STL expression";
+inline constexpr auto error_message<VarDecl> =
+    "expected a variable declaration `(name type)`";
 
 template <>
-inline constexpr auto error_message<TermTail> =
-    "expected an expression followed by a closing parenthesis ')'";
+inline constexpr auto error_message<Term> = "expected a well-structured Term";
 
 template <>
-inline constexpr auto error_message<Term> = "expected a Term";
+inline constexpr auto error_message<valid_commands> = "invalid top-level command";
 
 template <>
-inline constexpr auto error_message<AllowedCommands> =
-    "top-level command does not match list of known commands";
+inline constexpr auto error_message<StatementList> = "invalid syntax";
 
-template <>
-inline constexpr auto error_message<AnyCommandTail> =
-    "expected (<command> ...). Maybe you have an unclosed S-expression command.";
-
-template <>
-inline constexpr auto error_message<StatementList> = "invalid top-level item";
 } // namespace error_messages
 
 struct error {

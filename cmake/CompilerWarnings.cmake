@@ -23,7 +23,7 @@ function(set_project_warnings project_name)
       -Wnon-virtual-dtor # warn the user if a class with virtual functions has a
                          # non-virtual destructor. This helps catch hard to
                          # track down memory errors
-      -Wold-style-cast # warn for c-style casts
+      # -Wold-style-cast # warn for c-style casts
       -Wunused # warn on anything being unused
       -Wpedantic # warn if non-standard C++ is used
       -Wformat=2 # warn on security issues around functions that format output

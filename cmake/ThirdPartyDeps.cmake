@@ -37,6 +37,26 @@ else()
   message(CHECK_PASS "system library found.")
 endif()
 
+message(CHECK_START "Looking for Neargye/magic_enum")
+find_package(magic_enum QUIET)
+if(NOT magic_enum_FOUND)
+  message(CHECK_FAIL "system library not found (using fetched version).")
+  FetchContent_Declare(
+    magic_enum
+    GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
+    GIT_TAG v0.7.2
+    GIT_PROGRESS ON
+  )
+
+  FetchContent_GetProperties(magic_enum)
+  if(NOT magic_enum_POPULATED)
+    FetchContent_Populate(magic_enum)
+    add_subdirectory(${magic_enum_SOURCE_DIR} ${magic_enum_BINARY_DIR})
+  endif()
+else()
+  message(CHECK_PASS "system library found.")
+endif()
+
 message(CHECK_START "Looking for taocpp/pegtl")
 find_package(pegtl QUIET)
 if(NOT pegtl_FOUND)
@@ -58,6 +78,27 @@ if(NOT pegtl_FOUND)
 else()
   message(CHECK_PASS "system library found.")
 endif()
+
+message(CHECK_START "Looking for ericniebler/range-v3")
+find_package(range-v3 QUIET)
+if(NOT range-v3_FOUND)
+  message(CHECK_FAIL "system library not found (using fetched version).")
+  FetchContent_Declare(
+    range-v3
+    GIT_REPOSITORY https://github.com/ericniebler/range-v3.git
+    GIT_TAG 0.11.0
+    GIT_PROGRESS ON
+  )
+
+  FetchContent_GetProperties(range-v3)
+  if(NOT range-v3_POPULATED)
+    FetchContent_Populate(range-v3)
+    add_subdirectory(${range-v3_SOURCE_DIR} ${range-v3_BINARY_DIR} EXCLUDE_FROM_ALL)
+  endif()
+else()
+  message(CHECK_PASS "system library found.")
+endif()
+
 
 # ##############################################################################
 # Python Bindings

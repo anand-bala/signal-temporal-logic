@@ -66,13 +66,22 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 # ##############################################################################
 
 set(argus_headers
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algorithms.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/algebraic_semantics.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/cumulative_semantics.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/filtering_semantics.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/monitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/monitor_fwd.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/robust_semantics.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/argus.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/ast_fwd.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/atoms.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/attributes.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/expression.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/functions.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/manipulate.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/propositional.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/signal.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/temporal.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/automata/automaton.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/core.hpp
@@ -82,18 +91,14 @@ set(argus_headers
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/signals/base_signal.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/signals/pwc.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/signals/pwl.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algorithms.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/algebraic_semantics.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/cumulative_semantics.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/filtering_semantics.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/monitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/robust_semantics.hpp
 )
 
 # Interface library for the header files. Useful for generating
 # compile_commands.json
 add_library(argus-headers-only INTERFACE)
-target_sources(argus-headers-only INTERFACE "$<BUILD_INTERFACE:${argus_headers}>")
+target_sources(
+  argus-headers-only INTERFACE "$<BUILD_INTERFACE:${argus_headers}>"
+)
 target_include_directories(
   argus-headers-only
   INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
@@ -206,12 +211,7 @@ install(EXPORT argusTargets DESTINATION ${INSTALL_CONFIGDIR})
 
 install(FILES LICENSE LICENSE-3rdParty DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
-
-# export(
-#   EXPORT argusTargets
-#   FILE ${CMAKE_CURRENT_BINARY_DIR}/argusTargets.cmake
-#   NAMESPACE argus::
-# )
+# export( EXPORT argusTargets FILE
+# ${CMAKE_CURRENT_BINARY_DIR}/argusTargets.cmake NAMESPACE argus:: )
 #
-# # Register package in user's package registry
-# export(PACKAGE argus)
+# # Register package in user's package registry export(PACKAGE argus)

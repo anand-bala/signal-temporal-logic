@@ -31,6 +31,9 @@ using CmpOp       = details::PredicateOp::Type;
 using LogicOpType = details::LogicalOp::Type;
 using ModalOpType = details::TemporalOp::Type;
 
+using details::Attribute;
+using details::Interval;
+
 using ExprTypes = std::variant<
     details::Constant,
     details::Variable,
@@ -82,13 +85,13 @@ struct Expr : ast::ExprTypes {
   static std::unique_ptr<Expr> Function(
       ast::FnType op,
       std::vector<ExprPtr> args,
-      std::set<Attribute, Attribute::KeyCompare> attrs);
+      std::set<ast::Attribute, ast::Attribute::KeyCompare> attrs);
 
   /// @brief Create a custom function, with given arguments and attributes
   static std::unique_ptr<Expr> Function(
       std::string op,
       std::vector<ExprPtr> args,
-      std::set<Attribute, Attribute::KeyCompare> attrs);
+      std::set<ast::Attribute, ast::Attribute::KeyCompare> attrs);
 
   /// @brief Create an Addition AST
   static std::unique_ptr<Expr> Add(std::vector<ExprPtr> args);
@@ -145,24 +148,40 @@ struct Expr : ast::ExprTypes {
   static std::unique_ptr<Expr> Previous(ExprPtr arg);
 
   /// @brief Eventually temporal operator
-  static std::unique_ptr<Expr> Eventually(ExprPtr arg, ExprPtr interval = nullptr);
+  static std::unique_ptr<Expr> Eventually(ExprPtr arg);
+  /// @brief Eventually temporal oprator with interval
+  static std::unique_ptr<Expr>
+  Eventually(ExprPtr arg, std::shared_ptr<ast::details::Interval> interval);
 
   /// @brief Once temporal operator
-  static std::unique_ptr<Expr> Once(ExprPtr arg, ExprPtr interval = nullptr);
+  static std::unique_ptr<Expr> Once(ExprPtr arg);
+  /// @brief Once temporal operator with interval
+  static std::unique_ptr<Expr>
+  Once(ExprPtr arg, std::shared_ptr<ast::details::Interval> interval);
 
   /// @brief Always temporal operator
-  static std::unique_ptr<Expr> Always(ExprPtr arg, ExprPtr interval = nullptr);
+  static std::unique_ptr<Expr> Always(ExprPtr arg);
+  /// @brief Always temporal operator with interval
+  static std::unique_ptr<Expr>
+  Always(ExprPtr arg, std::shared_ptr<ast::details::Interval> interval);
 
   /// @brief Historically temporal operator
-  static std::unique_ptr<Expr> Historically(ExprPtr arg, ExprPtr interval = nullptr);
+  static std::unique_ptr<Expr> Historically(ExprPtr arg);
+  /// @brief Historically temporal oprator with interval
+  static std::unique_ptr<Expr>
+  Historically(ExprPtr arg, std::shared_ptr<ast::details::Interval> interval);
 
   /// @brief Until temporal operator
+  static std::unique_ptr<Expr> Until(ExprPtr arg1, ExprPtr arg2);
+  /// @brief Until temporal operator with interval
   static std::unique_ptr<Expr>
-  Until(ExprPtr arg1, ExprPtr arg2, ExprPtr interval = nullptr);
+  Until(ExprPtr arg1, ExprPtr arg2, std::shared_ptr<ast::details::Interval> interval);
 
   /// @brief Since temporal operator
+  static std::unique_ptr<Expr> Since(ExprPtr arg1, ExprPtr arg2);
+  /// @brief Since temporal operator with interval
   static std::unique_ptr<Expr>
-  Since(ExprPtr arg1, ExprPtr arg2, ExprPtr interval = nullptr);
+  Since(ExprPtr arg1, ExprPtr arg2, std::shared_ptr<ast::details::Interval> interval);
 
  private:
   /// @brief The unique ID for an expression

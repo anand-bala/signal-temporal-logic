@@ -1,22 +1,37 @@
 #ifndef ARGUS_UTILS_STATIC_ANALYSIS_HEPLERS_HPP
 #define ARGUS_UTILS_STATIC_ANALYSIS_HEPLERS_HPP
 
-#include <cassert>
+#include <iostream>
+#include <string>
 
 // LCOV_EXCL_START
 
 namespace utils {
-[[noreturn]] inline void unreachable() {
-  do {
-    assert(false && "Unreachable code!");
-#ifdef _MSC_VER
-    __assume(false);
-#elif defined(__clang__) || defined(__GNUC__) || defined(__INTEL_COMPILER)
-    __builtin_unreachable();
-#else
+
+inline void
+assert_([[maybe_unused]] bool condition, [[maybe_unused]] const std::string& msg) {
+#ifdef NDEBUG
+  if (!condition) {
+    std::cerr << "Assertion Failed: " << msg << std::endl;
     abort();
+  }
+#endif // NDEBUG
+}
+
+[[noreturn]] inline void unreachable() {
+  assert_(1 == 0, "Unreachable code!");
+#ifdef _MSC_VER
+  __assume(false);
+#elif defined(__clang__) || defined(__GNUC__) || defined(__INTEL_COMPILER)
+  __builtin_unreachable();
+#else
+  abort();
 #endif
-  } while (false);
+}
+
+[[noreturn]] inline void unreachable(std::string_view msg) {
+  std::cerr << "Unreachable: " << msg << std::endl;
+  unreachable();
 }
 
 } // namespace utils

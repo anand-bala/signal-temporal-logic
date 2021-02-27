@@ -8,29 +8,33 @@
 #include <memory>
 #include <string>
 #include <variant>
+#include <vector>
 
-namespace argus::ast::details {
+#include "argus/ast/ast_fwd.hpp"
 
-struct Attribute;
-
-struct AttributeValue : std::variant<
-                            bool,
-                            long long int,
-                            unsigned long long int,
-                            std::string,
-                            std::unique_ptr<Attribute>> {};
+namespace ARGUS_AST_NS {
 
 struct Attribute {
   std::string key;
-  AttributeValue value;
+  std::vector<PrimitiveTypes> values;
 
   struct KeyCompare {
-    bool operator()(const Attribute& lhs, const Attribute& rhs) {
+    bool operator()(const Attribute& lhs, const Attribute& rhs) const {
       return lhs.key < rhs.key;
     }
+
+    bool operator()(const Attribute& lhs, const std::string& rhs) const {
+      return lhs.key < rhs;
+    }
+
+    bool operator()(const std::string& lhs, const Attribute& rhs) const {
+      return lhs < rhs.key;
+    }
   };
+
+  [[nodiscard]] std::string to_string() const;
 };
 
-} // namespace argus::ast::details
+} // namespace ARGUS_AST_NS
 
 #endif /* end of include guard: ARGUS_AST_ATTRIBUTES */

@@ -12,18 +12,16 @@
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <string_view>
 
+#include "argus/algos/monitor_fwd.hpp"
 #include "argus/ast/ast_fwd.hpp"
+#include "argus/ast/attributes.hpp"
 #include "argus/internal/filesystem.hpp"
 
 namespace argus {
-
-// Forward Declaration for MonitorConfig (holds necessary information to build monitors
-// for different formulas).
-struct MonitorConfig;
-using MonitorConfigPtr = std::shared_ptr<MonitorConfig>;
 
 /// The type of syntax that can be used in the specification.
 ///
@@ -51,7 +49,6 @@ enum struct Logic { MTL, STL, /* TQTL, STQL */ };
 
 /// Holds the context of the parsed specification.
 struct Context {
- public:
   Context() = default;
 
   /// Given a `string_view` of the actual specification (typically read from the
@@ -72,14 +69,12 @@ struct Context {
   /// lose its meaning once you do.
   static std::unique_ptr<Context> from_file(const fs::path&);
 
-  /// The logic set in the specification
-  Logic logic = Logic::STL;
-  /// Syntax settings.
-  SyntaxSettings syntax_settings = SyntaxSettings::MIXED;
   /// List of defined formulas, keyed by their corresponding identifiers.
   std::map<std::string, ExprPtr> defined_formulas;
-  /// List of settings for monitors, keyed by their corresponding identifiers.
+  /// List of  monitors, keyed by their corresponding identifiers.
   std::map<std::string, ExprPtr> monitors;
+  /// List of settings
+  std::set<ARGUS_AST_NS::Attribute, ARGUS_AST_NS::Attribute::KeyCompare> settings;
 };
 
 // LCOV_EXCL_START

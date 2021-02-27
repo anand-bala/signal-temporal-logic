@@ -21,27 +21,34 @@ namespace ARGUS_AST_NS {
 ///
 /// @note
 /// Predicates can have at most 2 arguments: the LHS and the RHS. Each of these must be
-/// either a Constant, a Variable, or a Function. This is checked by the semantics.
+/// either a Constant, a Variable, or a Function.
 struct PredicateOp {
   enum struct Type { LE, LT, GE, GT, EQ, NE };
 
   Type op;
   ExprPtr lhs, rhs;
 
-  PredicateOp(Type cmp, ExprPtr arg1, ExprPtr arg2) : op{cmp}, lhs{std::move(arg1)}, rhs{std::move(arg2)} {}
+  PredicateOp(Type cmp, ExprPtr arg1, ExprPtr arg2);
 
+  [[nodiscard]] std::string to_string() const;
 };
 
 /// @brief Generic AST node for all propositional operations.
+///
+/// @note
+/// The argument to a LogicalOp must be either a Predicate, a TemporalOp or another
+/// LogicalOp. Specifically, we can't use Functions here.
 struct LogicalOp {
   enum struct Type { Not, And, Or };
 
   Type op;
   std::vector<ExprPtr> args;
 
-  LogicalOp(Type operation, std::vector<ExprPtr> operands) : op{operation}, args{std::move(operands)} {}
+  LogicalOp(Type operation, std::vector<ExprPtr> operands);
+
+  [[nodiscard]] std::string to_string() const;
 };
 
-} // namespace argus::ast::details
+} // namespace ARGUS_AST_NS
 
 #endif /* end of include guard: ARGUS_AST_DETAILS_PROPOSITIONAL */

@@ -34,10 +34,6 @@ struct Whitespace : peg::disable<peg::space> {};
 struct Sep : peg::disable<peg::sor<Whitespace, LineComment, peg::eol>> {};
 /// We use this as a placeholder for `Sep*`
 struct Skip : peg::disable<peg::star<Sep>> {};
-/// We use this to mark the end of a word/identifier (which is skippable whitespace)
-struct EndOfWord : peg::seq<peg::not_at<peg::identifier_other>, Skip> {};
-
-struct Identifier : peg::seq<peg::identifier, EndOfWord> {};
 
 namespace sym {
 using lparen    = peg::one<'('>;
@@ -66,17 +62,22 @@ using rpad = peg::seq<R..., peg::at<Skip>>;
 template <typename... R>
 using paren_surround = peg::if_must<sym::lparen, Skip, R..., Skip, sym::rparen, Skip>;
 
+/// We use this to mark the end of a word/identifier (which is skippable whitespace)
+using EndOfWord = peg::seq<peg::not_at<peg::identifier_other>, Skip>;
+
 /// Keywords are one the following.
 template <typename Key>
 using builtin = peg::seq<Key, EndOfWord>;
 
 struct KwTrue : builtin<TAO_PEGTL_STRING("true")> {};
 struct KwFalse : builtin<TAO_PEGTL_STRING("false")> {};
+struct KwInfty : builtin<TAO_PEGTL_STRING("infty")> {};
 
-using bool_primitives = peg::sor<KwTrue, KwFalse>;
+using primitives = peg::sor<KwTrue, KwFalse, KwInfty>;
 
 struct KwSetOption : builtin<TAO_PEGTL_STRING("set-option")> {};
 struct KwDefineFormula : builtin<TAO_PEGTL_STRING("define-formula")> {};
+struct KwDeclareConst : builtin<TAO_PEGTL_STRING("declare-const")> {};
 struct KwDeclareSignal : builtin<TAO_PEGTL_STRING("declare-signal")> {};
 struct KwDeclareParameter : builtin<TAO_PEGTL_STRING("declare-parameter")> {};
 struct KwMonitor : builtin<TAO_PEGTL_STRING("monitor")> {};
@@ -86,7 +87,7 @@ struct IntervalOp : builtin<sym::underscore> {};
 using builtin_cmd = peg::
     sor<KwSetOption, KwDefineFormula, KwDeclareSignal, KwDeclareParameter, KwMonitor>;
 
-using reserved = peg::sor<builtin_cmd, bool_primitives>;
+using reserved = peg::sor<builtin_cmd, primitives>;
 
 // Built-in types
 struct TypeBool : builtin<TAO_PEGTL_STRING("Bool")> {};
@@ -112,26 +113,6 @@ template <typename E>
 using exponent =
     peg::if_must<E, peg::seq<peg::opt<sym::plus_or_minus>, peg::plus<peg::digit>>>;
 } // namespace num
-
-struct BinInt : peg::if_must<num::bin_pre, peg::plus<num::binary_digit>> {};
-struct OctInt : peg::if_must<num::oct_pre, peg::plus<num::octal_digit>> {};
-struct HexInt : peg::if_must<num::hex_pre, peg::plus<num::hex_digit>> {};
-struct DecInt : peg::plus<peg::digit> {};
-
-struct IntegerLiteral : peg::seq<peg::sor<BinInt, OctInt, HexInt, DecInt>> {};
-
-struct DoubleLiteral : peg::seq<peg::sor<
-                           peg::seq<
-                               num::decimal_seq,
-                               sym::dot,
-                               num::decimal_seq,
-                               peg::opt<num::exponent<peg::one<'e', 'E'>>>>,
-                           peg::seq<
-                               num::decimal_seq,
-                               peg::opt<sym::dot>,
-                               num::exponent<peg::one<'e', 'E'>>>>> {};
-
-struct BooleanLiteral : peg::sor<KwTrue, KwFalse> {};
 
 /// Character tokens and helpers
 ///
@@ -190,6 +171,38 @@ using quoted_symbol_char = peg::sor<
 
 } // namespace chars
 
+struct BinInt : peg::seq<
+                    peg::opt<sym::plus_or_minus>,
+                    peg::if_must<num::bin_pre, peg::plus<num::binary_digit>>> {};
+struct OctInt : peg::seq<
+                    peg::opt<sym::plus_or_minus>,
+                    peg::if_must<num::oct_pre, peg::plus<num::octal_digit>>> {};
+struct HexInt : peg::seq<
+                    peg::opt<sym::plus_or_minus>,
+                    peg::if_must<num::hex_pre, peg::plus<num::hex_digit>>> {};
+struct DecInt : peg::seq<peg::opt<sym::plus_or_minus>, peg::plus<peg::digit>> {};
+
+struct IntegerLiteral : peg::seq<peg::sor<BinInt, OctInt, HexInt, DecInt>> {};
+
+struct DoubleLiteral : peg::seq<
+                           peg::opt<sym::plus_or_minus>,
+                           peg::sor<
+                               KwInfty,
+                               peg::seq<peg::sor<
+                                   peg::seq<
+                                       num::decimal_seq,
+                                       sym::dot,
+                                       num::decimal_seq,
+                                       peg::opt<num::exponent<peg::one<'e', 'E'>>>>,
+                                   peg::seq<
+                                       num::decimal_seq,
+                                       peg::opt<sym::dot>,
+                                       num::exponent<peg::one<'e', 'E'>>>>>>> {};
+
+struct NumericLiteral : peg::sor<DoubleLiteral, IntegerLiteral> {};
+
+struct BooleanLiteral : peg::sor<KwTrue, KwFalse> {};
+
 /// A string literal is any sequence of characters between two double quotes, with the
 /// literal escape sequence `\b \t \n \f \r \" \\`.
 ///
@@ -199,18 +212,13 @@ using quoted_symbol_char = peg::sor<
 /// In SMT-LIB, they assume that strings can be inputs to the solver, thus, the
 /// significance of the backslash and other "traditionally" escaped characters in C-like
 /// languages is important, as these can change the input to the program.
-///
-/// \par
-/// In PerceMon, strings have no significance other than to document various things. In
-/// reality, this is here only for familiarity and may never be used by the script user.
 struct StringLiteral : peg::if_must<
                            sym::double_quote,
                            peg::until<sym::double_quote, chars::raw_string_char>> {};
 
 /// A constant in the specification language can be a floating point constant, an
 /// integer, a boolean literal, or a string.
-struct Constant
-    : peg::sor<DoubleLiteral, IntegerLiteral, BooleanLiteral, StringLiteral> {};
+struct Constant : peg::sor<NumericLiteral, BooleanLiteral, StringLiteral> {};
 
 /// A simple symbol is a case sensitive sequence of characters that are either ASCII
 /// letters, ASCII digits, or the characters `~ ! @ $ % ^ & * _ - + = < > . ? /`
@@ -233,49 +241,20 @@ struct Symbol : peg::sor<SimpleSymbol, QuotedSymbol> {};
 /// options for commands in PerceMon.
 struct Keyword : peg::if_must<sym::colon, SimpleSymbol> {};
 
-struct Attribute;
+/// Attribute Values are either a constant or a list of constants (within parentheses).
+struct AttributeValue : peg::sor<Constant, paren_surround<peg::list<Constant, Skip>>> {
+};
 
-/// Option attributes.
-///
-/// Used to set options for operations and commands that accept them.
+/// An attribute is simply either an option attribute or a keyval attribute.
 ///
 /// Action
 /// ======
 ///
-/// 1. Check if there is a keyword.
-/// 2. Create an `attribute` with boolean `true` value.
-struct OptionAttribute : Keyword {};
+/// 1. Check if we have 1 Keyword and a list of Values.
+/// 2. Create an attribute
+/// 3. Push to `attributes`
+struct Attribute : peg::seq<Keyword, AttributeValue> {};
 
-/// Attribute Values
-///
-/// A recursive rule that allows Key-value attributes the have nested attributes.
-struct AttributeValue : peg::seq<paren_surround<Attribute>, Constant, Symbol> {};
-
-/// Key-value attributes.
-///
-/// @todo
-/// Currently, KeyValueAttributes can only have a single value. It may be useful to have
-/// a list of mappings (but this can get weird for parsing).
-struct KeyValueAttribute : peg::seq<Keyword, Skip, Constant> {};
-
-/// An attribute is simply either an option attribute or a keyval attribute.
-struct Attribute : peg::sor<KeyValueAttribute, OptionAttribute> {};
-
-struct Term;
-
-/// A operation is just a symbol. This can include one of the following
-/// pre-defined operations/operators:
-///
-/// - `not`
-/// - `and`
-/// - `or`
-/// - `implies`
-/// - `iff`
-/// - `xor`
-/// - `always`
-/// - `eventually`
-/// - `until`
-struct Operation : Symbol {};
 /// A qualified identifier is used to reference some pre-defined symbol or variable.
 struct QualifiedIdentifier : Symbol {};
 
@@ -313,27 +292,7 @@ struct VarDecl : peg::sor<paren_surround<VarName, Skip, peg::opt<VarType>>, VarN
 /// @todo Nothing, I think.
 struct VarList : paren_surround<peg::list<VarDecl, Skip>> {};
 
-/// Rule for pinning the frame and time variables.
-///
-/// Action
-/// =====
-///
-/// 1. Assert the operation is "@" (redundant).
-/// 2. Check if there is either 1 or 2 Variables in the `variables` list.
-/// 3. Create a `result`.
-struct PinningExpression : peg::seq<KwPin, Skip, VarList> {};
-
-using quantifier_ops = peg::sor<KwExists, KwForall>;
-/// Rule to encode quantifier expressions.
-///
-/// Action
-/// ======
-///
-/// 1. Check if there is 1 `operation`.
-/// 2. Check if there is at least 1 variable in the `variables` list.
-/// 3. Check if there is 1 Term in the `terms` list.
-/// 4. Create a `result` for the quantifier.
-struct QuantifierExpression : peg::seq<quantifier_ops, Skip, VarList, Skip, Term> {};
+struct Term;
 
 /// Rule to encode Interval operations
 ///
@@ -341,9 +300,23 @@ struct QuantifierExpression : peg::seq<quantifier_ops, Skip, VarList, Skip, Term
 /// ======
 ///
 /// 1. Check if the operation is '_'
-/// 2. Check if there is exactly 1 Term in the `terms` list.
+/// 2. Check if there is exactly 2 Term in the `terms` list.
 /// 3. Create an Interval.
-struct IntervalExpression : peg::seq<KwInterval, Skip, Term> {};
+struct IntervalExpression : peg::seq<IntervalOp, Skip, Term, Skip, Term> {};
+
+/// A operation is just a symbol. This can include one of the following
+/// pre-defined operations/operators:
+///
+/// - `not`
+/// - `and`
+/// - `or`
+/// - `implies`
+/// - `iff`
+/// - `xor`
+/// - `always`
+/// - `eventually`
+/// - `until`
+struct Operation : Symbol {};
 
 /// Rule to encode arbitrary operations.
 ///
@@ -367,11 +340,7 @@ struct OperationExpression
 /// =======
 ///
 /// Nothing. Let sub-rules handle it.
-struct Expression : peg::sor<
-                        PinningExpression,
-                        QuantifierExpression,
-                        IntervalExpression,
-                        OperationExpression> {};
+struct Expression : peg::sor<IntervalExpression, OperationExpression> {};
 
 /// A recursive Term expression.
 ///
@@ -407,6 +376,51 @@ struct CmdSetOption : peg::seq<KwSetOption, Skip, peg::plus<Attribute, Skip>> {}
 struct CmdDefineFormula
     : peg::seq<KwDefineFormula, Skip, QualifiedIdentifier, Skip, Term> {};
 
+/// Declare an global constant
+///
+/// Action
+/// ======
+///
+/// 1. Check if there is exactly 1 Identifier and 1 Term.
+/// 2. Check if the term is a Constant
+/// 3. Add entry `{identifier, term}` to the `constants` map.
+struct CmdDeclareConst
+    : peg::seq<KwDeclareConst, Skip, QualifiedIdentifier, Skip, Term> {};
+
+/// Declare a signal
+///
+/// Action
+/// ======
+///
+/// 1. Check if there is exactly 1 Identifier and 1 Term (Variable).
+/// 2. Check if we have any attributes (and check if the attributes make sense).
+/// 3. Add entry to the `signals` map.
+struct CmdDeclareSignal : peg::seq<
+                              KwDeclareSignal,
+                              Skip,
+                              QualifiedIdentifier,
+                              Skip,
+                              Term,
+                              Skip,
+                              peg::star<Attribute, Skip>> {};
+
+/// Declare a parameter
+///
+/// Action
+/// ======
+///
+/// 1. Check if there is exactly 1 Identifier and 1 Term (Variable).
+/// 2. Check if we have any attributes (and check if the attributes make sense).
+/// 3. Add entry to the `parameters` map.
+struct CmdDeclareParameter : peg::seq<
+                                 KwDeclareParameter,
+                                 Skip,
+                                 QualifiedIdentifier,
+                                 Skip,
+                                 Term,
+                                 Skip,
+                                 peg::star<Attribute, Skip>> {};
+
 /// Define a monitor for a formula.
 ///
 /// The monitor takes in a list of attributes that will set the semantics of the
@@ -429,7 +443,13 @@ struct CmdMonitor : peg::seq<
                         Skip,
                         peg::star<Attribute, Skip>> {};
 
-using valid_commands = peg::sor<CmdSetOption, CmdDefineFormula, CmdMonitor>;
+using valid_commands = peg::sor<
+    CmdSetOption,
+    CmdDefineFormula,
+    CmdDeclareConst,
+    CmdDeclareSignal,
+    CmdDeclareParameter,
+    CmdMonitor>;
 
 struct StatementList
     : peg::until<peg::eof, peg::pad<paren_surround<valid_commands>, Sep>> {};

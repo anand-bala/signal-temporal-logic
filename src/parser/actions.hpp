@@ -1,386 +1,320 @@
 #pragma once
 
-#ifndef SIGNALTL_PARSER_ACTIONS_HPP
-#define SIGNALTL_PARSER_ACTIONS_HPP
+#ifndef ARGUS_PARSER_ACTIONS_HPP
+#define ARGUS_PARSER_ACTIONS_HPP
+
+#include "argus/ast/expression.hpp"
 
 #include "grammar.hpp"
-#include "signal_tl/ast.hpp"
-#include <tao/pegtl.hpp> // IWYU pragma: keep
+#include "utils/static_analysis_helpers.hpp"
 
 #include <fmt/core.h>
+#include <magic_enum.hpp>
+#include <tao/pegtl.hpp>
 
-// #define NDEBUG
-#include <cassert>
 #include <map>
 #include <memory>
 #include <optional>
 #include <variant>
 #include <vector>
 
-namespace signal_tl::parser {
-
-namespace actions {
 /// Here, we will define the custom actions for the PEG parser that will
 /// convert each rule into a valid AST class.
-namespace peg = tao::pegtl;
-using namespace signal_tl::grammar;
+namespace argus::parser::actions {
+/* helpers */
 
-using PrimitiveState = std::variant<bool, long int, double>;
+/// Constant types
+using ConstTypes =
+    std::variant<std::string, double, long long int, unsigned long long int, bool>;
 
-enum struct PredicateType { ONE, TWO };
-
-/// This encodes local state of the push-down parser.
+/// Move the contents of an optional, and invalidate the optional.
 ///
-/// Essentially, this is a stack element, and a new one is pushed down
-/// whenerver we encounter a Term, as that is the only recursive rule in our
-/// grammar. This keeps track of whatever is required to make a Term, without
-/// polluting the context of parent rules in the AST.
-struct ParserState {
+/// Doesn't check if the optional has contents.
+template <typename T>
+T remove_opt_quick(std::optional<T>& opt) {
+  T content = std::move(*opt);
+  opt       = std::nullopt;
+  return content;
+}
+
+namespace peg = tao::pegtl;
+namespace gm  = argus::grammar;
+
+/// This encodes local state of the push-down parser for Terms.
+struct TermContext {
   /// Purely here for debugging purposes.
   unsigned long long int level;
+
+  /// List of parsed Constants
+  ///
+  /// Used immediately by either Term or AttributeValue
+  std::vector<ConstTypes> constants;
+
+  /// A Symbol. Needs to be immediately consumed by a parent rule.
+  std::optional<std::string> symbol;
+
+  /// Keyword (`:<keyword>`). Consumed immediately in Attributes.
+  std::optional<std::string> keyword;
+
+  /// List of parsed attributes
+  std::vector<ast::Attribute> attributes;
+
+  /// An identifier as parsed by the rule.
+  ///
+  /// This is immediately used by the parent rule (either in Term or in some Command) to
+  /// either create new formulas/assertions or to map existing formulas/assertions to a
+  /// valid `ast::Expr`.
+  std::optional<std::string> identifier;
+
+  /// Holds the variable name. Used immediately in VarDecl.
+  std::optional<std::string> var_name;
+  /// Holds the variable type. This is used immediately in a VarDecl rule.
+  std::optional<std::string> var_type;
+  /// A list of Variables (Terms) declared in the local context.
+  ///
+  /// Created in VarName with type `VarType::Unknown`. The parent rule will determine
+  /// the type and the scope of the variable.
+  /// Used by Pinning and Quantifier, and will be consumed immediately by the parent
+  /// rule.
+  std::vector<ExprPtr> variables;
+
+  /// An interval command. Error if there are more than 1 in an Term.
+  std::shared_ptr<ast::details::Interval> interval;
+
+  /// An operation string. Used immediately by the Expression term.
+  std::optional<std::string> operation;
 
   /// Whenever an Expression is completed, this field gets populared. Later,
   /// within the action for the Term rule, we move the result onto the vector
   /// `terms` to allow for the parent expression to easily combine it with
   /// their list of `terms`.
-  std::optional<ast::Expr> result;
-
-  /// When parsing a primitive (boolean or numeral), we add the result here so
-  /// that the parent rule can immediately use it to construct either a
-  /// BooleanLiteral or a Numeral (integer or double).
-  std::optional<PrimitiveState> primitive_result;
-
-  /// A list of identifiers as parsed by the rule.
-  ///
-  /// In most cases, this is immediately used by the parent rule (either in
-  /// Term or in some Command) to either create new formulas/assertions or to
-  /// map existing formulas/assertions to a valid `ast::Expr`.
-  std::vector<std::string> identifiers;
-
-  /// Informs the immediate parent rule (only useful for PredicateTerm) whether
-  /// the Predicate is of the form `id ~ c` or `c ~ id`, essentially to change
-  /// it to the canonical form `id ~ c`.
-  std::optional<PredicateType> predicate_type;
-  /// Informs the parent PredicateTerm what comparison operation is used in the
-  /// predicate. It is used in conjunction with the `predicate_type` field to
-  /// construct a valid `ast::Predicate`.
-  std::optional<ast::ComparisonOp> comparison_type;
-
+  std::unique_ptr<argus::Expr> result;
   /// A list of Terms parsed in the local context. For example, for an N-ary
   /// operation like And and Or, we expect the list to have at least 2 valid
   /// `ast::Expr`. This is populated when a local context is popped off the
   /// stack of a Term within the current rule.
-  std::vector<ast::Expr> terms;
+  std::vector<ExprPtr> terms;
 };
 
 /// This maintains the global list of formulas and assertions that have been
 /// parsed within the specification.
-struct GlobalParserState {
-  std::map<std::string, ast::Expr> formulas;
-  std::map<std::string, ast::Expr> assertions;
+struct GlobalContext {
+  /// List of defined constants
+  std::map<std::string, ExprPtr> constants;
+  /// List of defined Signals
+  std::map<std::string, ExprPtr> signals;
+  /// List of defined Parameters
+  std::map<std::string, ExprPtr> parameters;
+
+  /// List of defined formulas, keyed by their corresponding identifiers.
+  std::map<std::string, ExprPtr> defined_formulas;
+  /// List of settings for monitors, keyed by their corresponding identifiers.
+  std::map<std::string, ExprPtr> monitors;
+
+  /// List of global settings
+  std::set<ast::Attribute, ast::Attribute::KeyCompare> settings;
 };
 
 template <typename Rule>
 struct action : peg::nothing<Rule> {};
 
-/// For each rule, we will assume that the top level function that calls this
-/// action passes a reference to a `Specification` that we can populate, along
-/// with other internal states.
+template <>
+struct action<gm::KwTrue> {
+  static void apply0(GlobalContext&, TermContext& ctx) {
+    ctx.constants.emplace_back(true);
+  }
+};
 
 template <>
-struct action<peg::identifier> {
+struct action<gm::KwFalse> {
+  static void apply0(GlobalContext&, TermContext& ctx) {
+    ctx.constants.emplace_back(false);
+  }
+};
+
+template <>
+struct action<gm::BinInt> {
+  static constexpr int base = 2;
   template <typename ActionInput>
-  static void apply(const ActionInput& in, GlobalParserState&, ParserState& state) {
-    auto id = std::string(in.string());
-    state.identifiers.push_back(id);
-  }
-};
-
-template <>
-struct action<KwTrue> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    state.primitive_result = PrimitiveState(true);
-  }
-};
-
-template <>
-struct action<KwFalse> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    state.primitive_result = PrimitiveState(false);
-  }
-};
-
-template <>
-struct action<BooleanLiteral> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    // This function is called only if the BooleanLiteral rule passes,
-    // otherwise it is a parsing failure.
-    if (state.primitive_result.has_value()) {
-      bool primitive_val     = std::get<bool>(state.primitive_result.value());
-      state.result           = Const(primitive_val);
-      state.primitive_result = std::nullopt;
-    }
-  }
-};
-
-template <>
-struct action<IntegerLiteral> {
-  template <typename ActionInput>
-  static void apply(const ActionInput& in, GlobalParserState&, ParserState& state) {
-    long int val           = std::stol(in.string());
-    state.primitive_result = PrimitiveState(val);
-  }
-};
-
-template <>
-struct action<DoubleLiteral> {
-  template <typename ActionInput>
-  static void apply(const ActionInput& in, GlobalParserState&, ParserState& state) {
-    double val             = std::stod(in.string());
-    state.primitive_result = PrimitiveState(val);
-  }
-};
-
-template <>
-struct action<LtSymbol> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    state.comparison_type = ast::ComparisonOp::LT;
-  }
-};
-
-template <>
-struct action<LeSymbol> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    state.comparison_type = ast::ComparisonOp::LE;
-  }
-};
-
-template <>
-struct action<GtSymbol> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    state.comparison_type = ast::ComparisonOp::GT;
-  }
-};
-
-template <>
-struct action<GeSymbol> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    state.comparison_type = ast::ComparisonOp::GE;
-  }
-};
-
-template <>
-struct action<PredicateForm1> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    state.predicate_type = PredicateType::ONE;
-  }
-};
-
-template <>
-struct action<PredicateForm2> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    state.predicate_type = PredicateType::TWO;
-  }
-};
-
-template <>
-struct action<PredicateTerm> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    // Here, we assume that the parser succeeded in parsing 1 identifier and 1
-    // numeral in the subtree, and now we can get their results from state.
-    // Moreover, we assume that the sub-expressions set the predicate type and
-    // the comparison type.
-
-    if (state.identifiers.empty()) {
-      throw std::logic_error("Predicate sub-parser did not parse any identifiers");
-    }
-    auto id = state.identifiers.back(); // Get the last identifier.
-    state.identifiers.pop_back();       // Remove it from the list.
-    auto comparison_type  = state.comparison_type.value();
-    state.comparison_type = std::nullopt;
-
-    double const_val = 0.0;
-    if (auto pval = std::get_if<long int>(&state.primitive_result.value())) {
-      const_val = static_cast<double>(*pval);
+  static void apply(const ActionInput& in, GlobalContext&, TermContext& ctx) {
+    auto val = std::stoll(in.string(), /*pos*/ 0, base);
+    if (val >= 0) {
+      ctx.constants.emplace_back(static_cast<unsigned long long>(val));
     } else {
-      const_val = std::get<double>(state.primitive_result.value());
+      ctx.constants.emplace_back(val);
     }
-    state.primitive_result = std::nullopt;
+  }
+};
 
-    if (state.predicate_type == PredicateType::TWO) {
-      // For Type TWO, we need to flip the direction of the comparison
-      switch (state.comparison_type.value()) {
-        case ast::ComparisonOp::LT:
-          comparison_type = ast::ComparisonOp::GT;
-          break;
-        case ast::ComparisonOp::LE:
-          comparison_type = ast::ComparisonOp::GE;
-          break;
-        case ast::ComparisonOp::GT:
-          comparison_type = ast::ComparisonOp::LT;
-          break;
-        case ast::ComparisonOp::GE:
-          comparison_type = ast::ComparisonOp::LE;
-          break;
+template <>
+struct action<gm::OctInt> {
+  static constexpr int base = 8;
+  template <typename ActionInput>
+  static void apply(const ActionInput& in, GlobalContext&, TermContext& ctx) {
+    auto val = std::stoll(in.string(), /*pos*/ 0, base);
+    if (val >= 0) {
+      ctx.constants.emplace_back(static_cast<unsigned long long>(val));
+    } else {
+      ctx.constants.emplace_back(val);
+    }
+  }
+};
+
+template <>
+struct action<gm::HexInt> {
+  static constexpr int base = 16;
+  template <typename ActionInput>
+  static void apply(const ActionInput& in, GlobalContext&, TermContext& ctx) {
+    auto val = std::stoll(in.string(), /*pos*/ 0, base);
+    if (val >= 0) {
+      ctx.constants.emplace_back(static_cast<unsigned long long>(val));
+    } else {
+      ctx.constants.emplace_back(val);
+    }
+  }
+};
+
+template <>
+struct action<gm::DecInt> {
+  static constexpr int base = 10;
+  template <typename ActionInput>
+  static void apply(const ActionInput& in, GlobalContext&, TermContext& ctx) {
+    auto val = std::stoll(in.string(), /*pos*/ 0, base);
+    if (val >= 0) {
+      ctx.constants.emplace_back(static_cast<unsigned long long>(val));
+    } else {
+      ctx.constants.emplace_back(val);
+    }
+  }
+};
+
+template <>
+struct action<gm::DoubleLiteral> {
+  template <typename ActionInput>
+  static void apply(const ActionInput& in, GlobalContext&, TermContext& ctx) {
+    auto val = std::stod(in.string());
+    ctx.constants.emplace_back(val);
+  }
+};
+
+template <>
+struct action<gm::StringLiteral> {
+  template <typename ActionInput>
+  static void apply(const ActionInput& in, GlobalContext&, TermContext& ctx) {
+    // Get the quoted content.
+    std::string content = in.string();
+    // Check if there is a " on either end and trim it.
+    {
+      size_t begin = 0, count = std::string::npos;
+      if (content.front() == '"') {
+        begin = 1;
       }
+      if (content.back() == '"') {
+        count = content.size() - begin - 1;
+      }
+      content = content.substr(begin, count);
     }
-    state.predicate_type = std::nullopt;
-
-    state.result = ast::Predicate{id, comparison_type, const_val};
+    ctx.constants.emplace_back(content);
   }
 };
 
 template <>
-struct action<NotTerm> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    assert(!state.terms.empty());
-    // Here we assume that the NotTerm rule matched a single Term as a
-    // subexpression. This implies that there should be exactly 1 Expr in
-    // states.terms
-    state.result = ::signal_tl::Not(state.terms.back());
-    // We will remove that term after using it, and set Not(term) as the resultant
-    // state.
-    state.terms.pop_back();
-    // There should be exactly 0 terms left now.
-    assert(state.terms.empty());
-  }
-};
-
-template <>
-struct action<AndTerm> : peg::require_apply {
+struct action<gm::SimpleSymbol> {
   template <typename ActionInput>
-  static void apply(const ActionInput& in, GlobalParserState&, ParserState& state) {
-    if (state.terms.size() < 2) {
-      throw peg::parse_error(
-          std::string("expected at least 2 terms, got ") +
-              std::to_string(state.terms.size()),
-          in);
-    }
-    // We expect the state to contain at least 2 terms due to pegtl::rep_min
-    assert(state.terms.size() >= 2);
-    // Then, we just std::move the vector of terms into the And expression.
-    state.result = ::signal_tl::And(std::move(state.terms));
-    // There should be exactly 0 terms left now.
-    assert(state.terms.empty());
+  static void apply(const ActionInput& in, GlobalContext&, TermContext& ctx) {
+    ctx.symbol = in.string();
   }
 };
 
 template <>
-struct action<OrTerm> : peg::require_apply {
+struct action<gm::QuotedSymbol> {
   template <typename ActionInput>
-  static void apply(const ActionInput& in, GlobalParserState&, ParserState& state) {
-    if (state.terms.size() < 2) {
-      throw peg::parse_error(
-          std::string("expected at least 2 terms, got ") +
-              std::to_string(state.terms.size()),
-          in);
+  static void apply(const ActionInput& in, GlobalContext&, TermContext& ctx) {
+    std::string content = in.string();
+    // We need to trim the '|' on either ends.
+    {
+      size_t begin = 0, count = std::string::npos;
+      if (content.front() == '|') {
+        begin = 1;
+      }
+      if (content.back() == '|') {
+        count = content.size() - begin - 1;
+      }
+      content = content.substr(begin, count);
     }
-    // We expect the state to contain at least 2 terms due to pegtl::rep_min
-    assert(state.terms.size() >= 2);
-    // Then, we just std::move the vector of terms into the Or expression.
-    state.result = ::signal_tl::Or(std::move(state.terms));
-    // There should be exactly 0 terms left now.
-    assert(state.terms.empty());
+    ctx.symbol = content;
   }
 };
 
 template <>
-struct action<ImpliesTerm> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    // We expect the state to contain exactly 2 terms
-    assert(state.terms.size() == 2);
-    // TODO(anand): Verify the order of the Terms.
-    auto rhs = state.terms.back();
-    state.terms.pop_back();
-    auto lhs = state.terms.back();
-    state.terms.pop_back();
-    state.result = ::signal_tl::Implies(lhs, rhs);
-    // There should be exactly 0 terms left now.
-    assert(state.terms.empty());
+struct action<gm::Keyword> {
+  static void apply0(GlobalContext&, TermContext& state) {
+    utils::assert_(
+        state.symbol.has_value(), "Expected at least 1 symbol to parse as a keyword");
+    utils::assert_(!state.keyword.has_value(), "Keyword seems to already have a value");
+    state.keyword = remove_opt_quick(state.symbol);
   }
 };
 
 template <>
-struct action<IffTerm> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    // We expect the state to contain exactly 2 terms
-    assert(state.terms.size() == 2);
-    auto rhs = state.terms.back();
-    state.terms.pop_back();
-    auto lhs = state.terms.back();
-    state.terms.pop_back();
-    state.result = ::signal_tl::Iff(lhs, rhs);
-    // There should be exactly 0 terms left now.
-    assert(state.terms.empty());
+struct action<gm::Attribute> {
+  static void apply0(GlobalContext&, TermContext& ctx) {
+    utils::assert_(
+        ctx.keyword.has_value(), "Expected a keyword to be parsed for attributes");
+    std::string key = remove_opt_quick(ctx.keyword);
+    auto vals       = std::move(ctx.constants);
+    ctx.attributes.push_back(ast::Attribute{key, std::move(vals)});
   }
 };
 
 template <>
-struct action<XorTerm> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    // We expect the state to contain exactly 2 terms
-    assert(state.terms.size() == 2);
-    auto rhs = state.terms.back();
-    state.terms.pop_back();
-    auto lhs = state.terms.back();
-    state.terms.pop_back();
-    state.result = ::signal_tl::Xor(lhs, rhs);
-    // There should be exactly 0 terms left now.
-    assert(state.terms.empty());
+struct action<gm::QualifiedIdentifier> {
+  static void apply0(GlobalContext&, TermContext& ctx) {
+    utils::assert_(
+        ctx.symbol.has_value(), "Expected a symbol to parse as a qualified identifier");
+    utils::assert_(!ctx.identifier.has_value(), "Identifier already populated.");
+    ctx.identifier = remove_opt_quick(ctx.symbol);
   }
 };
 
 template <>
-struct action<AlwaysTerm> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    assert(state.terms.size() == 1);
-    // Here we assume that the AlwaysTerm rule matched a single Term as a
-    // subexpression. This implies that there should be exactly 1 Expr in
-    // states.terms
-    // TODO(anand): Add support for intervals.
-    state.result = ::signal_tl::Always(state.terms.back());
-    // We will remove that term after using it, and set Not(term) as the resultant
-    // state.
-    state.terms.pop_back();
-    // There should be exactly 0 terms left now.
-    assert(state.terms.empty());
+struct action<gm::VarName> {
+  static void apply0(GlobalContext&, TermContext& ctx) {
+    utils::assert_(
+        ctx.symbol.has_value(), "Expected a symbol to parse as a Variable name");
+    ctx.var_name = remove_opt_quick(ctx.symbol);
   }
 };
 
 template <>
-struct action<EventuallyTerm> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    assert(state.terms.size() == 1);
-    // Here we assume that the EventuallyTerm rule matched a single Term as a
-    // subexpression. This implies that there should be exactly 1 Expr in
-    // states.terms
-    // TODO(anand): Add support for intervals.
-    state.result = ::signal_tl::Eventually(state.terms.back());
-    // We will remove that term after using it, and set Not(term) as the resultant
-    // state.
-    state.terms.pop_back();
-    // There should be exactly 0 terms left now.
-    assert(state.terms.empty());
+struct action<gm::VarType> {
+  static void apply0(GlobalContext&, TermContext& ctx) {
+    utils::assert_(
+        ctx.symbol.has_value(), "Expected a symbol to parse as a Variable type");
+    ctx.var_type = remove_opt_quick(ctx.symbol);
   }
 };
 
 template <>
-struct action<UntilTerm> {
-  static void apply0(GlobalParserState&, ParserState& state) {
-    // We expect the state to contain exactly 2 terms
-    assert(state.terms.size() == 2);
-    auto rhs = state.terms.back();
-    state.terms.pop_back();
-    auto lhs = state.terms.back();
-    state.terms.pop_back();
-    state.result = ::signal_tl::Until(lhs, rhs);
-    // There should be exactly 0 terms left now.
-    assert(state.terms.empty());
+struct action<gm::VarDecl> {
+  template <typename ActionInput>
+  static void apply(const ActionInput& in, GlobalContext&, TermContext& ctx) {
+    utils::assert_(
+        ctx.var_name.has_value(), "Expected a variable name to have been parsed");
+    std::string var_name     = remove_opt_quick(ctx.var_name);
+    std::string var_type_str = remove_opt_quick(ctx.var_type);
+    auto var_type            = magic_enum::enum_cast<ast::VarType>(var_type_str);
+    if (!var_type.has_value()) {
+      throw peg::parse_error(
+          fmt::format("Unknown Variable type: `{}`", var_type_str), in);
+    }
+    auto variable = Expr::Variable(var_name, *var_type);
+    ctx.variables.push_back(std::move(variable));
   }
 };
 
 template <>
-struct action<Term> {
+struct action<gm::Term> {
   template <
       typename Rule,
       peg::apply_mode A,
@@ -390,34 +324,43 @@ struct action<Term> {
       template <typename...>
       class Control,
       typename ParseInput>
-  static bool
-  match(ParseInput& in, GlobalParserState& global_state, ParserState& state) {
-    // Here, we implement a push-down parser. Essentially, the new_state was
+  static bool match(ParseInput& in, GlobalContext& global_ctx, TermContext& ctx) {
+    // Here, we implement a push-down parser. Essentially, the new_ctx was
     // pushed onto the stack before the parser entered the rule for Term, and
-    // now we have to pop the top of the stack (new_state) and merge the top
-    // smartly with the old_state.
+    // now we have to pop the top of the stack (new_ctx) and merge the top
+    // smartly with the old_ctx.
 
     // Create a new layer on the stack
-    ParserState new_local_state{};
-    new_local_state.level = state.level + 1;
+    auto new_local_ctx  = TermContext{};
+    new_local_ctx.level = ctx.level + 1;
 
-    // Parse the input with the new state.
-    bool ret = tao::pegtl::match<Rule, A, M, Action, Control>(
-        in, global_state, new_local_state);
-    // Once we are done parsing, we need to reset the states.
-    // After the apply0 for Term was completed, new_state should have 1 Term in
+    // Parse the input with the new ctx.
+    bool ret =
+        tao::pegtl::match<Rule, A, M, Action, Control>(in, global_ctx, new_local_ctx);
+    // Once we are done parsing, we need to reset the ctxs.
+    // After the apply0 for Term was completed, new_ctx should have 1 Term in
     // the vector. This term needs to be moved onto the Terms vector in the
-    // old_state.
-    state.terms.insert(
-        std::end(state.terms),
-        std::begin(new_local_state.terms),
-        std::end(new_local_state.terms));
+    // old_ctx.
+    ctx.terms.insert(
+        std::end(ctx.terms),
+        std::begin(new_local_ctx.terms),
+        std::end(new_local_ctx.terms));
+    // We also need to move the interval expression to the current context
+    if (ctx.interval != nullptr && new_local_ctx.interval != nullptr) {
+      throw peg::parse_error(
+          "Multiple interval expressions defined for the same term", in);
+    } else if (new_local_ctx.interval) {
+      ctx.interval = std::move(new_local_ctx.interval);
+    }
     return ret;
   }
 
   template <typename ActionInput>
   static void
-  apply(const ActionInput& in, GlobalParserState& global_state, ParserState& state) {
+  apply(const ActionInput& in, GlobalContext& global_ctx, TermContext& ctx) {
+    utils::assert_(
+        ctx.terms.empty(),
+        fmt::format("Expected 0 intermediary Terms, got {}", ctx.terms.size()));
     // Here, we have two possibilities:
     //
     // 1. The Term was a valid expression; or
@@ -429,92 +372,473 @@ struct action<Term> {
     // In the second case, we have to copy the expression pointed by the
     // identifier onto the terms vector.
 
-    // If we have a Expression as the sub-result.
-    if (state.result.has_value()) {
+    // If we have an Expression as the sub-result.
+    if (ctx.result) {
       // We move the result onto the vector of terms.
-      state.terms.push_back(*state.result);
-      // And invalidate the sub-result
-      state.result = std::nullopt;
-    } else if (!state.identifiers.empty()) { // And if we have an id
+      ctx.terms.push_back(std::move(ctx.result));
+    } else if (ctx.identifier.has_value()) { // And if we have an id
       // Copy the pointer to the formula with the corresponding id
-      state.terms.push_back(global_state.formulas.at(state.identifiers.back()));
-      state.identifiers.pop_back();
+      const std::string id = remove_opt_quick(ctx.identifier);
+      const auto it        = global_ctx.defined_formulas.find(id);
+      if (it == global_ctx.defined_formulas.end()) {
+        throw peg::parse_error(
+            fmt::format("Reference to unknown identifier: `{}`", id), in);
+      } else {
+        ctx.terms.push_back(it->second);
+      }
+    } else if (!ctx.constants.empty()) { // We have a constant
+      utils::assert_(
+          ctx.constants.size() == 1,
+          fmt::format("Expected exactly 1 constant, got {}", ctx.constants.size()));
+
+      ConstTypes val = std::move(ctx.constants.back());
+      ctx.constants.pop_back();
+      ctx.terms.push_back(Expr::Constant(val));
+    } else if (ctx.interval != nullptr) {
+      // If we parsed an interval expression
     } else {
-      // Otherwise, it doesn't make sense that there are no results, as this
-      // means that the parser failed. This should be unreachable.
-      //
-      // UPDATE 2021-01-26:
-      //
-      // Turns out, this is reachable if there is an empty "()" in the list of
-      // expressions. This means that we need to throw a parsing error, where we matched
-      // an empty list where it never makes sense to have one.
+      // This is reachable if there is an empty "()" in the list of expressions. This
+      // means that we need to throw a parsing error, where we matched an empty list
+      // where it never makes sense to have one.
       throw peg::parse_error(
           "Looks like a pair '(' ')' was matched with nothing in between", in);
-      // LCOV_EXCL_START
-      throw std::logic_error(
-          "Should be unreachable, but looks like a Term has no sub expression or identifier.");
-      // LCOV_EXCL_STOP
+      // utils::unreachable("Looks like a Term has no sub expression or identifier.");
     }
   }
 };
 
 template <>
-struct action<Assertion> {
+struct action<gm::IntervalExpression> {
   template <typename ActionInput>
-  static void
-  apply(const ActionInput& in, GlobalParserState& global_state, ParserState& state) {
-    // For an assertion statement, we essentially will have 1 identifier, and 1
-    // term. Thus, the identifier will be in the  result, and the number of
-    // terms must be 1.
-    assert(state.terms.size() == 1);
-    assert(!state.identifiers.empty());
-
-    auto id = state.identifiers.back(); // Must be there
-    state.identifiers.pop_back();
-    auto expr = state.terms.back(); // Must be there
-    state.terms.pop_back();
-
-    const auto [it, check] = global_state.assertions.insert({id, expr});
-    if (!check) { // Unsuccessful insert. Probably due to id already being there
-      throw peg::parse_error(
-          fmt::format("possible redefinition of Assertion with id: \"{}\"", it->first),
-          in);
+  static void apply(const ActionInput& in, GlobalContext&, TermContext& ctx) {
+    utils::assert_(
+        ctx.terms.size() == 1, "Expected exactly 2 terms to parse as Interval bounds");
+    // If an interval already exists in the current context. Not technically possible
+    // here, but it needs to be checked properly in Terms.
+    utils::assert_(
+        ctx.interval != nullptr,
+        "Attempting to specify multiple intervals to the same operation");
+    // Move the terms here.
+    std::vector<ExprPtr> terms = std::move(ctx.terms);
+    // Create a Interval
+    try {
+      ctx.interval = std::make_shared<ast::details::Interval>(terms.at(0), terms.at(1));
+    } catch (const std::invalid_argument& e) {
+      throw peg::parse_error(fmt::format("Invalid interval: {}", e.what()), in);
     }
-
-    assert(state.terms.empty());
   }
 };
 
 template <>
-struct action<DefineFormula> {
-  template <typename ActionInput>
-  static void
-  apply(const ActionInput& in, GlobalParserState& global_state, ParserState& state) {
-    // For an define-formula command, we essentially will have 1 identifier,
-    // and 1 term. Thus, the identifier will be in the  result, and the number
-    // of terms must be 1.
-    assert(state.terms.size() == 1);
-    assert(!state.identifiers.empty());
-
-    auto id = state.identifiers.back(); // Must be there
-    state.identifiers.pop_back();
-    auto expr = state.terms.back(); // Must be there
-    state.terms.pop_back();
-
-    const auto [it, check] = global_state.formulas.insert({id, expr});
-    if (!check) { // Unsuccessful insert. Probably due to id already being there
-      throw peg::parse_error(
-          fmt::format("possible redefinition of Formula with id: \"{}\"", it->first),
-          in);
-    }
-
-    assert(state.terms.empty());
+struct action<gm::Operation> {
+  static void apply0(GlobalContext&, TermContext& ctx) {
+    utils::assert_(
+        ctx.symbol.has_value(), "Expected a symbol to parse as an operation");
+    utils::assert_(!ctx.operation.has_value(), "Operation already populated.");
+    ctx.operation = remove_opt_quick(ctx.symbol);
   }
 };
 
-} // namespace actions
+enum struct KnownOp {
+  LT,
+  LE,
+  GT,
+  GE,
+  EQ,
+  NEQ,
+  NOT,
+  AND,
+  OR,
+  IMPLIES,
+  IFF,
+  XOR,
+  NEXT,
+  PREV,
+  EVENTUALLY,
+  ONCE,
+  ALWAYS,
+  HISTORICALLY,
+  UNTIL,
+  SINCE,
+  ADD,
+  SUB,
+  MUL,
+  DIV,
+};
 
-using actions::action;
-} // namespace signal_tl::parser
+template <>
+struct action<gm::OperationExpression> {
+  static std::optional<KnownOp> lookup(std::string_view op) {
+    // clang-format off
+    if ( op == "lt" || op == "<"   )  { return KnownOp::LT;           }
+    if ( op == "le" || op == "<="  )  { return KnownOp::LE;           }
+    if ( op == "gt" || op == ">"   )  { return KnownOp::GT;           }
+    if ( op == "ge" || op == ">="  )  { return KnownOp::GE;           }
+    if ( op == "eq" || op == "=="  )  { return KnownOp::EQ;           }
+    if ( op == "neq" || op == "!=" )  { return KnownOp::NEQ;          }
+    if ( op == "not"               )  { return KnownOp::NOT;          }
+    if ( op == "and"               )  { return KnownOp::AND;          }
+    if ( op == "or"                )  { return KnownOp::OR;           }
+    if ( op == "next"              )  { return KnownOp::NEXT;         }
+    if ( op == "previous"          )  { return KnownOp::PREV;         }
+    if ( op == "eventually"        )  { return KnownOp::EVENTUALLY;   }
+    if ( op == "once"              )  { return KnownOp::ONCE;         }
+    if ( op == "always"            )  { return KnownOp::ALWAYS;       }
+    if ( op == "historically"      )  { return KnownOp::HISTORICALLY; }
+    if ( op == "until"             )  { return KnownOp::UNTIL;        }
+    if ( op == "since"             )  { return KnownOp::SINCE;        }
+    if ( op == "add" || op == "+"  )  { return KnownOp::ADD;          }
+    if ( op == "sub" || op == "-"  )  { return KnownOp::SUB;          }
+    if ( op == "mul" || op == "*"  )  { return KnownOp::MUL;          }
+    if ( op == "div" || op == "/"  )  { return KnownOp::DIV;          }
+    // clang-format on
+    return {};
+  }
 
-#endif /* end of include guard: SIGNALTL_PARSER_ACTIONS_HPP */
+  template <typename ActionInput>
+  static void handle_predicate(const ActionInput& in, TermContext& ctx, KnownOp op) {
+    // 1. Check if we have 2 terms.
+    if (ctx.terms.size() != 2) {
+      throw peg::parse_error(
+          fmt::format(
+              "Predicate expects 2 arguments, an LHS and an RHS, got {}",
+              ctx.terms.size()),
+          in);
+    }
+    // 2. Load the args. Clear `terms`
+    auto terms  = std::move(ctx.terms);
+    ExprPtr lhs = std::move(terms[0]);
+    ExprPtr rhs = std::move(terms[1]);
+    // 3. Create result
+    try {
+      switch (op) {
+        case KnownOp::LT:
+          ctx.result = Expr::Lt(std::move(lhs), std::move(rhs));
+          return;
+        case KnownOp::LE:
+          ctx.result = Expr::Le(std::move(lhs), std::move(rhs));
+          return;
+        case KnownOp::GT:
+          ctx.result = Expr::Gt(std::move(lhs), std::move(rhs));
+          return;
+        case KnownOp::GE:
+          ctx.result = Expr::Ge(std::move(lhs), std::move(rhs));
+          return;
+        case KnownOp::EQ:
+          ctx.result = Expr::Eq(std::move(lhs), std::move(rhs));
+          return;
+        case KnownOp::NEQ:
+          ctx.result = Expr::Neq(std::move(lhs), std::move(rhs));
+          return;
+        default:
+          utils::unreachable();
+      }
+    } catch (const std::invalid_argument& e) { throw peg::parse_error(e.what(), in); }
+  }
+
+  template <typename ActionInput>
+  static void handle_unary(const ActionInput& in, TermContext& ctx, KnownOp op) {
+    // 1. Check if we have 1 term.
+    if (ctx.terms.size() != 1) {
+      throw peg::parse_error(
+          fmt::format("Unary operation expects 1 argument, got {}", ctx.terms.size()),
+          in);
+    }
+    // 2. Load the arg. Clear `terms`.
+    //    Load the options.
+    auto terms  = std::move(ctx.terms);
+    ExprPtr arg = std::move(terms[0]);
+    auto attrs  = std::move(ctx.attributes);
+    // 2.1 Can't have any intervals here
+    if (ctx.interval != nullptr) {
+      throw peg::parse_error(
+          "Operation is not temporal an doesn't support Intervals", in);
+    }
+    // 3. Create result
+    try {
+      switch (op) {
+        case KnownOp::NOT:
+          ctx.result = Expr::Not(std::move(arg));
+          return;
+        case KnownOp::NEXT:
+          ctx.result = Expr::Next(std::move(arg));
+          return;
+        case KnownOp::PREV:
+          ctx.result = Expr::Previous(std::move(arg));
+          return;
+        default:
+          utils::unreachable();
+      }
+    } catch (const std::invalid_argument& e) { throw peg::parse_error(e.what(), in); }
+  }
+
+  template <typename ActionInput>
+  static void handle_binary(const ActionInput& in, TermContext& ctx, KnownOp op) {
+    // 1. Chck if we have exactly 2 terms
+    if (ctx.terms.size() == 2) {
+      throw peg::parse_error(
+          fmt::format(
+              "Binary operation expects exactly 2 arguments, got {}", ctx.terms.size()),
+          in);
+    }
+    // 2. Load the args. (and the options)
+    ExprPtr arg0 = std::move(ctx.terms[0]);
+    ExprPtr arg1 = std::move(ctx.terms[1]);
+    // 2.1 Can't have any intervals here
+    if (ctx.interval != nullptr) {
+      throw peg::parse_error(
+          "Operation is not temporal an doesn't support Intervals", in);
+    }
+    // 3. Create the result
+    try {
+      switch (op) {
+        case KnownOp::IMPLIES:
+          ctx.result = Expr::Implies(arg0, arg1);
+          return;
+        case KnownOp::IFF:
+          ctx.result = Expr::Iff(arg0, arg1);
+          return;
+        case KnownOp::XOR:
+          ctx.result = Expr::Xor(arg0, arg1);
+          return;
+        case KnownOp::SUB:
+          ctx.result = Expr::Subtract(arg0, arg1);
+          return;
+        case KnownOp::DIV:
+          ctx.result = Expr::Div(arg0, arg1);
+          return;
+        default:
+          utils::unreachable();
+      }
+    } catch (const std::invalid_argument& e) { throw peg::parse_error(e.what(), in); }
+  }
+
+  template <typename ActionInput>
+  static void handle_nary(const ActionInput& in, TermContext& ctx, KnownOp op) {
+    // 1. Check if we have at least 2 terms.
+    if (ctx.terms.size() < 2) {
+      throw peg::parse_error(
+          fmt::format(
+              "N-ary operation expects at least 2 arguments, got {}", ctx.terms.size()),
+          in);
+    }
+    // 2. Load the args
+    auto args = std::move(ctx.terms);
+    // 2.1 Can't have any intervals here
+    if (ctx.interval != nullptr) {
+      throw peg::parse_error(
+          "Operation is not temporal an doesn't support Intervals", in);
+    }
+    // 3. Create result
+    try {
+      switch (op) {
+        case KnownOp::AND:
+          ctx.result = Expr::And(std::move(args));
+          return;
+        case KnownOp::OR:
+          ctx.result = Expr::Or(std::move(args));
+          return;
+        case KnownOp::ADD:
+          ctx.result = Expr::Add(std::move(args));
+          return;
+        case KnownOp::MUL:
+          ctx.result = Expr::Mul(std::move(args));
+          return;
+        default:
+          utils::unreachable();
+      }
+    } catch (const std::invalid_argument& e) { throw peg::parse_error(e.what(), in); }
+  }
+
+  template <typename ActionInput>
+  static void
+  handle_temporal_unary(const ActionInput& in, TermContext& state, KnownOp op) {
+    // 1. Check if we have at least 2 terms.
+    if (state.terms.size() == 1) {
+      throw peg::parse_error(
+          fmt::format(
+              "Temporal Unary operation expects exactly 1 argument, got {}",
+              state.terms.size()),
+          in);
+    }
+    // 2. Load the args
+    auto terms    = std::move(state.terms);
+    ExprPtr arg   = std::move(terms[0]);
+    auto interval = std::move(state.interval);
+
+    // 3. Create result
+    try {
+      switch (op) {
+        case KnownOp::EVENTUALLY:
+          state.result = Expr::Eventually(std::move(arg), std::move(interval));
+          return;
+        case KnownOp::ONCE:
+          state.result = Expr::Once(std::move(arg), std::move(interval));
+          return;
+        case KnownOp::ALWAYS:
+          state.result = Expr::Always(std::move(arg), std::move(interval));
+          return;
+        case KnownOp::HISTORICALLY:
+          state.result = Expr::Historically(std::move(arg), std::move(interval));
+          return;
+        default:
+          utils::unreachable();
+      }
+    } catch (const std::invalid_argument& e) { throw peg::parse_error(e.what(), in); }
+  }
+
+  template <typename ActionInput>
+  static void
+  handle_temporal_binary(const ActionInput& in, TermContext& state, KnownOp op) {
+    // 1. Check if we have 2 terms
+    if (state.terms.size() == 2) {
+      throw peg::parse_error(
+          fmt::format(
+              "Temporal Binary operation expects exactly 2 argument, got {}",
+              state.terms.size()),
+          in);
+    }
+    // 2. Load the args
+    auto terms    = std::move(state.terms);
+    ExprPtr arg0  = std::move(terms[0]);
+    ExprPtr arg1  = std::move(terms[1]);
+    auto interval = std::move(state.interval);
+
+    // 3. Create result
+    switch (op) {
+      case KnownOp::UNTIL:
+        state.result =
+            Expr::Until(std::move(arg0), std::move(arg1), std::move(interval));
+        return;
+      case KnownOp::SINCE:
+        state.result =
+            Expr::Since(std::move(arg0), std::move(arg1), std::move(interval));
+        return;
+      default:
+        utils::unreachable();
+    }
+  }
+
+  template <typename ActionInput>
+  static void apply(const ActionInput& in, GlobalContext&, TermContext& state) {
+    utils::assert_(
+        state.operation.has_value(), "Expected a symbol for the function operation");
+    utils::assert_(state.terms.size() >= 1, "Expected at least 1 Term");
+
+    std::string op_str        = remove_opt_quick(state.operation);
+    std::optional<KnownOp> op = lookup(op_str);
+
+    if (!op.has_value()) {
+      auto options = std::set<ast::Attribute, ast::Attribute::KeyCompare>{
+          state.attributes.begin(), state.attributes.end()};
+      try {
+        state.result = Expr::Function(
+            ast::FnType::Custom, std::move(state.terms), std::move(options));
+      } catch (const std::invalid_argument& e) { throw peg::parse_error(e.what(), in); }
+      return;
+    }
+
+    switch (*op) {
+      // Predicates
+      case KnownOp::LT:
+      case KnownOp::LE:
+      case KnownOp::GT:
+      case KnownOp::GE:
+      case KnownOp::EQ:
+      case KnownOp::NEQ:
+        handle_predicate(in, state, *op);
+        break;
+      // Unary ops
+      case KnownOp::NOT:
+      case KnownOp::NEXT:
+      case KnownOp::PREV:
+        handle_unary(in, state, *op);
+        break;
+      // Binary operations
+      case KnownOp::IMPLIES:
+      case KnownOp::IFF:
+      case KnownOp::XOR:
+      case KnownOp::SUB:
+      case KnownOp::DIV:
+        handle_binary(in, state, *op);
+        break;
+      // Nary operations
+      case KnownOp::AND:
+      case KnownOp::OR:
+      case KnownOp::ADD:
+      case KnownOp::MUL:
+        handle_nary(in, state, *op);
+        break;
+      // Temporal unary operations.
+      case KnownOp::EVENTUALLY:
+      case KnownOp::ONCE:
+      case KnownOp::ALWAYS:
+      case KnownOp::HISTORICALLY:
+        handle_temporal_unary(in, state, *op);
+        break;
+      // Temporal binary operations.
+      case KnownOp::UNTIL:
+      case KnownOp::SINCE:
+        handle_temporal_binary(in, state, *op);
+    }
+
+    // 4. Clear the attributes and interval.
+    state.attributes.clear();
+    state.interval.reset();
+  }
+};
+
+template <>
+struct action<gm::CmdSetOption> {
+  static void apply0(GlobalContext& global_ctx, TermContext& ctx) {
+    utils::assert_(!ctx.attributes.empty(), "Expected at least 1 option");
+    auto attrs          = std::move(ctx.attributes);
+    global_ctx.settings = std::set<ast::Attribute, ast::Attribute::KeyCompare>{
+        attrs.begin(), attrs.end()};
+  }
+};
+
+template <>
+struct action<gm::CmdDefineFormula> {
+  static void apply0(GlobalContext& global_ctx, TermContext& ctx) {
+    utils::assert_(
+        ctx.identifier.has_value(), "Expected exactly 1 formula name identifier");
+    utils::assert_(ctx.terms.size() == 1, "Expected exactly 1 expression argument");
+
+    auto terms     = std::move(ctx.terms);
+    std::string id = remove_opt_quick(ctx.identifier);
+
+    auto expr = std::move(terms[0]);
+
+    global_ctx.defined_formulas[id] = std::move(expr);
+  }
+};
+
+template <>
+struct action<gm::valid_commands> {
+  template <
+      typename Rule,
+      peg::apply_mode A,
+      peg::rewind_mode M,
+      template <typename...>
+      class Action,
+      template <typename...>
+      class Control,
+      typename ParseInput>
+  static bool match(ParseInput& in, GlobalContext& global_state, TermContext&) {
+    // We create a new local state for each top-level command. This way, we don't have
+    // any pollution of scopes between commands (due to dev error).
+    TermContext state{};
+    state.level = 0;
+
+    return tao::pegtl::match<Rule, A, M, Action, Control>(in, global_state, state);
+  }
+
+  static void apply0(GlobalContext&, TermContext&) {
+    // Kept empty to satisfy PEGTL
+  }
+};
+
+} // namespace argus::parser::actions
+
+#endif /* end of include guard: ARGUS_PARSER_ACTIONS_HPP */

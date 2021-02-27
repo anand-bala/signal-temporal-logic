@@ -38,23 +38,32 @@ struct Function {
 
   std::set<Attribute, Attribute::KeyCompare> attrs;
 
+  Function(
+      Type op,
+      std::optional<std::string> op_str,
+      std::vector<ExprPtr> operands,
+      std::set<Attribute, Attribute::KeyCompare> attributes);
+
   Function(Type op, std::vector<ExprPtr> operands) :
-      fn{op}, args{std::move(operands)}, attrs{} {}
+      Function{op, std::nullopt, std::move(operands), {}} {}
 
   Function(
       Type op,
       std::vector<ExprPtr> operands,
       std::set<Attribute, Attribute::KeyCompare> attributes) :
-      fn{op}, args{std::move(operands)}, attrs{std::move(attributes)} {}
+      Function{op, std::nullopt, std::move(operands), std::move(attributes)} {}
 
   Function(
       std::string op,
       std::vector<ExprPtr> operands,
       std::set<Attribute, Attribute::KeyCompare> attributes) :
-      fn{Type::Custom},
-      custom_fn{std::move(op)},
-      args{std::move(operands)},
-      attrs{std::move(attributes)} {}
+      Function{
+          Type::Custom,
+          std::move(op),
+          std::move(operands),
+          std::move(attributes)} {}
+
+  [[nodiscard]] std::string to_string() const;
 };
 
 } // namespace ARGUS_AST_NS

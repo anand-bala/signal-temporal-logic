@@ -15,8 +15,6 @@
 
 namespace ARGUS_AST_NS {
 
-using PrimitiveTypes = std::variant<std::string, double, long long int, unsigned long long int, bool>;
-
 /// @brief A constant in the AST.
 ///
 /// An AST type that wraps around `string`, `double`, `int`, and `bool` to encode all
@@ -51,6 +49,20 @@ struct Constant : PrimitiveTypes {
   [[nodiscard]] constexpr bool is_string() const {
     return std::holds_alternative<std::string>(*this);
   }
+
+  [[nodiscard]] constexpr bool is_nonnegative() const {
+    if (is_unsigned()) {
+      return true;
+    } else if (is_integer()) {
+      return std::get<long long int>(*this) >= 0;
+    } else if (is_real()) {
+      return std::get<double>(*this) >= 0.0;
+    } else {
+      return false;
+    }
+  }
+
+  [[nodiscard]] std::string to_string() const;
 };
 
 /// @brief A typed variable.
@@ -72,9 +84,7 @@ struct Variable {
   Scope scope;
 
   Variable(std::string name_arg, Type type_arg, Scope scope_arg = Scope::Input) :
-      name{std::move(name_arg)},
-      type{type_arg},
-      scope{scope_arg} {};
+      name{std::move(name_arg)}, type{type_arg}, scope{scope_arg} {};
 
   /// Check if the variable is a boolean.
   [[nodiscard]] constexpr bool is_bool() const {
@@ -106,7 +116,7 @@ struct Variable {
     return scope == Scope::Output;
   }
 
-  /// Check if the variable is an output signal.
+  [[nodiscard]] std::string to_string() const;
 };
 
 /// @brief A typed parameter AST node
@@ -122,9 +132,7 @@ struct Parameter {
   Type type;
 
   Parameter(std::string name_arg, Type type_arg) :
-      name{std::move(name_arg)},
-      type{type_arg} {};
-
+      name{std::move(name_arg)}, type{type_arg} {};
 
   /// Check if the parameter is a boolean.
   [[nodiscard]] constexpr bool is_bool() const {
@@ -140,8 +148,10 @@ struct Parameter {
   [[nodiscard]] constexpr bool is_integer() const {
     return type == Type::Int;
   }
+
+  [[nodiscard]] std::string to_string() const;
 };
 
-}; // namespace ARGUS_AST_NS
+} // namespace ARGUS_AST_NS
 
 #endif /* end of include guard: ARGUS_AST_ATOMS_HPP */
