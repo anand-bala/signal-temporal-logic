@@ -1,27 +1,33 @@
+if(NOT ENABLE_TESTING)
+  return()
+endif()
+
 message(STATUS "Building Tests in ${CMAKE_CURRENT_LIST_DIR}")
 
-function(add_test_executable TARGET)
-  add_executable(${TARGET} ${ARGN})
-  target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-  target_link_libraries(${TARGET} PUBLIC signaltl::signaltl Catch2::Catch2)
-  set_default_compile_options(${TARGET})
-  add_coverage_flags(${TARGET})
-  catch_discover_tests(${TARGET})
-endfunction()
-
-add_test_executable(
-  signaltl_tests signaltl_tests.cc test_append_error.cc test_signals.cc
+add_executable(
+  argus_tests
+  test_main.cc
+  ast/test_structure.cc
+  parser/test_parsing.cc
+  parser/test_grammar.cc
+  signals/test_signals.cc
+  # signaltl_tests.cc
+  # test_append_error.cc
+  # test_parser.cc
+  # test_signals.cc
+  utils/test_visit.cc
+  custom_generators.hpp
 )
-
-if(BUILD_PARSER)
-  add_test_executable(parser_tests signaltl_tests.cc test_parser.cc)
-
-  # HACK(anand): Hard coding the path to the directory with examples so that
-  # Catch2 can load it. I am not sure how to do it otherwise...
-  #
-  # NOTE: The double quotes must be escaped correctly.
-  set_target_properties(
-    parser_tests PROPERTIES COMPILE_DEFINITIONS
-                            "SIGNALTL_TESTS_DIR=\"${CMAKE_CURRENT_LIST_DIR}\""
-  )
-endif()
+target_include_directories(
+  argus_tests
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR} # Needed for local stuff
+          ${PROJECT_SOURCE_DIR}/src # Needed for private sources like utils
+)
+target_link_libraries(
+  argus_tests
+  PUBLIC Catch2::Catch2 argus
+  PRIVATE taocpp::pegtl magic_enum::magic_enum
+)
+set_default_compile_options(argus_tests)
+add_coverage_flags(argus_tests)
+catch_discover_tests(argus_tests)

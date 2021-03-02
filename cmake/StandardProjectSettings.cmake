@@ -1,4 +1,5 @@
 include(CMakeParseArguments)
+include(CheckCXXCompilerFlag)
 
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -38,6 +39,19 @@ else()
   message(WARNING "IPO is not supported: ${output}")
 endif()
 
+# Use LLD for better linking messages and speed
+# option(ARGUS_ENABLE_LLD "Try to use the lld linker" ON)
+# if(ARGUS_ENABLE_LLD AND ARGUS_MASTER_PROJECT)
+#   # Check if the compiler accepts -fuse-ld=lld flag. (Only on Clang and GCC
+#   # AFAIK)
+#   check_cxx_compiler_flag("-fuse-ld=lld" CXX_SUPPORTS_LLD)
+#   if(CXX_SUPPORTS_LLD)
+#     list(APPEND CMAKE_EXE_LINKER_FLAGS "-fuse-ld=lld")
+#     list(APPEND CMAKE_SHARED_LINKER_FLAGS "-fuse-ld=lld")
+#     # list(APPEND CMAKE_STATIC_LINKER_FLAGS "-fuse-ld=lld")
+#   endif()
+# endif()
+
 # Set some default options for target
 function(set_default_compile_options target)
   if(PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -71,19 +85,19 @@ function(set_std_filesystem_options target)
     set(std_fs_no_lib_needed TRUE)
   else()
     try_compile(
-      std_fs_no_lib_needed ${CMAKE_CURRENT_BINARY_DIR} SOURCES
-      ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
+      std_fs_no_lib_needed ${CMAKE_CURRENT_BINARY_DIR}
+      SOURCES ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
       COMPILE_DEFINITIONS -std=c++17
     )
     try_compile(
-      std_fs_needs_stdcxxfs ${CMAKE_CURRENT_BINARY_DIR} SOURCES
-      ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
+      std_fs_needs_stdcxxfs ${CMAKE_CURRENT_BINARY_DIR}
+      SOURCES ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
       COMPILE_DEFINITIONS -std=c++17
       LINK_LIBRARIES stdc++fs
     )
     try_compile(
-      std_fs_needs_cxxfs ${CMAKE_CURRENT_BINARY_DIR} SOURCES
-      ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
+      std_fs_needs_cxxfs ${CMAKE_CURRENT_BINARY_DIR}
+      SOURCES ${PROJECT_SOURCE_DIR}/cmake/test_std_filesystem.cc
       COMPILE_DEFINITIONS -std=c++17
       LINK_LIBRARIES c++fs
     )

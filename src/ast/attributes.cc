@@ -1,8 +1,7 @@
 #include "argus/ast/attributes.hpp"
-#include "utils/visit.hpp"
+#include "utils/visit.hpp" // for overloaded, visit
 
-#include <fmt/format.h>
-#include <magic_enum.hpp>
+#include <fmt/format.h> // for format, to_string, join
 
 namespace argus::ast::details {
 

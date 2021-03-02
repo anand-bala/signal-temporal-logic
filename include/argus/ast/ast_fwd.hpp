@@ -9,14 +9,12 @@
 #include <string>
 #include <variant>
 
-#define ARGUS_AST_NS argus::ast::details
-
 namespace argus {
 struct Expr;
 using ExprPtr = std::shared_ptr<Expr>;
 } // namespace argus
 
-namespace ARGUS_AST_NS {
+namespace argus::ast::details {
 
 using PrimitiveTypes =
     std::variant<std::string, double, long long int, unsigned long long int, bool>;
@@ -32,6 +30,6 @@ struct TemporalOp;
 
 struct Interval;
 struct Attribute;
-} // namespace ARGUS_AST_NS
+} // namespace argus::ast::details
 
 #endif /* end of include guard: ARGUS_AST_FORWARD_DECL */

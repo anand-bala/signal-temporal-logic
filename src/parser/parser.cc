@@ -1,17 +1,16 @@
 #include "argus/parser.hpp"
+#include "actions.hpp"        // for ConstTypes, GlobalContext
+#include "error_messages.hpp" // for control
+#include "grammar.hpp"        // for grammar
 
-#include "utils/visit.hpp"
-
-#include "actions.hpp"
-#include "error_messages.hpp"
-#include "grammar.hpp"
-
-#include <tao/pegtl.hpp>                    // for pegtl
-#include <tao/pegtl/contrib/parse_tree.hpp> // for basic_node<>::children_t
+#include <tao/pegtl.hpp> // for pegtl, parse, parse_error, position
 
 #include <algorithm> // for max
-#include <iostream>
-#include <utility> // for move
+#include <iomanip>   // for operator<<, setw
+#include <iostream>  // for operator<<, endl, basic...
+#include <stdexcept> // for invalid_argument
+#include <utility>   // for move
+#include <vector>    // for vector
 
 /// Private namespace for the parser core.
 namespace {
@@ -19,6 +18,7 @@ namespace {
 namespace grammar = argus::grammar;
 namespace parser  = argus::parser;
 namespace actions = argus::parser::actions;
+namespace control = argus::parser::control;
 namespace peg     = tao::pegtl;
 
 /// This function takes in some PEGTL compliant input and outputs a concrete context.
@@ -33,7 +33,7 @@ std::unique_ptr<argus::Context> _parse(ParseInput&& input) {
   top_local_state.level = 0;
 
   try {
-    peg::parse<grammar::Specification, actions::action>(
+    peg::parse<grammar::Specification, actions::action, control::control>(
         input, global_state, top_local_state);
   } catch (const peg::parse_error& e) {
     const auto p = e.positions().front();

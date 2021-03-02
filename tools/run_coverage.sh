@@ -15,6 +15,10 @@ msg() {
   echo >&2 -e "${1-}"
 }
 
+info() {
+  msg "${GREEN}${1-}${NOFORMAT}"
+}
+
 relpath(){
   python3 -c "import os.path; print(os.path.relpath('$1','${2:-$PWD}'))"
 }
@@ -22,13 +26,14 @@ relpath(){
 setup_colors
 
 cd $project_dir
-coverage_file="${project_dir}/coverage.info"
+coverage_file=$(relpath ${project_dir}/coverage.info)
 proj_relpath=$(relpath $project_dir)
 src_relpath=$(relpath $project_dir/src)
 
-msg "${GREEN}Capturing lcov data and saving to:${NOFORMAT} ${coverage_file}"
+info "${GREEN}"
+info "Capturing lcov data and saving to:${NOFORMAT} ${coverage_file}"
 lcov --capture --directory . --output-file $coverage_file
-msg "-- ${YELLOW}Extracting coverage information for directory:${NOFORMAT} ${src_relpath}"
+info "-- Extracting coverage information for directory:${NOFORMAT} ${src_relpath}"
 lcov --extract $coverage_file "${project_dir}/src/*" --output-file $coverage_file
 lcov --list $coverage_file
 

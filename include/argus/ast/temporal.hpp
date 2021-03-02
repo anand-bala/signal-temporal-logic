@@ -14,7 +14,7 @@
 
 #include "argus/ast/ast_fwd.hpp"
 
-namespace ARGUS_AST_NS {
+namespace argus::ast::details {
 
 /// @brief Interval type.
 ///
@@ -61,6 +61,6 @@ struct TemporalOp {
 
   [[nodiscard]] std::string to_string() const;
 };
-} // namespace ARGUS_AST_NS
+} // namespace argus::ast::details
 
 #endif /* end of include guard: PERCEMON_AST_DETAILS_TEMPORAL */

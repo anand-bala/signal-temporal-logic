@@ -5,14 +5,12 @@
 #ifndef ARGUS_AST_ATTRIBUTES
 #define ARGUS_AST_ATTRIBUTES
 
-#include <memory>
-#include <string>
-#include <variant>
-#include <vector>
+#include "argus/ast/ast_fwd.hpp" // for PrimitiveTypes
 
-#include "argus/ast/ast_fwd.hpp"
+#include <string> // for operator<, string
+#include <vector> // for vector
 
-namespace ARGUS_AST_NS {
+namespace argus::ast::details {
 
 struct Attribute {
   std::string key;
@@ -35,6 +33,6 @@ struct Attribute {
   [[nodiscard]] std::string to_string() const;
 };
 
-} // namespace ARGUS_AST_NS
+} // namespace argus::ast::details
 
 #endif /* end of include guard: ARGUS_AST_ATTRIBUTES */

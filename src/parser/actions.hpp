@@ -88,7 +88,7 @@ struct TermContext {
   /// within the action for the Term rule, we move the result onto the vector
   /// `terms` to allow for the parent expression to easily combine it with
   /// their list of `terms`.
-  std::unique_ptr<argus::Expr> result;
+  argus::ExprPtr result;
   /// A list of Terms parsed in the local context. For example, for an N-ary
   /// operation like And and Or, we expect the list to have at least 2 valid
   /// `ast::Expr`. This is populated when a local context is popped off the

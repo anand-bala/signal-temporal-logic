@@ -1,7 +1,10 @@
-#include "argus/ast/expression.hpp"
-#include "utils/visit.hpp"
+#include "argus/ast/expression.hpp" // for Expr, ExprPtr, Parameter, Variable, Constant
+#include "utils/visit.hpp"          // for overloaded, visit
 
-#include <fmt/format.h>
+#include <string>  // for string, basic_string
+#include <utility> // for move
+
+#include <fmt/format.h> // for format
 
 namespace argus {
 
@@ -28,16 +31,15 @@ std::string Parameter::to_string() const {
 
 namespace nodes = ast::details;
 
-template <typename CType>
-std::unique_ptr<Expr> Expr::Constant(CType constant) {
-  return make_expr(nodes::Constant{constant});
+ExprPtr Expr::Constant(nodes::PrimitiveTypes constant) {
+  return make_expr(nodes::Constant{std::move(constant)});
 }
 
-std::unique_ptr<Expr> Expr::Variable(std::string name, ast::VarType type) {
+ExprPtr Expr::Variable(std::string name, ast::VarType type) {
   return make_expr(nodes::Variable{std::move(name), type});
 }
 
-std::unique_ptr<Expr> Expr::Parameter(std::string name, ast::ParamType type) {
+ExprPtr Expr::Parameter(std::string name, ast::ParamType type) {
   return make_expr(nodes::Parameter{std::move(name), type});
 }
 

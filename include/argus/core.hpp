@@ -4,8 +4,8 @@
 /// We primarily use this file to export the contents of other AST files.
 
 #pragma once
-#ifndef ARGUS_AST_HPP
-#define ARGUS_AST_HPP
+#ifndef ARGUS_CORE_HPP
+#define ARGUS_CORE_HPP
 
 // IWYU pragma: begin_exports
 #include "argus/ast/atoms.hpp"
@@ -17,4 +17,4 @@
 #include "argus/ast/manipulate.hpp"
 // IWYU pragma: end_exports
 
-#endif /* end of include guard: ARGUS_AST_HPP */
+#endif /* end of include guard: ARGUS_CORE_HPP */

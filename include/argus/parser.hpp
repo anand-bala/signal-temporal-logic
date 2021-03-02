@@ -9,17 +9,15 @@
 #ifndef ARGUS_PARSER_HPP
 #define ARGUS_PARSER_HPP
 
-#include <cstddef>
-#include <map>
-#include <memory>
-#include <set>
-#include <string>
-#include <string_view>
-
-#include "argus/algos/monitor_fwd.hpp"
-#include "argus/ast/ast_fwd.hpp"
-#include "argus/ast/attributes.hpp"
+#include "argus/ast/ast_fwd.hpp"    // for ExprPtr
+#include "argus/ast/attributes.hpp" // for Attribute::KeyCompare, Attribute
 #include "argus/internal/filesystem.hpp"
+
+#include <map>         // for map
+#include <memory>      // for unique_ptr
+#include <set>         // for set
+#include <string>      // for string
+#include <string_view> // for string_view
 
 namespace argus {
 
@@ -74,25 +72,9 @@ struct Context {
   /// List of  monitors, keyed by their corresponding identifiers.
   std::map<std::string, ExprPtr> monitors;
   /// List of settings
-  std::set<ARGUS_AST_NS::Attribute, ARGUS_AST_NS::Attribute::KeyCompare> settings;
+  std::set<argus::ast::details::Attribute, argus::ast::details::Attribute::KeyCompare>
+      settings;
 };
-
-// LCOV_EXCL_START
-namespace grammar::internal {
-
-/// **INTERNAL USE ONLY**
-///
-/// This is used to call `tao::pagtl::contrib::analyze`, a function that
-/// analyzes the parser grammar for construction errors like unresolved cycles,
-/// etc. Used in the tests to check the grammar and is useful only for
-/// developers of this library.
-size_t analyze(int verbose = 1);
-
-bool trace_from_file(const fs::path&);
-
-} // namespace grammar::internal
-
-// LCOV_EXCL_STOP
 
 } // namespace argus
 

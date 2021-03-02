@@ -24,7 +24,7 @@
 #include "argus/ast/ast_fwd.hpp"
 #include "argus/ast/attributes.hpp"
 
-namespace ARGUS_AST_NS {
+namespace argus::ast::details {
 
 /// @brief Functions on `Constant`s, `Variable`s, and other `Function`s.
 ///
@@ -66,6 +66,6 @@ struct Function {
   [[nodiscard]] std::string to_string() const;
 };
 
-} // namespace ARGUS_AST_NS
+} // namespace argus::ast::details
 
 #endif /* end of include guard: ARGUS_AST_DETAILS_FUNCTIONS */

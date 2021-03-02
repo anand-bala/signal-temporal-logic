@@ -1,17 +1,18 @@
-#include "argus/ast/expression.hpp"
-#include "utils/static_analysis_helpers.hpp"
-#include "utils/visit.hpp"
+#include "argus/ast/expression.hpp"          // for ExprPtr, Attribute, Function
+#include "utils/static_analysis_helpers.hpp" // for assert_
+#include "utils/visit.hpp"                   // for overloaded, visit
 
-#include <map>
-#include <memory>
-#include <optional>
-#include <set>
-#include <stdexcept>
-#include <string>
-#include <vector>
+#include <fmt/format.h>   // for format, join
+#include <magic_enum.hpp> // for enum_name, enum_cast
 
-#include <fmt/format.h>
-#include <magic_enum.hpp>
+#include <memory>      // for allocator, operator==
+#include <optional>    // for optional
+#include <set>         // for set
+#include <stdexcept>   // for invalid_argument
+#include <string>      // for string, basic_string
+#include <string_view> // for string_view
+#include <utility>     // for move
+#include <vector>      // for vector
 
 namespace argus {
 
@@ -100,14 +101,15 @@ std::string Function::to_string() const {
 
 } // namespace ast::details
 
-std::unique_ptr<Expr> Expr::Function(
+ExprPtr Expr::Function(
     ast::FnType op,
     std::vector<ExprPtr> args,
     std::set<ast::Attribute, ast::Attribute::KeyCompare> attrs) {
-  return make_expr(ARGUS_AST_NS::Function{op, std::move(args), std::move(attrs)});
+  return make_expr(
+      argus::ast::details::Function{op, std::move(args), std::move(attrs)});
 }
 
-std::unique_ptr<Expr> Expr::Function(
+ExprPtr Expr::Function(
     std::string op,
     std::vector<ExprPtr> args,
     std::set<ast::Attribute, ast::Attribute::KeyCompare> attrs) {
@@ -118,22 +120,22 @@ std::unique_ptr<Expr> Expr::Function(
     }
   }
   return make_expr(
-      ARGUS_AST_NS::Function{std::move(op), std::move(args), std::move(attrs)});
+      argus::ast::details::Function{std::move(op), std::move(args), std::move(attrs)});
 }
 
-std::unique_ptr<Expr> Expr::Add(std::vector<ExprPtr> args) {
+ExprPtr Expr::Add(std::vector<ExprPtr> args) {
   return Function(ast::FnType::Add, std::move(args), {});
 }
 
-std::unique_ptr<Expr> Expr::Mul(std::vector<ExprPtr> args) {
+ExprPtr Expr::Mul(std::vector<ExprPtr> args) {
   return Function(ast::FnType::Mul, std::move(args), {});
 }
 
-std::unique_ptr<Expr> Expr::Subtract(ExprPtr lhs, ExprPtr rhs) {
+ExprPtr Expr::Subtract(ExprPtr lhs, ExprPtr rhs) {
   return Function(ast::FnType::Sub, {std::move(lhs), std::move(rhs)}, {});
 }
 
-std::unique_ptr<Expr> Expr::Div(ExprPtr num, ExprPtr den) {
+ExprPtr Expr::Div(ExprPtr num, ExprPtr den) {
   return Function(ast::FnType::Div, {std::move(num), std::move(den)}, {});
 }
 

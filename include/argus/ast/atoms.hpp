@@ -9,11 +9,12 @@
 
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <variant>
 
 #include "argus/ast/ast_fwd.hpp"
 
-namespace ARGUS_AST_NS {
+namespace argus::ast::details {
 
 /// @brief A constant in the AST.
 ///
@@ -24,6 +25,23 @@ namespace ARGUS_AST_NS {
 /// For example, in STQL, the string "CTIME" and "CFRAME" will refer to the
 struct Constant : PrimitiveTypes {
   using PrimitiveTypes::variant;
+
+  Constant()                = default;
+  Constant(Constant&&)      = default;
+  Constant(const Constant&) = default;
+
+  Constant(PrimitiveTypes constant) : PrimitiveTypes{std::move(constant)} {}
+  template <typename ConstantType>
+  Constant(ConstantType constant) : PrimitiveTypes{std::move(constant)} {
+    static_assert(
+        std::disjunction_v<
+            std::is_same_v<ConstantType, std::string>,
+            std::is_same_v<ConstantType, bool>,
+            std::is_same_v<ConstantType, double>,
+            std::is_same_v<ConstantType, long long int>,
+            std::is_same_v<ConstantType, unsigned long long int>>,
+        "Attempting to initialize constant with unsupported type");
+  }
 
   /// Convenience method to check if the constant is a `bool`.
   [[nodiscard]] constexpr bool is_bool() const {
@@ -152,6 +170,6 @@ struct Parameter {
   [[nodiscard]] std::string to_string() const;
 };
 
-} // namespace ARGUS_AST_NS
+} // namespace argus::ast::details
 
-#endif /* end of include guard: ARGUS_AST_ATOMS_HPP */
+#endif

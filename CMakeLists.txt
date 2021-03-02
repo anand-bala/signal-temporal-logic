@@ -23,10 +23,10 @@ option(BUILD_EXAMPLES "Build the examples?" ${ARGUS_MASTER_PROJECT})
 
 option(ENABLE_CACHE "Enable cache if available" ${ARGUS_MASTER_PROJECT})
 option(ENABLE_TESTING "Build argus test suite?" ${ARGUS_MASTER_PROJECT})
-# Coverage needs to be explicitly turned on, but available only if Testing is
-# enabled.
+# Coverage is available only if Testing is enabled, and if it is, it is default
+# on
 cmake_dependent_option(
-  ENABLE_COVERAGE "Generate coverage information from test suite?" OFF
+  ENABLE_COVERAGE "Generate coverage information from test suite?" ON
   "ENABLE_TESTING" OFF
 )
 option(ENABLE_STATIC_ANALYSIS "Enable clang-tidy and include-what-you-use" OFF)
@@ -66,14 +66,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 # ##############################################################################
 
 set(argus_headers
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algorithms.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/algebraic_semantics.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/cumulative_semantics.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/filtering_semantics.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/monitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/monitor_fwd.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/robust_semantics.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/argus.hpp
+    # Core and AST
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/core.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/ast_fwd.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/atoms.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/attributes.hpp
@@ -83,14 +78,24 @@ set(argus_headers
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/propositional.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/signal.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/ast/temporal.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/automata/automaton.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/core.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/internal/filesystem.hpp
+    # Parser
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/parser.hpp
+    # Signals
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/signals.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/signals/base_signal.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/signals/pwc.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/signals/pwl.hpp
+    # Algorithms
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algorithms.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/algebraic_semantics.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/cumulative_semantics.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/filtering_semantics.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/monitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/monitor_fwd.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/algos/robust_semantics.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/automata/automaton.hpp
+    # Internal
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/argus/internal/filesystem.hpp
 )
 
 # Interface library for the header files. Useful for generating
@@ -153,17 +158,9 @@ add_subdirectory(src)
 
 # add_subdirectory(examples)
 
-set(_ARGUS_BUILD_THE_TESTS
-    OFF
-    CACHE INTERNAL "Easy option to build the tests"
-)
 if((ARGUS_MASTER_PROJECT AND ENABLE_TESTING) AND BUILD_TESTING)
-  set(_ARGUS_BUILD_THE_TESTS
-      ON
-      CACHE INTERNAL "Easy option to build the tests"
-  )
+  add_subdirectory(tests)
 endif()
-# add_subdirectory(tests)
 
 # ##############################################################################
 # Installation  #

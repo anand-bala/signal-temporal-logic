@@ -1,14 +1,22 @@
-#include "argus/ast/expression.hpp"
+#include "argus/ast/expression.hpp" // for Interval, TemporalOp, Expr, ExprPtr
+#include "utils/visit.hpp"          // for overloaded, visit
 
-#include "utils/static_analysis_helpers.hpp"
-#include "utils/visit.hpp"
+#include <cstddef>     // for size_t
+#include <limits>      // for numeric_limits
+#include <memory>      // for __shared_ptr_access, shared_ptr
+#include <stdexcept>   // for invalid_argument
+#include <string>      // for string
+#include <string_view> // for string_view
+#include <type_traits> // for is_arithmetic
+#include <utility>     // for move
+#include <variant>     // for holds_alternative, get
+#include <vector>      // for vector
 
-#include <fmt/format.h>
-#include <magic_enum.hpp>
-#include <range/v3/view.hpp>
-
-#include <limits>
-#include <stdexcept>
+#include <fmt/format.h>                // for format, join
+#include <magic_enum.hpp>              // for enum_name
+#include <range/v3/view/enumerate.hpp> // for enumerate, enumerate_fn
+#include <range/v3/view/view.hpp>      // for view_closure
+#include <range/v3/view/zip.hpp>       // for zip_view
 
 namespace argus {
 
@@ -105,8 +113,9 @@ TemporalOp::TemporalOp(
 
   // 2. Check argument type
   for (const auto& [idx, expr] : ranges::views::enumerate(args)) {
-    if (expr != nullptr) {
-      throw std::invalid_argument(fmt::format("Argument at position {} is null", idx));
+    if (expr == nullptr) {
+      throw std::invalid_argument(fmt::format(
+          "[{}] Argument at position {} is null", magic_enum::enum_name(op), idx));
     }
     bool is_valid = utils::visit(
         utils::overloaded{
@@ -161,83 +170,86 @@ std::string TemporalOp::to_string() const {
 }
 } // namespace ast::details
 
-std::unique_ptr<Expr> Expr::Next(ExprPtr arg) {
-  return make_expr(ARGUS_AST_NS::TemporalOp{ast::ModalOpType::Next, {std::move(arg)}});
-}
-
-std::unique_ptr<Expr> Expr::Previous(ExprPtr arg) {
+ExprPtr Expr::Next(ExprPtr arg) {
   return make_expr(
-      ARGUS_AST_NS::TemporalOp{ast::ModalOpType::Previous, {std::move(arg)}});
+      argus::ast::details::TemporalOp{ast::ModalOpType::Next, {std::move(arg)}});
 }
 
-std::unique_ptr<Expr> Expr::Eventually(ExprPtr arg) {
+ExprPtr Expr::Previous(ExprPtr arg) {
   return make_expr(
-      ARGUS_AST_NS::TemporalOp{ast::ModalOpType::Eventually, {std::move(arg)}});
+      argus::ast::details::TemporalOp{ast::ModalOpType::Previous, {std::move(arg)}});
 }
 
-std::unique_ptr<Expr>
-Expr::Eventually(ExprPtr arg, std::shared_ptr<ARGUS_AST_NS::Interval> interval) {
-  return make_expr(ARGUS_AST_NS::TemporalOp{
+ExprPtr Expr::Eventually(ExprPtr arg) {
+  return make_expr(
+      argus::ast::details::TemporalOp{ast::ModalOpType::Eventually, {std::move(arg)}});
+}
+
+ExprPtr
+Expr::Eventually(ExprPtr arg, std::shared_ptr<argus::ast::details::Interval> interval) {
+  return make_expr(argus::ast::details::TemporalOp{
       ast::ModalOpType::Eventually, {std::move(arg)}, std::move(interval)});
 }
 
-std::unique_ptr<Expr> Expr::Once(ExprPtr arg) {
-  return make_expr(ARGUS_AST_NS::TemporalOp{ast::ModalOpType::Once, {std::move(arg)}});
+ExprPtr Expr::Once(ExprPtr arg) {
+  return make_expr(
+      argus::ast::details::TemporalOp{ast::ModalOpType::Once, {std::move(arg)}});
 }
 
-std::unique_ptr<Expr>
-Expr::Once(ExprPtr arg, std::shared_ptr<ARGUS_AST_NS::Interval> interval) {
-  return make_expr(ARGUS_AST_NS::TemporalOp{
+ExprPtr
+Expr::Once(ExprPtr arg, std::shared_ptr<argus::ast::details::Interval> interval) {
+  return make_expr(argus::ast::details::TemporalOp{
       ast::ModalOpType::Once, {std::move(arg)}, std::move(interval)});
 }
 
-std::unique_ptr<Expr> Expr::Always(ExprPtr arg) {
+ExprPtr Expr::Always(ExprPtr arg) {
   return make_expr(
-      ARGUS_AST_NS::TemporalOp{ast::ModalOpType::Always, {std::move(arg)}});
+      argus::ast::details::TemporalOp{ast::ModalOpType::Always, {std::move(arg)}});
 }
 
-std::unique_ptr<Expr>
-Expr::Always(ExprPtr arg, std::shared_ptr<ARGUS_AST_NS::Interval> interval) {
-  return make_expr(ARGUS_AST_NS::TemporalOp{
+ExprPtr
+Expr::Always(ExprPtr arg, std::shared_ptr<argus::ast::details::Interval> interval) {
+  return make_expr(argus::ast::details::TemporalOp{
       ast::ModalOpType::Always, {std::move(arg)}, std::move(interval)});
 }
 
-std::unique_ptr<Expr> Expr::Historically(ExprPtr arg) {
-  return make_expr(
-      ARGUS_AST_NS::TemporalOp{ast::ModalOpType::Historically, {std::move(arg)}});
+ExprPtr Expr::Historically(ExprPtr arg) {
+  return make_expr(argus::ast::details::TemporalOp{
+      ast::ModalOpType::Historically, {std::move(arg)}});
 }
 
-std::unique_ptr<Expr>
-Expr::Historically(ExprPtr arg, std::shared_ptr<ARGUS_AST_NS::Interval> interval) {
-  return make_expr(ARGUS_AST_NS::TemporalOp{
+ExprPtr Expr::Historically(
+    ExprPtr arg,
+    std::shared_ptr<argus::ast::details::Interval> interval) {
+  return make_expr(argus::ast::details::TemporalOp{
       ast::ModalOpType::Historically, {std::move(arg)}, std::move(interval)});
 }
 
-std::unique_ptr<Expr> Expr::Until(ExprPtr arg1, ExprPtr arg2) {
-  return make_expr(ARGUS_AST_NS::TemporalOp{
+ExprPtr Expr::Until(ExprPtr arg1, ExprPtr arg2) {
+  return make_expr(argus::ast::details::TemporalOp{
       ast::ModalOpType::Until, {std::move(arg1), std::move(arg2)}});
 }
 
-std::unique_ptr<Expr> Expr::Until(
+ExprPtr Expr::Until(
     ExprPtr arg1,
     ExprPtr arg2,
-    std::shared_ptr<ARGUS_AST_NS::Interval> interval) {
-  return make_expr(ARGUS_AST_NS::TemporalOp{
+    std::shared_ptr<argus::ast::details::Interval> interval) {
+  return make_expr(argus::ast::details::TemporalOp{
       ast::ModalOpType::Until,
       {std::move(arg1), std::move(arg2)},
       std::move(interval)});
 }
 
-std::unique_ptr<Expr> Expr::Since(ExprPtr arg1, ExprPtr arg2) {
-  return make_expr(ARGUS_AST_NS::TemporalOp{
+ExprPtr Expr::Since(ExprPtr arg1, ExprPtr arg2) {
+  return make_expr(argus::ast::details::TemporalOp{
       ast::ModalOpType::Since, {std::move(arg1), std::move(arg2)}});
 }
 
-std::unique_ptr<Expr> Expr::Since(
+ExprPtr Expr::Since(
     ExprPtr arg1,
     ExprPtr arg2,
-    std::shared_ptr<ARGUS_AST_NS::Interval> interval) {
-  return make_expr(ARGUS_AST_NS::TemporalOp{
+    std::shared_ptr<argus::ast::details::Interval> interval) {
+  return make_expr(argus::ast::details::TemporalOp{
       ast::ModalOpType::Since,
       {std::move(arg1), std::move(arg2)},
       std::move(interval)});

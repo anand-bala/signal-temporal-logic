@@ -15,7 +15,7 @@
 
 #include "argus/ast/ast_fwd.hpp"
 
-namespace ARGUS_AST_NS {
+namespace argus::ast::details {
 
 /// @brief AST node for relational operations/predicates
 ///
@@ -49,6 +49,6 @@ struct LogicalOp {
   [[nodiscard]] std::string to_string() const;
 };
 
-} // namespace ARGUS_AST_NS
+} // namespace argus::ast::details
 
 #endif /* end of include guard: ARGUS_AST_DETAILS_PROPOSITIONAL */

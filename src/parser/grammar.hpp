@@ -13,6 +13,8 @@
 #ifndef ARGUS_GRAMMAR_HPP
 #define ARGUS_GRAMMAR_HPP
 
+#include "argus/internal/filesystem.hpp"
+
 #include <tao/pegtl.hpp> // IWYU pragma: keep
 
 /// @namsepace argus::grammar

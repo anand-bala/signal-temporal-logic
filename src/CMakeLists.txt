@@ -1,12 +1,12 @@
 # AST stuff
 add_argus_component(
   argusast
+  ast/atoms.cc
   ast/temporal.cc
+  ast/expression.cc
   ast/functions.cc
   ast/attributes.cc
-  ast/atoms.cc
   ast/propositional.cc
-  ast/expression.cc
 )
 target_link_libraries(
   argusast
@@ -27,10 +27,10 @@ target_link_libraries(
 )
 set_std_filesystem_options(argusparser)
 
-# Signals add_argus_component(argussignals signals/signal.cc)
-
 # Automata
-add_subdirectory(automata)
+add_argus_component(argusautomata automata/automaton.cc)
+
+# Signals add_argus_component(argussignals signals/signal.cc)
 
 # Algorithms
 add_subdirectory(algorithms)

@@ -1,13 +1,18 @@
-#include "argus/ast/expression.hpp"
+#include "argus/ast/expression.hpp" // for LogicalOp, PredicateOp, Expr, ExprPtr
+#include "utils/visit.hpp"          // for overloaded, visit
 
-#include "utils/static_analysis_helpers.hpp"
-#include "utils/visit.hpp"
+#include <fmt/format.h>                // for format, join
+#include <magic_enum.hpp>              // for enum_name
+#include <range/v3/view/enumerate.hpp> // for enumerate, enumerate_fn
+#include <range/v3/view/view.hpp>      // for view_closure
+#include <range/v3/view/zip.hpp>       // for zip_view
 
-#include <stdexcept>
-
-#include <fmt/format.h>
-#include <magic_enum.hpp>
-#include <range/v3/view.hpp>
+#include <memory>      // for operator==, __shared_ptr_access
+#include <stdexcept>   // for invalid_argument
+#include <string>      // for string
+#include <string_view> // for string_view
+#include <utility>     // for move
+#include <vector>      // for vector
 
 namespace argus {
 
@@ -107,8 +112,9 @@ LogicalOp::LogicalOp(Type operation, std::vector<ExprPtr> operands) :
 
   // 2. Check argument type
   for (const auto& [idx, expr] : ranges::views::enumerate(args)) {
-    if (expr != nullptr) {
-      throw std::invalid_argument(fmt::format("Argument at position {} is null", idx));
+    if (expr == nullptr) {
+      throw std::invalid_argument(fmt::format(
+          "[{}] Argument at position {} is null", magic_enum::enum_name(op), idx));
     }
     bool is_valid = utils::visit(
         utils::overloaded{
@@ -151,48 +157,48 @@ std::string LogicalOp::to_string() const {
 
 namespace nodes = ast::details;
 
-std::unique_ptr<Expr> Expr::Eq(ExprPtr lhs, ExprPtr rhs) {
+ExprPtr Expr::Eq(ExprPtr lhs, ExprPtr rhs) {
   return make_expr(nodes::PredicateOp{ast::CmpOp::EQ, std::move(lhs), std::move(rhs)});
 }
 
-std::unique_ptr<Expr> Expr::Neq(ExprPtr lhs, ExprPtr rhs) {
+ExprPtr Expr::Neq(ExprPtr lhs, ExprPtr rhs) {
   return make_expr(nodes::PredicateOp{ast::CmpOp::NE, std::move(lhs), std::move(rhs)});
 }
 
-std::unique_ptr<Expr> Expr::Lt(ExprPtr lhs, ExprPtr rhs) {
+ExprPtr Expr::Lt(ExprPtr lhs, ExprPtr rhs) {
   return make_expr(nodes::PredicateOp{ast::CmpOp::LT, std::move(lhs), std::move(rhs)});
 }
 
-std::unique_ptr<Expr> Expr::Le(ExprPtr lhs, ExprPtr rhs) {
+ExprPtr Expr::Le(ExprPtr lhs, ExprPtr rhs) {
   return make_expr(nodes::PredicateOp{ast::CmpOp::LE, std::move(lhs), std::move(rhs)});
 }
 
-std::unique_ptr<Expr> Expr::Gt(ExprPtr lhs, ExprPtr rhs) {
+ExprPtr Expr::Gt(ExprPtr lhs, ExprPtr rhs) {
   return make_expr(nodes::PredicateOp{ast::CmpOp::GT, std::move(lhs), std::move(rhs)});
 }
 
-std::unique_ptr<Expr> Expr::Ge(ExprPtr lhs, ExprPtr rhs) {
+ExprPtr Expr::Ge(ExprPtr lhs, ExprPtr rhs) {
   return make_expr(nodes::PredicateOp{ast::CmpOp::GE, std::move(lhs), std::move(rhs)});
 }
 
-std::unique_ptr<Expr> Expr::Not(ExprPtr arg) {
+ExprPtr Expr::Not(ExprPtr arg) {
   return make_expr(nodes::LogicalOp{ast::LogicOpType::Not, {std::move(arg)}});
 }
 
-std::unique_ptr<Expr> Expr::And(std::vector<ExprPtr> arg) {
+ExprPtr Expr::And(std::vector<ExprPtr> arg) {
   return make_expr(nodes::LogicalOp{ast::LogicOpType::And, std::move(arg)});
 }
 
-std::unique_ptr<Expr> Expr::Or(std::vector<ExprPtr> arg) {
+ExprPtr Expr::Or(std::vector<ExprPtr> arg) {
   return make_expr(nodes::LogicalOp{ast::LogicOpType::Or, std::move(arg)});
 }
 
-std::unique_ptr<Expr> Expr::Implies(ExprPtr x, ExprPtr y) {
+ExprPtr Expr::Implies(ExprPtr x, ExprPtr y) {
   ExprPtr not_x = Not(std::move(x));
   return Or({std::move(not_x), std::move(y)});
 }
 
-std::unique_ptr<Expr> Expr::Xor(ExprPtr x, ExprPtr y) {
+ExprPtr Expr::Xor(ExprPtr x, ExprPtr y) {
   ExprPtr not_x    = Not(x);
   ExprPtr not_y    = Not(y);
   ExprPtr x_or_y   = Or({std::move(x), std::move(y)});
@@ -200,7 +206,7 @@ std::unique_ptr<Expr> Expr::Xor(ExprPtr x, ExprPtr y) {
   return And({std::move(x_or_y), std::move(nx_or_ny)});
 }
 
-std::unique_ptr<Expr> Expr::Iff(ExprPtr x, ExprPtr y) {
+ExprPtr Expr::Iff(ExprPtr x, ExprPtr y) {
   ExprPtr not_x     = Not(x);
   ExprPtr not_y     = Not(y);
   ExprPtr x_and_y   = And({std::move(x), std::move(y)});

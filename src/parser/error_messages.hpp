@@ -5,12 +5,12 @@
 
 #include "grammar.hpp"
 
-namespace signal_tl::parser {
+namespace argus::parser {
 namespace peg = tao::pegtl;
 
 /// Here we define the exceptions/error messages that must be thrown/shown when some
 /// rule encounters a parsing error.
-namespace error_messages {
+namespace control {
 
 using namespace argus::grammar;
 
@@ -57,6 +57,13 @@ inline constexpr auto
         "invalid quoted symbol (either used an invalid character or unclosed `|`)";
 
 template <>
+inline constexpr auto error_message<Constant> = "expected a constant";
+
+template <>
+inline constexpr auto error_message<peg::list<Constant, Skip>> =
+    "expected a list of constants";
+
+template <>
 inline constexpr auto error_message<SimpleSymbol> =
     "expected a simple (unquoted) symbol";
 
@@ -68,6 +75,10 @@ inline constexpr auto error_message<VarDecl> =
     "expected a variable declaration `(name type)`";
 
 template <>
+inline constexpr auto error_message<Expression> =
+    "expected a well-structured Expression";
+
+template <>
 inline constexpr auto error_message<Term> = "expected a well-structured Term";
 
 template <>
@@ -76,11 +87,9 @@ inline constexpr auto error_message<valid_commands> = "invalid top-level command
 template <>
 inline constexpr auto error_message<StatementList> = "invalid syntax";
 
-} // namespace error_messages
-
 struct error {
   template <typename Rule>
-  static constexpr auto message = error_messages::error_message<Rule>;
+  static constexpr auto message = error_message<Rule>;
 
   /// This is used to prevent local failues in the Term rule from becoming
   /// global failures.
@@ -90,7 +99,8 @@ struct error {
 
 template <typename Rule>
 using control = peg::must_if<error, peg::normal>::control<Rule>;
+} // namespace control
 
-} // namespace signal_tl::parser
+} // namespace argus::parser
 
 #endif /* end of include guard: SIGNALTL_PARSER_ERRORS_HPP */

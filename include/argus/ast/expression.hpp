@@ -5,21 +5,23 @@
 #ifndef ARGUS_AST_EXPRESSION
 #define ARGUS_AST_EXPRESSION
 
-#include "argus/ast/ast_fwd.hpp"
-
 // IWYU pragma: begin_exports
-#include "argus/ast/atoms.hpp"
-#include "argus/ast/attributes.hpp"
-#include "argus/ast/functions.hpp"
-#include "argus/ast/propositional.hpp"
-#include "argus/ast/temporal.hpp"
+#include "argus/ast/ast_fwd.hpp"       // for ExprPtr, PrimitiveTypes
+#include "argus/ast/atoms.hpp"         // for Constant (ptr only), Parameter
+#include "argus/ast/attributes.hpp"    // for Attribute
+#include "argus/ast/functions.hpp"     // for Function, Function::Type
+#include "argus/ast/propositional.hpp" // for LogicalOp, LogicalOp::Type
+#include "argus/ast/temporal.hpp"      // for Interval (ptr only), TemporalOp
 // IWYU pragma: end_exports
 
-#include <initializer_list>
-#include <set>
-#include <string>
-#include <variant>
-#include <vector>
+#include <cstddef>   // for size_t
+#include <memory>    // for shared_ptr
+#include <set>       // for set
+#include <stdexcept> // for invalid_argument
+#include <string>    // for string
+#include <utility>   // for move
+#include <variant>   // for variant
+#include <vector>    // for vector
 
 namespace argus {
 namespace ast {
@@ -72,115 +74,152 @@ struct Expr : ast::ExprTypes {
   [[nodiscard]] std::string to_string() const;
 
   /// @brief Create an expression with a Constant value.
-  template <typename CType>
-  static std::unique_ptr<Expr> Constant(CType constant);
+  static ExprPtr Constant(ast::details::PrimitiveTypes constant);
 
   /// @brief Create a variable with a known type.
-  static std::unique_ptr<Expr> Variable(std::string name, ast::VarType type);
+  static ExprPtr Variable(std::string name, ast::VarType type);
+
+  /// @brief Create a variable with a known type.
+  template <typename T>
+  static ExprPtr Variable(std::string name) {
+    auto type = ast::VarType::Real;
+    if constexpr (std::is_same_v<T, bool>) {
+      type = ast::VarType::Bool;
+    } else if constexpr (std::is_integral_v<T>) {
+      if constexpr (std::is_unsigned_v<T>) {
+        type = ast::VarType::UInt;
+      } else {
+        type = ast::VarType::Int;
+      }
+    } else if constexpr (std::is_floating_point_v<T>) {
+      type = ast::VarType::Real;
+    } else {
+      throw std::invalid_argument("Cannot create variable of given type");
+    }
+    return Variable(std::move(name), type);
+  }
 
   /// @brief Create a parameter with a known type.
-  static std::unique_ptr<Expr> Parameter(std::string name, ast::ParamType type);
+  static ExprPtr Parameter(std::string name, ast::ParamType type);
+
+  /// @brief Create a parameter with a known type.
+  template <typename T>
+  static ExprPtr Parameter(std::string name) {
+    auto type = ast::ParamType::Real;
+    if constexpr (std::is_same_v<T, bool>) {
+      type = ast::ParamType::Bool;
+    } else if constexpr (std::is_integral_v<T>) {
+      if constexpr (std::is_unsigned_v<T>) {
+        type = ast::ParamType::UInt;
+      } else {
+        type = ast::ParamType::Int;
+      }
+    } else if constexpr (std::is_floating_point_v<T>) {
+      type = ast::ParamType::Real;
+    } else {
+      throw std::invalid_argument("Cannot create parameter of given type");
+    }
+    return Parameter(std::move(name), type);
+  }
 
   /// @brief Create a pre-defined function, with given arguments and attributes
-  static std::unique_ptr<Expr> Function(
+  static ExprPtr Function(
       ast::FnType op,
       std::vector<ExprPtr> args,
       std::set<ast::Attribute, ast::Attribute::KeyCompare> attrs);
 
   /// @brief Create a custom function, with given arguments and attributes
-  static std::unique_ptr<Expr> Function(
+  static ExprPtr Function(
       std::string op,
       std::vector<ExprPtr> args,
       std::set<ast::Attribute, ast::Attribute::KeyCompare> attrs);
 
   /// @brief Create an Addition AST
-  static std::unique_ptr<Expr> Add(std::vector<ExprPtr> args);
+  static ExprPtr Add(std::vector<ExprPtr> args);
 
   /// @brief Create an Multiplication AST
-  static std::unique_ptr<Expr> Mul(std::vector<ExprPtr> args);
+  static ExprPtr Mul(std::vector<ExprPtr> args);
 
   /// @brief Create an Subtraction AST
-  static std::unique_ptr<Expr> Subtract(ExprPtr lhs, ExprPtr rhs);
+  static ExprPtr Subtract(ExprPtr lhs, ExprPtr rhs);
 
   /// @brief Create an Division AST
-  static std::unique_ptr<Expr> Div(ExprPtr numerator, ExprPtr denominator);
+  static ExprPtr Div(ExprPtr numerator, ExprPtr denominator);
 
   /// @brief Create a Equality predicate
-  static std::unique_ptr<Expr> Eq(ExprPtr lhs, ExprPtr rhs);
+  static ExprPtr Eq(ExprPtr lhs, ExprPtr rhs);
 
   /// @brief Create a Not-Equality predicate
-  static std::unique_ptr<Expr> Neq(ExprPtr lhs, ExprPtr rhs);
+  static ExprPtr Neq(ExprPtr lhs, ExprPtr rhs);
 
   /// @brief Create a Less Than predicate
-  static std::unique_ptr<Expr> Lt(ExprPtr lhs, ExprPtr rhs);
+  static ExprPtr Lt(ExprPtr lhs, ExprPtr rhs);
 
   /// @brief Create a Less Than or Equal predicate
-  static std::unique_ptr<Expr> Le(ExprPtr lhs, ExprPtr rhs);
+  static ExprPtr Le(ExprPtr lhs, ExprPtr rhs);
 
   /// @brief Create a Greater Than predicate
-  static std::unique_ptr<Expr> Gt(ExprPtr lhs, ExprPtr rhs);
+  static ExprPtr Gt(ExprPtr lhs, ExprPtr rhs);
 
   /// @brief Create a Greater Than or Equal predicate
-  static std::unique_ptr<Expr> Ge(ExprPtr lhs, ExprPtr rhs);
+  static ExprPtr Ge(ExprPtr lhs, ExprPtr rhs);
 
   /// @brief Create a Logical Negation
-  static std::unique_ptr<Expr> Not(ExprPtr arg);
+  static ExprPtr Not(ExprPtr arg);
 
   /// @brief Create a Logical And operation
-  static std::unique_ptr<Expr> And(std::vector<ExprPtr> arg);
+  static ExprPtr And(std::vector<ExprPtr> arg);
 
   /// @brief Create a Logical Or operation
-  static std::unique_ptr<Expr> Or(std::vector<ExprPtr> arg);
+  static ExprPtr Or(std::vector<ExprPtr> arg);
 
   /// @brief Create a Logical Implication
-  static std::unique_ptr<Expr> Implies(ExprPtr lhs, ExprPtr rhs);
+  static ExprPtr Implies(ExprPtr lhs, ExprPtr rhs);
 
   /// @brief Create a Logical Implication
-  static std::unique_ptr<Expr> Xor(ExprPtr lhs, ExprPtr rhs);
+  static ExprPtr Xor(ExprPtr lhs, ExprPtr rhs);
 
   /// @brief Create a Logical Implication
-  static std::unique_ptr<Expr> Iff(ExprPtr lhs, ExprPtr rhs);
+  static ExprPtr Iff(ExprPtr lhs, ExprPtr rhs);
 
   /// @brief Next temporal operator
-  static std::unique_ptr<Expr> Next(ExprPtr arg);
+  static ExprPtr Next(ExprPtr arg);
 
   /// @brief Previous temporal operator
-  static std::unique_ptr<Expr> Previous(ExprPtr arg);
+  static ExprPtr Previous(ExprPtr arg);
 
   /// @brief Eventually temporal operator
-  static std::unique_ptr<Expr> Eventually(ExprPtr arg);
+  static ExprPtr Eventually(ExprPtr arg);
   /// @brief Eventually temporal oprator with interval
-  static std::unique_ptr<Expr>
+  static ExprPtr
   Eventually(ExprPtr arg, std::shared_ptr<ast::details::Interval> interval);
 
   /// @brief Once temporal operator
-  static std::unique_ptr<Expr> Once(ExprPtr arg);
+  static ExprPtr Once(ExprPtr arg);
   /// @brief Once temporal operator with interval
-  static std::unique_ptr<Expr>
-  Once(ExprPtr arg, std::shared_ptr<ast::details::Interval> interval);
+  static ExprPtr Once(ExprPtr arg, std::shared_ptr<ast::details::Interval> interval);
 
   /// @brief Always temporal operator
-  static std::unique_ptr<Expr> Always(ExprPtr arg);
+  static ExprPtr Always(ExprPtr arg);
   /// @brief Always temporal operator with interval
-  static std::unique_ptr<Expr>
-  Always(ExprPtr arg, std::shared_ptr<ast::details::Interval> interval);
+  static ExprPtr Always(ExprPtr arg, std::shared_ptr<ast::details::Interval> interval);
 
   /// @brief Historically temporal operator
-  static std::unique_ptr<Expr> Historically(ExprPtr arg);
+  static ExprPtr Historically(ExprPtr arg);
   /// @brief Historically temporal oprator with interval
-  static std::unique_ptr<Expr>
+  static ExprPtr
   Historically(ExprPtr arg, std::shared_ptr<ast::details::Interval> interval);
 
   /// @brief Until temporal operator
-  static std::unique_ptr<Expr> Until(ExprPtr arg1, ExprPtr arg2);
+  static ExprPtr Until(ExprPtr arg1, ExprPtr arg2);
   /// @brief Until temporal operator with interval
-  static std::unique_ptr<Expr>
+  static ExprPtr
   Until(ExprPtr arg1, ExprPtr arg2, std::shared_ptr<ast::details::Interval> interval);
 
   /// @brief Since temporal operator
-  static std::unique_ptr<Expr> Since(ExprPtr arg1, ExprPtr arg2);
+  static ExprPtr Since(ExprPtr arg1, ExprPtr arg2);
   /// @brief Since temporal operator with interval
-  static std::unique_ptr<Expr>
+  static ExprPtr
   Since(ExprPtr arg1, ExprPtr arg2, std::shared_ptr<ast::details::Interval> interval);
 
  private:
@@ -190,8 +229,7 @@ struct Expr : ast::ExprTypes {
   /// efficient use of the
   size_t m_id;
   /// Private factory function.
-  template <typename ExprType>
-  static std::unique_ptr<Expr> make_expr(ExprType);
+  static ExprPtr make_expr(Expr&&);
 };
 } // namespace argus
 
