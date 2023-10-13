@@ -1,3 +1,5 @@
+# This repository has been archived in favor of my other package [argus](https://github.com/anand-bala/argus)
+
 [![pypi](https://badge.fury.io/py/signal-temporal-logic.svg)](https://badge.fury.io/py/signal-temporal-logic)
 [![codecov](https://codecov.io/gh/anand-bala/signal-temporal-logic/branch/master/graph/badge.svg)](https://codecov.io/gh/anand-bala/signal-temporal-logic)
 
